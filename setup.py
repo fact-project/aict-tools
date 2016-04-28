@@ -1,13 +1,17 @@
 from setuptools import setup
 
 setup(
-    name='classifier',
+    name='fact-classifier',
     version='0.0.2',
     description='classifier -- tools to build models on FACT MC data  ',
     url='https://github.com/fact-project/erna',
     author='Kai Brügge',
     author_email='kai.bruegge@tu-dortmund.de',
     license='MIT',
+    py_modules=[
+                'apply_model',
+                'train_model',
+                ],
     # dependency_links = ['git+https://github.com/mackaiver/gridmap.git#egg=gridmap'],
     install_requires=[
         'pandas',           # in anaconda
