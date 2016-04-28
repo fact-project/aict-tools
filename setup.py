@@ -19,6 +19,7 @@ setup(
         'matplotlib>=1.4',  # in anaconda
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
+        'pyyaml',             # in anaconda
         'tables',           # needs to be installed by pip for some reason
         # 'hdf5',
         'click',
@@ -29,7 +30,8 @@ setup(
    entry_points={
     'console_scripts': [
         'apply_model = apply_model:main',
-        'train_model = train_model:main',
+        'train_separation_model = train_separation_model:main',
+        'train_energy_regressor = train_energy_regressor:main',
     ],
   }
 )
