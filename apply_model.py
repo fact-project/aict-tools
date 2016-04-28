@@ -54,11 +54,13 @@ def main(configuration_path, data_path, model_path, output_path):
 
     model = joblib.load(model_path)
     #sklearn needs float32 values. after downcasting some -infs appear somehow. here i drop them.
+    print('Loading data')
     df_data = read_data(data_path)
     df_data[training_variables] = df_data[training_variables].astype('float32')
     df_data = df_data.replace([np.inf, -np.inf], np.nan).dropna(how='any')
     # embed()
     print('After dropping nans there are {} events left.'.format(len(df_data)))
+    print('Predicting on data...')
     prediction = model.predict_proba(df_data[training_variables])
     df_data['signal_prediction'] = prediction[:,1]
     df_data['signal_theta'] = df_data['Theta']
@@ -67,6 +69,7 @@ def main(configuration_path, data_path, model_path, output_path):
     thetas = df_data['Theta']
     distances = df_data['Distance']
 
+    print('Predicting off data...')
     df_data['Theta'] = df_data['Theta_Off_3']
     df_data['Distance'] = df_data['Distance_Off_3']
     df_data['background_prediction'] =  model.predict_proba(df_data[training_variables])[:,1]
@@ -91,6 +94,7 @@ def main(configuration_path, data_path, model_path, output_path):
 
     df_data['Distance'] = distances
     df_data['Theta'] = thetas
+    print('Writing data')
     write_data(df_data, output_path)
 
 

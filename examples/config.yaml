@@ -2,7 +2,7 @@
 
 
 #paths to output files
-prediction_path : output/predictions.json
+prediction_path : output/mc_predictions.json
 importances_path : output/importances.json
 model_path : output/model.pkl
 
