@@ -1,9 +1,10 @@
 # hmm realy tasty config for realy tasty classification stuff
 
-# path to mc files
-signal_path : examples/signal.hdf
 
-background_path : examples/background.hdf
+#paths to output files
+prediction_path : output/predictions.json
+importances_path : output/importances.json
+model_path : output/model.pkl
 
 #the classifier to use
 classifier : |

@@ -1,4 +1,3 @@
-import erna
 import pandas as pd
 import click
 from sklearn import cross_validation
@@ -40,11 +39,10 @@ def check_extension(file_path, allowed_extensions= ['.hdf', '.hdf5', '.h5', '.js
         print('Extension {} not allowed here.'.format(extension))
 
 @click.command()
-@click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
-@click.argument('prediction_path', type=click.Path(exists=False, dir_okay=False, file_okay=True) )
-@click.argument('model_path', type=click.Path(exists=False, dir_okay=False, file_okay=True) )
-@click.argument('importances_path', type=click.Path(exists=False, dir_okay=False, file_okay=True))
-def main(configuration_path, prediction_path, model_path, importances_path):
+@click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
+@click.argument('signal_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
+@click.argument('background_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
+def main(configuration_path, signal_path, background_path):
     '''
     Train a classifier on signal and background monte carlo data and write the model to MODEL_PATH in pmml or pickle format.
 
@@ -53,13 +51,14 @@ def main(configuration_path, prediction_path, model_path, importances_path):
     MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml. If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
-    check_extension(prediction_path)
-    check_extension(importances_path)
-    check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
-
-    #load configuartion stuff
     with open(configuration_path) as f:
         config = yaml.load(f)
+
+
+    #load paths
+    prediction_path = config['prediction_path']
+    importances_path = config['importances_path']
+    model_path = config['model_path']
 
     sample = config['sample']
     query = config['query']
@@ -68,11 +67,18 @@ def main(configuration_path, prediction_path, model_path, importances_path):
 
     classifier = eval(config['classifier'])
 
+    check_extension(prediction_path)
+    check_extension(importances_path)
+    check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
+
+    #load configuartion stuff
+
+
 
 
     print("Loading data")
-    df_gamma = read_data(config['signal_path'])
-    df_proton = read_data(config['background_path'])
+    df_gamma = read_data(signal_path)
+    df_proton = read_data(background_path)
 
     if query:
         print('Quering with string: {}'.format(query))
