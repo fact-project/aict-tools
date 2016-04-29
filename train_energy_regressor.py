@@ -28,7 +28,9 @@ def write_data(df, file_path, hdf_key='table'):
 @click.argument('gamma_path', type=click.Path(exists=True, dir_okay=False, file_okay=True, readable=True) )
 def main(configuration_path, gamma_path):
     '''
-    Train a RF regressor and write the model to OUT in pmml format.
+    Train a regressor using signal monte carlo specified by GAMMA_PATH.
+
+    Output ist written to the paths specified in the config yaml file provided by CONFIGURATION_PATH.
     '''
     print("Loading data")
     with open(configuration_path) as f:
@@ -54,7 +56,7 @@ def main(configuration_path, gamma_path):
 
     if query:
         print('Quering with string: {}'.format(query))
-        df = df.query(query)
+        df = df.copy().query(query)
 
     df_train = df[training_variables]
     df_train = df_train.dropna(axis=0, how='any')

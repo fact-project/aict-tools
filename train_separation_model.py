@@ -82,8 +82,8 @@ def main(configuration_path, signal_path, background_path):
 
     if query:
         print('Quering with string: {}'.format(query))
-        df_gamma = df_gamma.query(query)
-        df_proton = df_proton.query(query)
+        df_gamma = df_gamma.copy().query(query)
+        df_proton = df_proton.copy().query(query)
 
     df_gamma['label_text'] = 'signal'
     df_gamma['label'] = 1
