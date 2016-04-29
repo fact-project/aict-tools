@@ -4,7 +4,7 @@
 #paths to output files
 prediction_path : output/mc_predictions_energy.json
 importances_path : output/importances_energy.json
-model_path : output/model_energy.pkl
+model_path : examples/model_energy.pkl
 
 #the classifier to use
 classifier : |
