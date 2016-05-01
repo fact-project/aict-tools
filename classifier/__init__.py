@@ -44,6 +44,7 @@ def check_extension(file_path, allowed_extensions= ['.hdf', '.hdf5', '.h5', '.js
 
 def pickle_model(classifier, feature_names, model_path, label_text = 'label'):
     p, extension = path.splitext(model_path)
+    classifier.feature_names = feature_names
     if (extension == '.pmml'):
         print("Pickling model to {} ...".format(model_path))
         # joblib.dump(rf, mode, compress = 4)
