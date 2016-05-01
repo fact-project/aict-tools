@@ -1,11 +1,5 @@
 # hmm realy tasty config for realy tasty classification stuff
 
-
-#paths to output files
-prediction_path : output/mc_predictions.json
-importances_path : output/importances.json
-model_path : output/model.pkl
-
 #the classifier to use
 classifier : |
   ensemble.RandomForestClassifier(n_estimators=30, max_features='sqrt', n_jobs=1, max_depth=15, criterion='entropy')

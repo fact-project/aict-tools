@@ -9,10 +9,10 @@ setup(
     author_email='kai.bruegge@tu-dortmund.de',
     license='MIT',
     py_modules=[
-                'apply_regression_model',
-                'apply_separation_model',
-                'train_separation_model',
-                'train_energy_regressor',
+                'classifier/apply_regression_model',
+                'classifier/apply_separation_model',
+                'classifier/train_separation_model',
+                'classifier/train_energy_regressor',
                 ],
     # dependency_links = ['git+https://github.com/mackaiver/gridmap.git#egg=gridmap'],
     install_requires=[
@@ -31,10 +31,10 @@ setup(
    zip_safe=False,
    entry_points={
     'console_scripts': [
-        'apply_separation_model = apply_separation_model:main',
-        'apply_regression_model = apply_regression_model:main',
-        'train_separation_model = train_separation_model:main',
-        'train_energy_regressor = train_energy_regressor:main',
+        'apply_separation_model = classifier.apply_separation_model:main',
+        'apply_regression_model =classifier.apply_regression_model:main',
+        'train_separation_model =classifier.train_separation_model:main',
+        'train_energy_regressor =classifier.train_energy_regressor:main',
     ],
   }
 )

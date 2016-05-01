@@ -1,11 +1,5 @@
 # hmm realy tasty config for realy tasty classification stuff
 
-
-#paths to output files
-prediction_path : output/mc_predictions_energy.json
-importances_path : output/importances_energy.json
-model_path : examples/model_energy.pkl
-
 #the classifier to use
 classifier : |
   ensemble.RandomForestRegressor(n_estimators=30, max_features='sqrt', n_jobs=1, max_depth=12)

@@ -2,45 +2,35 @@ import pandas as pd
 import click
 from sklearn import cross_validation
 # from sklearn import linear_model
-from sklearn2pmml import sklearn2pmml
 from sklearn import metrics
 from tqdm import tqdm
-from os import path
 import numpy as np
-from sklearn_pandas import DataFrameMapper
 import yaml
-from sklearn.externals import joblib
 from sklearn import ensemble
-
-
-
-def write_data(df, file_path, hdf_key='table'):
-    name, extension =  path.splitext(file_path)
-    if extension in ['.hdf', '.hdf5', '.h5']:
-        df.to_hdf(file_path, key=hdf_key)
-    elif extension == '.json':
-        df.to_json(file_path)
-    else:
-        print('cannot write tabular data with extension {}'.format(extension))
+from . import write_data, pickle_model, read_data
 
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
-@click.argument('gamma_path', type=click.Path(exists=True, dir_okay=False, file_okay=True, readable=True) )
-def main(configuration_path, gamma_path):
+@click.argument('signal_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
+@click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False, file_okay=True))
+@click.argument('model_path', type=click.Path(exists=False, dir_okay=False, file_okay=True))
+def main(configuration_path, signal_path, predictions_path, model_path):
     '''
-    Train a regressor using signal monte carlo specified by GAMMA_PATH.
+    Train a classifier on signal and background monte carlo data and write the model to MODEL_PATH in pmml or pickle format.
 
-    Output ist written to the paths specified in the config yaml file provided by CONFIGURATION_PATH.
+    CONFIGURATION_PATH: Path to the config yaml file
+
+    SIGNAL_PATH: Path to the signal data
+
+    PREDICTIONS_PATH : path to the file where the mc predictions are stored.
+
+    MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml. If extension is .pmml, then both pmml and pkl file will be saved
     '''
+
     print("Loading data")
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-
-    #load paths
-    prediction_path = config['prediction_path']
-    importances_path = config['importances_path']
-    model_path = config['model_path']
 
     sample = config['sample']
     query = config['query']
@@ -49,14 +39,7 @@ def main(configuration_path, gamma_path):
 
     classifier = eval(config['classifier'])
 
-    df = pd.read_hdf(gamma_path, key='table')
-
-    if sample > 0:
-        df = df.sample(sample)
-
-    if query:
-        print('Quering with string: {}'.format(query))
-        df = df.copy().query(query)
+    df = read_data(file_path=signal_path, sample=sample, query=query)
 
     df_train = df[training_variables]
     df_train = df_train.dropna(axis=0, how='any')
@@ -92,7 +75,7 @@ def main(configuration_path, gamma_path):
     predictions_df = pd.concat(cv_predictions,ignore_index=True)
 
     print('writing predictions from cross validation')
-    predictions_df.to_hdf(prediction_path, key='table')
+    write_data(predictions_df, predictions_path)
 
     scores = np.array(scores)
     print("Cross validated R^2 scores: {}".format(scores))
@@ -104,27 +87,13 @@ def main(configuration_path, gamma_path):
     classifier.fit(X_train, y_train)
     print("Score on complete data set: {}".format(classifier.score(X_test, y_test)))
 
+    pickle_model(
+            classifier=classifier,
+            feature_names=list(df_train.columns),
+            model_path=model_path,
+            label_text = 'estimated_energy',
+    )
 
-    print("Saving importances")
-    importances = pd.DataFrame(classifier.feature_importances_, index=df_train.columns, columns=['importance'])
-    write_data(importances, importances_path)
-
-
-    p, extension = path.splitext(model_path)
-    if (extension == '.pmml'):
-        print("Pickling model to {} ...".format(model_path))
-        # joblib.dump(rf, mode, compress = 4)
-        mapper = DataFrameMapper([
-                                (list(df_train.columns), None),
-                                ('estimated_energy', None)
-                        ])
-
-        # joblib.dump(mapper, out, compress = 4)
-        sklearn2pmml(classifier, mapper,  model_path)
-
-        joblib.dump(classifier,p + '.pkl', compress = 4)
-    else:
-        joblib.dump(classifier, model_path, compress = 4)
 
 if __name__ == '__main__':
     main()

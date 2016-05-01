@@ -1,43 +1,17 @@
-import pandas as pd
 import numpy as np
 import click
 # from IPython import embed
 from sklearn.externals import joblib
-from os import path
-import json
+
 import yaml
-
-def write_data(df, file_path, hdf_key='table'):
-    name, extension =  path.splitext(file_path)
-    if extension in ['.hdf', '.hdf5', '.h5']:
-        df.to_hdf(file_path, key=hdf_key)
-    elif extension == '.json':
-        df.to_json(file_path)
-    elif extension == '.csv':
-        df.to_csv(file_path, index_label='index')
-    else:
-        print('cannot write tabular data with extension {}'.format(extension))
-
-def read_data(file_path, hdf_key='table'):
-    name, extension =  path.splitext(file_path)
-    if extension in ['.hdf', '.hdf5', '.h5']:
-        return pd.read_hdf(file_path, key=hdf_key)
-    if extension == '.json':
-        with open(file_path, 'r') as j:
-            d = json.load(j)
-            return pd.DataFrame(d)
-
-def check_extension(file_path, allowed_extensions= ['.hdf', '.hdf5', '.h5', '.json', '.csv']):
-    p, extension = path.splitext(file_path)
-    if not extension in allowed_extensions:
-        print('Extension {} not allowed here.'.format(extension))
+from . import check_extension, read_data, write_data
 
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
-@click.argument('output_path', type=click.Path(exists=False, dir_okay=False, file_okay=True) )
-def main(configuration_path, data_path, model_path, output_path):
+@click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False, file_okay=True) )
+def main(configuration_path, data_path, model_path, predictions_path):
     '''
     Apply loaded model to data. The cuts applied during model training will also be applied here.
     WARNING: currently only taking 1 off position into account.
@@ -48,9 +22,9 @@ def main(configuration_path, data_path, model_path, output_path):
 
     MODEL_PATH: Path to the pickled model.
 
-    OUTPUT_PATH: Path to the data with added prediction columns.
+    PREDICTIONS_PATH: Path to the data with added prediction columns.
     '''
-    check_extension(output_path)
+    check_extension(predictions_path)
 
     with open(configuration_path) as f:
         config = yaml.load(f)
@@ -76,7 +50,7 @@ def main(configuration_path, data_path, model_path, output_path):
     df_data['energy_prediction'] = prediction
 
     print('Writing data')
-    write_data(df_data, output_path)
+    write_data(df_data, predictions_path)
 
 
 
