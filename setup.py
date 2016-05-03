@@ -27,6 +27,9 @@ setup(
         'click',
         'numexpr',
         'pytest', # also in  conda
+        'sklearn-pandas',
+        'joblib',
+        'tqdm',
     ],
    zip_safe=False,
    entry_points={
