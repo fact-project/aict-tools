@@ -27,6 +27,7 @@ def read_data(file_path, query=None, sample=-1, hdf_key='table'):
             df = pd.DataFrame(d)
 
     if sample > 0:
+        print('Taking {} random samples'.format(sample))
         df = df.sample(sample)
 
     if query:
@@ -47,15 +48,14 @@ def pickle_model(classifier, feature_names, model_path, label_text = 'label'):
     classifier.feature_names = feature_names
     if (extension == '.pmml'):
         print("Pickling model to {} ...".format(model_path))
-        # joblib.dump(rf, mode, compress = 4)
+
         mapper = DataFrameMapper([
                                 (feature_names, None),
                                 ('estimated_energy', None)
                         ])
 
-        # joblib.dump(mapper, out, compress = 4)
+        joblib.dump(classifier,p + '.pkl', compress = 4)
         sklearn2pmml(classifier, mapper,  model_path)
 
-        joblib.dump(classifier,p + '.pkl', compress = 4)
     else:
         joblib.dump(classifier, model_path, compress = 4)
