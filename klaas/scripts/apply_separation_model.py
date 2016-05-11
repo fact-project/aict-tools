@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import click
 # from IPython import embed
-from sklearn.externals import joblib
+import joblib
 from klaas import check_extension, read_data, write_data
 import yaml
 

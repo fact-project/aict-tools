@@ -34,7 +34,7 @@ setup(
     'console_scripts': [
         'train_separation_model = klaas.scripts.train_separation_model:main',
         'train_energy_regressor = klaas.scripts.train_energy_regressor:main',
-        'apply_seperation_model = klaas.scripts.apply_seperation_model:main',
+        'apply_separation_model = klaas.scripts.apply_separation_model:main',
         'apply_regression_model = klaas.scripts.apply_regression_model:main',
     ],
   }
