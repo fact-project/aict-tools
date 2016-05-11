@@ -11,9 +11,7 @@ import yaml
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
 @click.argument('output_path', type=click.Path(exists=False, dir_okay=False, file_okay=True) )
-@click.option('--source_dependence', '-s', default=False,is_flag=True, help='Flag indicating whether the model is source dependend or not.' \
-                                                                            + 'If yes, it will be applied for each off region.')
-def main(configuration_path, data_path, model_path, output_path, source_dependence):
+def main(configuration_path, data_path, model_path, output_path):
     '''
     Apply loaded model to data. The cuts applied during model training will also be applied here.
     WARNING: currently only taking 1 off position into account.
@@ -49,7 +47,7 @@ def main(configuration_path, data_path, model_path, output_path, source_dependen
     df_data['signal_prediction'] = prediction[:,1]
     df_data['signal_theta'] = df_data['Theta']
     df_data['signal_distance'] = df_data['Distance']
-    if source_dependence:
+    if 'Theta' in training_variables:
         thetas = df_data['Theta']
         distances = df_data['Distance']
 
