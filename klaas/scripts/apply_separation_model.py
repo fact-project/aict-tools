@@ -11,7 +11,9 @@ import yaml
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )
 @click.argument('output_path', type=click.Path(exists=False, dir_okay=False, file_okay=True) )
-def main(configuration_path, data_path, model_path, output_path):
+@click.option('--source_dependence', '-s', default=False,is_flag=True, help='Flag indicating whether the model is source dependend or not.' \
+                                                                            + 'If yes, it will be applied for each off region.')
+def main(configuration_path, data_path, model_path, output_path, source_dependence):
     '''
     Apply loaded model to data. The cuts applied during model training will also be applied here.
     WARNING: currently only taking 1 off position into account.
@@ -47,35 +49,22 @@ def main(configuration_path, data_path, model_path, output_path):
     df_data['signal_prediction'] = prediction[:,1]
     df_data['signal_theta'] = df_data['Theta']
     df_data['signal_distance'] = df_data['Distance']
+    if source_dependence:
+        thetas = df_data['Theta']
+        distances = df_data['Distance']
 
-    thetas = df_data['Theta']
-    distances = df_data['Distance']
+        print('Predicting off data...')
+        for region in [1,2,3,4,5]:
+            theta_key = 'Theta_Off_{}'.format(region)
+            distance_key = 'Distance_Off_{}'.format(region)
+            df_data['Theta'] = df_data[theta_key]
+            df_data['Distance'] = df_data[distance_key]
+            df_data['background_prediction_{}'.format(region)] =  model.predict_proba(df_data[training_variables])[:,1]
 
-    print('Predicting off data...')
-    df_data['Theta'] = df_data['Theta_Off_3']
-    df_data['Distance'] = df_data['Distance_Off_3']
-    df_data['background_prediction'] =  model.predict_proba(df_data[training_variables])[:,1]
-    df_data['background_theta']  = df_data['Theta']
-    df_data['background_distance']  = df_data['Distance']
 
-    # df_data['background_prediction'] = 0
-    # df_data['background_theta'] = np.nan
-    # df_data['background_distance'] = np.nan
+        df_data['Distance'] = distances
+        df_data['Theta'] = thetas
 
-    # off_columns = zip(['Theta_Off_1', 'Theta_Off_2', 'Theta_Off_3', 'Theta_Off_4', 'Theta_Off_5'],
-    #                     ['Distance_Off_1', 'Distance_Off_2', 'Distance_Off_3', 'Distance_Off_4', 'Distance_Off_5'])
-    # for key in off_columns:
-    #     df_data['Theta'] = df_data[key[0]]
-    #     df_data['Distance'] = df_data[key[1]]
-    #     prediction_for_background = model.predict_proba(df_data[config.training_variables])[:,0]
-    #     # embed()
-    #     mask = (prediction_for_background > df_data['background_prediction']).values
-    #     df_data['background_prediction'][mask] = prediction_for_background[mask]
-    #     df_data['background_theta'][mask]  = df_data['Theta'][mask]
-    #     df_data['background_distance'][mask]  = df_data['Distance'][mask]
-
-    df_data['Distance'] = distances
-    df_data['Theta'] = thetas
     print('Writing data')
     write_data(df_data, output_path)
 
