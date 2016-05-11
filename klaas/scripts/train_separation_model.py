@@ -60,8 +60,8 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     print('Training classifier with {} protons and {} gammas'.format(len(df_proton), len(df_gamma)))
 
-    df_full = pd.concat([df_proton, df_gamma], ignore_index=True).dropna(axis=0, how='any')
-    df_training = df_full[training_variables]
+    df_full = pd.concat([df_proton, df_gamma], ignore_index=True).replace([np.inf, -np.inf], np.nan).dropna(how='any')
+    df_training = df_full[training_variables].astype('float32')
     df_label = df_full['label']
 
 
