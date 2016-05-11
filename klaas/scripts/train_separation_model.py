@@ -57,13 +57,16 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     df_proton['label'] = 0
 
 
-
-    print('Training classifier with {} protons and {} gammas'.format(len(df_proton), len(df_gamma)))
-
-    df_full = pd.concat([df_proton, df_gamma], ignore_index=True).replace([np.inf, -np.inf], np.nan).dropna(how='any')
-    df_training = df_full[training_variables].astype('float32')
+    df_full = pd.concat([df_proton, df_gamma], ignore_index=True)
+    # df_full[training_variables] = df_full[training_variables].astype('float32').replace([np.inf, -np.inf], np.nan).dropna(how='any')
+    df_training = df_full[training_variables].astype('float32').replace([np.inf, -np.inf], np.nan).dropna(how='any')
     df_label = df_full['label']
+    df_label = df_label[df_training.index]
 
+
+    num_gammas =  len(df_label[df_label==1])
+    num_protons =  len(df_label[df_label==0])
+    print('Training classifier with {} protons and {} gammas'.format(num_protons, num_gammas))
 
 
     #save prediction_path for each cv iteration
