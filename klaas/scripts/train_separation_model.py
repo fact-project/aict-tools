@@ -4,7 +4,7 @@ from sklearn import cross_validation
 from tqdm import tqdm
 import numpy as np
 from sklearn import metrics
-from . import read_data, pickle_model, write_data, check_extension
+from klaas import read_data, pickle_model, write_data, check_extension
 from sklearn import ensemble
 import yaml
 

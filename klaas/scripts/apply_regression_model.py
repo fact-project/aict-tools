@@ -4,7 +4,7 @@ import click
 from sklearn.externals import joblib
 
 import yaml
-from . import check_extension, read_data, write_data
+from klaas import check_extension, read_data, write_data
 
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, file_okay=True) )

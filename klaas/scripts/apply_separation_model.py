@@ -3,7 +3,7 @@ import numpy as np
 import click
 # from IPython import embed
 from sklearn.externals import joblib
-from . import check_extension, read_data, write_data
+from klaas import check_extension, read_data, write_data
 import yaml
 
 @click.command()

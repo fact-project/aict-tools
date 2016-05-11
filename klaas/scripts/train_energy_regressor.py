@@ -7,7 +7,7 @@ from tqdm import tqdm
 import numpy as np
 import yaml
 from sklearn import ensemble
-from . import write_data, pickle_model, read_data
+from klaas import write_data, pickle_model, read_data
 
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
