@@ -41,8 +41,7 @@ def main(configuration_path, signal_path, predictions_path, model_path):
 
     df = read_data(file_path=signal_path, sample=sample, query=query)
 
-    df_train = df[training_variables]
-    df_train = df_train.dropna(axis=0, how='any')
+    df_train = df[training_variables].astype('float32').replace([np.inf, -np.inf], np.nan).dropna(how='any')
 
     df_target = df['MCorsikaEvtHeader.fTotalEnergy']
     df_target.name = 'true_energy'
