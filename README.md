@@ -49,6 +49,10 @@ These are some executables which take some configuration.yaml files as input (se
       --help  Show this message and exit.
 
 
+## Model application
+
+Two scripts are provided to apply the models to real data `apply_regression_model` and `apply_separation_model`.
+
 
 # installation
 
