@@ -48,8 +48,8 @@ def main(configuration_path, data_path, model_path, output_path):
     df_data['signal_theta'] = df_data['Theta']
     df_data['signal_distance'] = df_data['Distance']
     if 'Theta' in training_variables:
-        thetas = df_data['Theta']
-        distances = df_data['Distance']
+        thetas = df_data['Theta'].copy()
+        distances = df_data['Distance'].copy()
 
         print('Predicting off data...')
         for region in [1,2,3,4,5]:
@@ -57,7 +57,8 @@ def main(configuration_path, data_path, model_path, output_path):
             distance_key = 'Distance_Off_{}'.format(region)
             df_data['Theta'] = df_data[theta_key]
             df_data['Distance'] = df_data[distance_key]
-            df_data['background_prediction_{}'.format(region)] =  model.predict_proba(df_data[training_variables])[:,1]
+            prediction = model.predict_proba(df_data[training_variables])
+            df_data['background_prediction_{}'.format(region)] =  prediction[:,1]
 
 
         df_data['Distance'] = distances
