@@ -1,4 +1,3 @@
-import pandas as pd
 import numpy as np
 import click
 # from IPython import embed
@@ -14,7 +13,6 @@ import yaml
 def main(configuration_path, data_path, model_path, output_path):
     '''
     Apply loaded model to data. The cuts applied during model training will also be applied here.
-    WARNING: currently only taking 1 off position into account.
 
     CONFIGURATION_PATH: Path to the config yaml file.
 
@@ -50,19 +48,23 @@ def main(configuration_path, data_path, model_path, output_path):
     if 'Theta' in training_variables:
         thetas = df_data['Theta'].copy()
         distances = df_data['Distance'].copy()
+        alphas = df_data['Alpha'].copy()
 
         print('Predicting off data...')
         for region in [1,2,3,4,5]:
             theta_key = 'Theta_Off_{}'.format(region)
             distance_key = 'Distance_Off_{}'.format(region)
+            alpha_key = 'Alpha_Off_{}'.format(region)
             df_data['Theta'] = df_data[theta_key]
             df_data['Distance'] = df_data[distance_key]
+            df_data['Alpha'] = df_data[alpha_key]
             prediction = model.predict_proba(df_data[training_variables])
             df_data['background_prediction_{}'.format(region)] =  prediction[:,1]
 
 
         df_data['Distance'] = distances
         df_data['Theta'] = thetas
+        df_data['Alphas'] = alphas
 
     print('Writing data')
     write_data(df_data, output_path)
