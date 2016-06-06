@@ -107,7 +107,12 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     # write_data(importances, importances_path)
 
     # print("Pickling model to {} ...".format(model_path))
-    pickle_model(classifier=classifier,model_path=model_path,  label_text = 'label' , feature_names=list(df_training.columns))
+    pickle_model(
+        classifier=classifier,
+        model_path=model_path,
+        label_text='label',
+        feature_names=list(df_training.columns)
+    )
 
     # print('Adding data information to pmml...')
     # ET.register_namespace('',"http://www.dmg.org/PMML-4_2")

@@ -51,9 +51,10 @@ def pickle_model(classifier, feature_names, model_path, label_text = 'label'):
 
         mapper = DataFrameMapper([
                                 (feature_names, None),
-                                ('estimated_energy', None)
+                                (label_text, None)
                         ])
 
+        
         joblib.dump(classifier,p + '.pkl', compress = 4)
         sklearn2pmml(classifier, mapper,  model_path)
 
