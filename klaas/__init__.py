@@ -20,7 +20,10 @@ def write_data(df, file_path, hdf_key='table'):
 def read_data(file_path, query=None, sample=-1, hdf_key='table'):
     name, extension =  path.splitext(file_path)
     if extension in ['.hdf', '.hdf5', '.h5']:
-        df = pd.read_hdf(file_path, key=hdf_key)
+        try:
+            df = pd.read_hdf(file_path, key=hdf_key)
+        except KeyError:
+            df = pd.read_hdf(file_path)
     if extension == '.json':
         with open(file_path, 'r') as j:
             d = json.load(j)
