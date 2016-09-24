@@ -2,6 +2,12 @@
 Scripts to classify FACT MC data and save models and stuff 
 These are some executables which take some configuration.yaml files as input (see examples folder) and do classification or regression tasks on them.
 
+# installation
+
+Clone the repo, `cd` into the folder and do the usual `pip install .` dance.
+
+You will have to install teh sklearn2pmml dependency by hand first.
+[https://github.com/jpmml/sklearn2pmml](https://github.com/jpmml/sklearn2pmml)
 
 # usage 
 
@@ -54,7 +60,5 @@ These are some executables which take some configuration.yaml files as input (se
 Two scripts are provided to apply the models to real data `apply_regression_model` and `apply_separation_model`.
 
 
-# installation
 
-The usual `pip install -e .` dance
 
