@@ -86,6 +86,7 @@ def main(configuration_path, signal_path, predictions_path, model_path):
     classifier.fit(X_train, y_train)
     print("Score on complete data set: {}".format(classifier.score(X_test, y_test)))
 
+    print("Pickling model to {} ...".format(model_path))
     pickle_model(
             classifier=classifier,
             feature_names=list(df_train.columns),

@@ -1,6 +1,6 @@
 import numpy as np
 import click
-# from IPython import embed
+from IPython import embed
 from sklearn.externals import joblib
 
 import yaml
@@ -46,8 +46,13 @@ def main(configuration_path, data_path, model_path, predictions_path):
 
     print('After query there are {} events left.'.format(len(df_data)))
     print('Predicting on data...')
-    prediction = model.predict(df_data[training_variables])
-    df_data['energy_prediction'] = prediction
+    predictions  = np.array([t.predict(df_data[training_variables]) for t in model.estimators_])
+
+    #this is equivalent to  model.predict(df_data[training_variables])
+    df_data['energy_prediction'] = np.mean(predictions, axis=0)
+    #also store the standard deviation in the table
+    df_data['energy_prediction_std'] = np.std(predictions, axis=0)
+
 
     print('Writing data')
     write_data(df_data, predictions_path)

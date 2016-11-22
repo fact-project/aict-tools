@@ -106,7 +106,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     # importances = pd.DataFrame(classifier.feature_importances_, index=df_training.columns, columns=['importance'])
     # write_data(importances, importances_path)
 
-    # print("Pickling model to {} ...".format(model_path))
+    print("Pickling model to {} ...".format(model_path))
     pickle_model(
         classifier=classifier,
         model_path=model_path,
