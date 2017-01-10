@@ -2,7 +2,12 @@
 
 #the classifier to use
 classifier : |
-  ensemble.RandomForestRegressor(n_estimators=30, max_features='sqrt', n_jobs=1, max_depth=12)
+  ensemble.RandomForestRegressor(
+    n_estimators=30,
+    max_features='sqrt',
+    n_jobs=1,
+    max_depth=12,
+  )
 
 
 #randomly sample the data if you dont want to use the whole set, -1 for all stuff
