@@ -5,7 +5,9 @@ from sklearn import metrics
 from tqdm import tqdm
 import numpy as np
 import yaml
-from klaas import write_data, pickle_model, read_data
+from sklearn import ensemble
+
+from .. import write_data, pickle_model, read_data
 
 
 @click.command()
