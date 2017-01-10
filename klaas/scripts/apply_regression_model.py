@@ -1,6 +1,5 @@
 import numpy as np
 import click
-from IPython import embed
 from sklearn.externals import joblib
 
 import yaml
