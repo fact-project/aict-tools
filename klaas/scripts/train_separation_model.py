@@ -4,10 +4,9 @@ from sklearn import cross_validation
 from tqdm import tqdm
 import numpy as np
 from sklearn import metrics
-from klaas import read_data, pickle_model, write_data, check_extension
-from sklearn import ensemble
 import yaml
 
+from ..io import read_data, pickle_model, write_data, check_extension
 
 
 @click.command()
@@ -18,7 +17,8 @@ import yaml
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False, file_okay=True))
 def main(configuration_path, signal_path, background_path, predictions_path, model_path):
     '''
-    Train a classifier on signal and background monte carlo data and write the model to MODEL_PATH in pmml or pickle format.
+    Train a classifier on signal and background monte carlo data and write the model
+    to MODEL_PATH in pmml or pickle format.
 
     CONFIGURATION_PATH: Path to the config yaml file
 
@@ -28,12 +28,12 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     PREDICTIONS_PATH : path to the file where the mc predictions are stored.
 
-    MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml. If extension is .pmml, then both pmml and pkl file will be saved
+    MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml.
+    If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
     with open(configuration_path) as f:
         config = yaml.load(f)
-
 
     sample = config['sample']
     query = config['query']
@@ -45,9 +45,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
-    #load configuartion stuff
-
-
+    # load configuartion stuff
     df_gamma = read_data(file_path=signal_path, query=query, sample=sample)
     df_proton = read_data(file_path=background_path, query=query, sample=sample)
 
@@ -56,7 +54,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     df_proton['label_text'] = 'background'
     df_proton['label'] = 0
 
-
     df_full = pd.concat([df_proton, df_gamma], ignore_index=True)
     # df_full[training_variables] = df_full[training_variables].astype('float32').replace([np.inf, -np.inf], np.nan).dropna(how='any')
     df_training = df_full[training_variables].astype('float32').replace([np.inf, -np.inf], np.nan).dropna(how='any')
@@ -64,19 +61,17 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     df_label = df_label[df_training.index]
 
 
-    num_gammas =  len(df_label[df_label==1])
-    num_protons =  len(df_label[df_label==0])
+    num_gammas = len(df_label[df_label==1])
+    num_protons = len(df_label[df_label==0])
     print('Training classifier with {} protons and {} gammas'.format(num_protons, num_gammas))
 
-
-    #save prediction_path for each cv iteration
+    # save prediction_path for each cv iteration
     cv_predictions = []
     # iterate over test and training sets
-    X =  df_training.values
+    X = df_training.values
     y = df_label.values
     print('Starting {} fold cross validation... '.format(num_cross_validations) )
     cv = cross_validation.StratifiedKFold(y, n_folds=num_cross_validations)
-
 
     aucs =  []
     for fold, (train, test) in enumerate(tqdm(cv)):
@@ -126,8 +121,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     #        xml_declaration=True,encoding='utf-8',
     #        method='xml')
     #
-
-
 
 
 if __name__ == '__main__':
