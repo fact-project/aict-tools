@@ -1,9 +1,10 @@
 import numpy as np
 import click
 import joblib
-from ..io import check_extension, read_data, write_data
 import yaml
 import logging
+
+from ..io import check_extension, read_data, write_data
 
 
 @click.command()
