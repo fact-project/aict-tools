@@ -6,6 +6,7 @@ import numpy as np
 from sklearn import metrics
 import yaml
 import logging
+from sklearn import ensemble
 
 from ..io import read_data, pickle_model, write_data, check_extension
 from ..preprocessing import convert_to_float32
@@ -17,7 +18,8 @@ from ..preprocessing import convert_to_float32
 @click.argument('background_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-def main(configuration_path, signal_path, background_path, predictions_path, model_path):
+@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
+def main(configuration_path, signal_path, background_path, predictions_path, model_path, key):
     '''
     Train a classifier on signal and background monte carlo data and write the model
     to MODEL_PATH in pmml or pickle format.
@@ -31,7 +33,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     PREDICTIONS_PATH : path to the file where the mc predictions are stored.
 
     MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml.
-    If extension is .pmml, then both pmml and pkl file will be saved
+        If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
     logging.basicConfig(level=logging.INFO)
@@ -51,8 +53,12 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
     # load configuartion stuff
-    df_gamma = read_data(file_path=signal_path, query=query, sample=sample)
-    df_proton = read_data(file_path=background_path, query=query, sample=sample)
+    df_gamma = read_data(
+        file_path=signal_path, query=query, sample=sample, key=key
+    )
+    df_proton = read_data(
+        file_path=background_path, query=query, sample=sample, key=key
+    )
 
     df_gamma['label_text'] = 'signal'
     df_gamma['label'] = 1
@@ -78,10 +84,13 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     X = df_training.values
     y = df_label.values
     log.info('Starting {} fold cross validation... '.format(num_cross_validations))
-    cv = model_selection.StratifiedKFold(y, n_folds=num_cross_validations)
+
+    stratified_kfold = model_selection.StratifiedKFold(
+        n_splits=num_cross_validations, shuffle=True,
+    )
 
     aucs = []
-    for fold, (train, test) in enumerate(tqdm(cv)):
+    for fold, (train, test) in enumerate(tqdm(stratified_kfold.split(X, y))):
         # select data
         xtrain, xtest = X[train], X[test]
         ytrain, ytest = y[train], y[test]
