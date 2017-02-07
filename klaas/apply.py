@@ -12,7 +12,7 @@ def predict(df, model, features):
     valid = check_valid_rows(df[features])
 
     prediction = np.full(len(df), np.nan)
-    prediction[valid] = model.predict_proba(df.loc[valid, features])
+    prediction[valid.values] = model.predict_proba(df.loc[valid, features])
 
     return prediction
 
@@ -35,7 +35,7 @@ def predict_off_positions(df, model, features, used_source_feautures, n_off=5):
         valid = check_valid_rows(df[features])
 
         prediction = np.full(len(df), np.nan)
-        prediction[valid] = model.predict_proba(df.loc[valid, features])[:, 1]
+        prediction[valid.values] = model.predict_proba(df.loc[valid, features])[:, 1]
 
         predictions['background_prediction_{}'.format(region)] = prediction
 
