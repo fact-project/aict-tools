@@ -5,8 +5,10 @@ from tqdm import tqdm
 import numpy as np
 from sklearn import metrics
 import yaml
+import logging
 
 from ..io import read_data, pickle_model, write_data, check_extension
+from ..preprocessing import convert_to_float32
 
 
 @click.command()
@@ -32,6 +34,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
+    logging.basicConfig(level=logging.INFO)
+    log = logging.getLogger()
+
     with open(configuration_path) as f:
         config = yaml.load(f)
 
@@ -55,13 +60,15 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     df_proton['label'] = 0
 
     df_full = pd.concat([df_proton, df_gamma], ignore_index=True)
-    df_training = df_full[training_variables].astype('float32').replace([np.inf, -np.inf], np.nan).dropna(how='any')
+    df_training = convert_to_float32(df_full[training_variables])
+
+    df_training.dropna(how='any', inplace=True)
     df_label = df_full['label']
-    df_label = df_label[df_training.index]
+    df_label = df_label.loc[df_training.index]
 
     num_gammas = len(df_label[df_label == 1])
     num_protons = len(df_label[df_label == 0])
-    print('Training classifier with {} protons and {} gammas'.format(
+    log.info('Training classifier with {} protons and {} gammas'.format(
         num_protons, num_gammas
     ))
 
@@ -70,7 +77,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     # iterate over test and training sets
     X = df_training.values
     y = df_label.values
-    print('Starting {} fold cross validation... '.format(num_cross_validations))
+    log.info('Starting {} fold cross validation... '.format(num_cross_validations))
     cv = model_selection.StratifiedKFold(y, n_folds=num_cross_validations)
 
     aucs = []
@@ -91,16 +98,16 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_prediction))
 
-    print('Mean AUC ROC : {}'.format(np.array(aucs).mean()))
+    log.info('Mean AUC ROC : {}'.format(np.array(aucs).mean()))
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
-    print('writing predictions from cross validation')
+    log.info('writing predictions from cross validation')
     write_data(predictions_df, predictions_path)
 
-    print('Training model on complete dataset')
+    log.info('Training model on complete dataset')
     classifier.fit(X, y)
 
-    print('Pickling model to {} ...'.format(model_path))
+    log.info('Pickling model to {} ...'.format(model_path))
     pickle_model(
         classifier=classifier,
         model_path=model_path,

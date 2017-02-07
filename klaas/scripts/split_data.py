@@ -1,5 +1,4 @@
 import click
-import pandas as pd
 import numpy as np
 
 from ..io import read_data
@@ -46,9 +45,11 @@ def main(input_path, output_basename, fraction, name, key, fmt):
         print(len(selected))
 
         if fmt == 'hdf5':
-            data.iloc[selected].to_hdf(output_basename + '_' + part_name + '.hdf5', key=key)
+            data.iloc[selected].to_hdf(
+                output_basename + '_' + part_name + '.hdf5',
+                key=key
+            )
         elif fmt == 'csv':
             data.iloc[selected].to_csv(output_basename + '_' + part_name + '.csv')
 
         data = data.iloc[list(set(all_idx) - set(selected))]
-        print(len(data))

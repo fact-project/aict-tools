@@ -5,6 +5,7 @@ import yaml
 import logging
 
 from ..io import check_extension, read_data, write_data
+from ..preprocessing import convert_to_float32
 
 
 @click.command()
@@ -40,12 +41,11 @@ def main(configuration_path, data_path, model_path, output_path):
     model = joblib.load(model_path)
 
     log.info('Loading data')
-    # sklearn needs float32 values. Overflows create -infs and infs.
     df_data = read_data(data_path, query=query)
-    df_data[training_variables] = df_data[training_variables].astype('float32')
+    log.info('Done')
 
-    df_data.replace(np.inf, np.finfo('float32').max, inplace=True)
-    df_data.replace(-np.inf, np.finfo('float32').min, inplace=True)
+    # sklearn needs float32 values. Overflows create -infs and infs.
+    df_data[training_variables] = convert_to_float32(df_data[training_variables])
     df_data.dropna(how='any', inplace=True)
 
     log.info('After dropping nans there are {} events left.'.format(len(df_data)))
