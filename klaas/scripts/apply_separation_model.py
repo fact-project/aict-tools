@@ -13,7 +13,8 @@ from ..preprocessing import convert_to_float32
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output_path', type=click.Path(exists=False, dir_okay=False))
-def main(configuration_path, data_path, model_path, output_path):
+@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
+def main(configuration_path, data_path, model_path, output_path, key):
     '''
     Apply loaded model to data.
     The cuts applied during model training will also be applied here.
@@ -35,24 +36,35 @@ def main(configuration_path, data_path, model_path, output_path):
         config = yaml.load(f)
 
     training_variables = config['training_variables']
-    query = config['query']
+    query = config.get('query')
 
     log.info('Loading model')
     model = joblib.load(model_path)
-
-    log.info('Loading data')
-    df_data = read_data(data_path, query=query)
     log.info('Done')
 
-    # sklearn needs float32 values. Overflows create -infs and infs.
-    df_data[training_variables] = convert_to_float32(df_data[training_variables])
-    df_data.dropna(how='any', inplace=True)
+    log.info('Loading data')
+    df_data = read_data(data_path, key=key)
+    log.info('Done')
 
-    log.info('After dropping nans there are {} events left.'.format(len(df_data)))
+    if query is not None:
+        df_data = df_data.query()
+
+    df_data[training_variables] = convert_to_float32(df_data[training_variables])
+
+    valid = np.logical_not(df_data[training_variables].isnull().any(axis=1))
+    if len(df_data.loc[valid]) < len(df_data):
+        invalid_columns = df_data[training_variables].isnull().any(axis=0)
+        log.warning(
+            'Data contains not-predictable events.\n'
+            'There are nan-values in columns: {}'.format(
+                df_data[training_variables].columns.loc[invalid_columns]
+            )
+        )
 
     log.info('Predicting on data...')
-    prediction = model.predict_proba(df_data[training_variables])
-    df_data['signal_prediction'] = prediction[:, 1]
+    prediction = model.predict_proba(df_data.loc[valid, training_variables])
+
+    df_data.loc[valid, 'signal_prediction'] = prediction[:, 1]
     df_data['signal_theta'] = df_data['Theta']
     df_data['signal_distance'] = df_data['Distance']
 
@@ -70,8 +82,9 @@ def main(configuration_path, data_path, model_path, output_path):
             df_data['Theta'] = df_data[theta_key]
             df_data['Distance'] = df_data[distance_key]
             df_data['Alpha'] = df_data[alpha_key]
-            prediction = model.predict_proba(df_data[training_variables])
-            df_data['background_prediction_{}'.format(region)] = prediction[:, 1]
+
+            prediction = model.predict_proba(df_data.loc[valid, training_variables])
+            df_data.loc[valid, 'background_prediction_{}'.format(region)] = prediction[:, 1]
 
         df_data['Distance'] = distances
         df_data['Theta'] = thetas
