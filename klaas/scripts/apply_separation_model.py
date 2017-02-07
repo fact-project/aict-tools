@@ -52,7 +52,7 @@ def main(configuration_path, data_path, model_path, key, chunksize):
         with h5py.File(data_path) as f:
             if 'signal_prediction' in f[key].keys():
                 log.warning('Overwriting existing signal_prediction')
-                f[key]['signal_prediction'] = signal_prediction
+                f[key]['signal_prediction'][:] = signal_prediction
             else:
                 f[key].create_dataset(
                     'signal_prediction', data=signal_prediction, maxshape=(None, )
@@ -74,7 +74,7 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                     name = 'background_prediction_{}'.format(region)
                     if name in f[key].keys():
                         log.warning('Overwriting existing {}'.format(name))
-                        f[key][name] = background_predictions[name]
+                        f[key][name][:] = background_predictions[name]
                     else:
                         f[key].create_dataset(
                             name, data=background_predictions[name], maxshape=(None, )
