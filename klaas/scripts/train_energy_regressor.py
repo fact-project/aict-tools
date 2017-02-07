@@ -40,31 +40,40 @@ def main(configuration_path, signal_path, predictions_path, model_path):
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    sample = config['sample']
-    query = config['query']
-    num_cross_validations = config['num_cross_validations']
+    query = config.get('query')
+    n_signal = config.get('n_signal')
+
+    n_cross_validations = config['n_cross_validations']
     training_variables = config['training_variables']
 
     classifier = eval(config['classifier'])
 
     log.info('Loading data')
-    df = read_data(file_path=signal_path, sample=sample, query=query)
+    df = read_data(file_path=signal_path)
+
     log.info('Total number of events: {}'.format(len(df)))
 
     df_train = convert_to_float32(df[training_variables])
     df_train.dropna(how='any', inplace=True)
 
+    if query:
+        log.info('Using query: {}'.format(query))
+        df_train = df_train.query(query)
+
+    if n_signal:
+        log.info('Sampling {} random events'.format(n_signal))
+        df_train = df_train.sample(n_signal)
+
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target = df['MCorsikaEvtHeader.fTotalEnergy']
+    target = df['MCorsikaEvtHeader.fTotalEnergy'].loc[df.train.index]
     target.name = 'true_energy'
-    target = target.loc[df_train.index]
 
-    log.info('Starting {} fold cross validation... '.format(num_cross_validations))
+    log.info('Starting {} fold cross validation... '.format(n_cross_validations))
     scores = []
     cv_predictions = []
 
-    kfold = model_selection.KFold(n_splits=num_cross_validations, shuffle=True)
+    kfold = model_selection.KFold(n_splits=n_cross_validations, shuffle=True)
 
     for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):
 

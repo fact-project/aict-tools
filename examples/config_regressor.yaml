@@ -10,20 +10,20 @@ classifier : |
   )
 
 
-#randomly sample the data if you dont want to use the whole set, -1 for all stuff
-sample : -1
+# randomly sample the data if you dont want to use the whole set
+n_signal : 100000
 
 #query to apply to the data before separation
 query : 'Leakage < 0.2'
 
 # define th number of cross validations to perform
-num_cross_validations : 5
+n_cross_validations : 5
 
 # training_variables = ['Size', 'Length', 'Width', 'numIslands', 'Leakage',
 #         'm3l', 'm3t', 'Disp', 'Timespread', 'arrivalTimeMean',
 #        'ConcCore']
 #specify the variables to train on
-training_variables : ['ConcCore',
+training_variables: ['ConcCore',
  'Concentration_onePixel',
  'Concentration_twoPixel',
  'Leakage',

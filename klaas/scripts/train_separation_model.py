@@ -42,9 +42,12 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    sample = config['sample']
-    query = config['query']
-    num_cross_validations = config['num_cross_validations']
+    query = config.get('query')
+    n_background = config.get('n_background')
+    n_signal = config.get('n_signal')
+
+    num_cross_validations = config.get('n_cross_validations', 10)
+
     training_variables = config['training_variables']
 
     classifier = eval(config['classifier'])
@@ -52,28 +55,43 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
-    # load configuartion stuff
-    df_gamma = read_data(
-        file_path=signal_path, query=query, sample=sample, key=key
-    )
-    df_proton = read_data(
-        file_path=background_path, query=query, sample=sample, key=key
-    )
+    log.info('Loading signal data')
+    df_signal = read_data(file_path=signal_path, key=key)
+    df_signal['label_text'] = 'signal'
+    df_signal['label'] = 1
 
-    df_gamma['label_text'] = 'signal'
-    df_gamma['label'] = 1
-    df_proton['label_text'] = 'background'
-    df_proton['label'] = 0
+    if query is not None:
+        log.info('Using query {}'.format(query))
+        df_signal = df_signal.query(query)
 
-    df_full = pd.concat([df_proton, df_gamma], ignore_index=True)
+    if n_signal is not None:
+        log.info('Randomly sample {} events'.format(n_signal))
+        df_signal = df_signal.sample(n_signal)
+
+    df_background = read_data(file_path=background_path, key=key)
+    df_background['label_text'] = 'background'
+    df_background['label'] = 0
+
+    if query is not None:
+        log.info('Using query {}'.format(query))
+        df_background = df_background.query(query)
+
+    if n_background is not None:
+        log.info('Randomly sample {} events'.format(n_background))
+        df_background = df_background.sample(n_background)
+
+    df_full = pd.concat([df_background, df_signal], ignore_index=True)
+
     df_training = convert_to_float32(df_full[training_variables])
+    log.info('Total training events: {}'.format(len(df_training)))
 
     df_training.dropna(how='any', inplace=True)
-    df_label = df_full['label']
-    df_label = df_label.loc[df_training.index]
+    log.info('Training events after dropping nans: {}'.format(len(df_training)))
 
-    num_gammas = len(df_label[df_label == 1])
-    num_protons = len(df_label[df_label == 0])
+    label = df_full.loc[df_training.index, 'label']
+
+    num_gammas = len(label[label == 1])
+    num_protons = len(label[label == 0])
     log.info('Training classifier with {} protons and {} gammas'.format(
         num_protons, num_gammas
     ))
@@ -82,7 +100,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     cv_predictions = []
     # iterate over test and training sets
     X = df_training.values
-    y = df_label.values
+    y = label.values
     log.info('Starting {} fold cross validation... '.format(num_cross_validations))
 
     stratified_kfold = model_selection.StratifiedKFold(
