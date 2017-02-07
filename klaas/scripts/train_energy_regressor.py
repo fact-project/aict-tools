@@ -67,7 +67,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target = df['MCorsikaEvtHeader.fTotalEnergy'].loc[df.train.index]
+    target = df['MCorsikaEvtHeader.fTotalEnergy'].loc[df_train.index]
     target.name = 'true_energy'
 
     log.info('Starting {} fold cross validation... '.format(n_cross_validations))
