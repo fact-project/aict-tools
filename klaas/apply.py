@@ -2,7 +2,7 @@ import numpy as np
 import logging
 import pandas as pd
 
-from ..preprocessing import convert_to_float32, check_valid_rows
+from .preprocessing import convert_to_float32, check_valid_rows
 
 log = logging.getLogger(__name__)
 
