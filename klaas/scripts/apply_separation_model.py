@@ -1,11 +1,10 @@
-import numpy as np
 import click
 import joblib
 import yaml
 import logging
 
 from ..io import check_extension, read_data, write_data
-from ..preprocessing import convert_to_float32
+from ..preprocessing import convert_to_float32, check_valid_rows
 
 
 @click.command()
@@ -20,11 +19,8 @@ def main(configuration_path, data_path, model_path, output_path, key):
     The cuts applied during model training will also be applied here.
 
     CONFIGURATION_PATH: Path to the config yaml file.
-
     DATA_PATH: path to the FACT data.
-
     MODEL_PATH: Path to the pickled model.
-
     OUTPUT_PATH: Path to the data with added prediction columns.
     '''
     logging.basicConfig(level=logging.INFO)
@@ -36,7 +32,6 @@ def main(configuration_path, data_path, model_path, output_path, key):
         config = yaml.load(f)
 
     training_variables = config['training_variables']
-    query = config.get('query')
 
     log.info('Loading model')
     model = joblib.load(model_path)
@@ -46,20 +41,13 @@ def main(configuration_path, data_path, model_path, output_path, key):
     df_data = read_data(data_path, key=key)
     log.info('Done')
 
+    query = config.get('query')
     if query is not None:
         df_data = df_data.query()
 
     df_data[training_variables] = convert_to_float32(df_data[training_variables])
 
-    valid = np.logical_not(df_data[training_variables].isnull().any(axis=1))
-    if len(df_data.loc[valid]) < len(df_data):
-        invalid_columns = df_data[training_variables].isnull().any(axis=0)
-        log.warning(
-            'Data contains not-predictable events.\n'
-            'There are nan-values in columns: {}'.format(
-                df_data[training_variables].columns.loc[invalid_columns]
-            )
-        )
+    valid = check_valid_rows(df_data[training_variables])
 
     log.info('Predicting on data...')
     prediction = model.predict_proba(df_data.loc[valid, training_variables])
