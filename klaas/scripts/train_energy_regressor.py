@@ -18,7 +18,8 @@ import logging
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-def main(configuration_path, signal_path, predictions_path, model_path):
+@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
+def main(configuration_path, signal_path, predictions_path, model_path, key):
     '''
     Train an energy regressor simulated gamma.
     Both pmml and pickle format are supported for the output.
@@ -49,7 +50,7 @@ def main(configuration_path, signal_path, predictions_path, model_path):
     classifier = eval(config['classifier'])
 
     log.info('Loading data')
-    df = read_data(file_path=signal_path)
+    df = read_data(file_path=signal_path, key=key)
 
     log.info('Total number of events: {}'.format(len(df)))
 
