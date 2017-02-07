@@ -69,16 +69,16 @@ def main(configuration_path, signal_path, predictions_path, model_path):
     for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):
 
         cv_x_train, cv_x_test = df_train.values[train], df_train.values[test]
-        cv_y_train, cv_y_test = df_train.values[train], df_train.values[test]
+        cv_y_train, cv_y_test = target.values[train], target.values[test]
 
         classifier.fit(cv_x_train, cv_y_train)
-        cv_y_prediciton = classifier.predict(cv_x_test)
+        cv_y_prediction = classifier.predict(cv_x_test)
 
-        scores.append(metrics.r2_score(cv_y_test, cv_y_prediciton))
+        scores.append(metrics.r2_score(cv_y_test, cv_y_prediction))
 
         cv_predictions.append(pd.DataFrame({
             'label': cv_y_test,
-            'label_prediction': cv_y_prediciton,
+            'label_prediction': cv_y_prediction,
             'cv_fold': fold
         }))
 
