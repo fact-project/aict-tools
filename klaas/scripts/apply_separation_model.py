@@ -1,5 +1,5 @@
 import click
-import sklearn.externals import joblib
+from sklearn.externals import joblib
 import yaml
 import logging
 import h5py
