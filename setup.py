@@ -24,6 +24,7 @@ setup(
         'click',
         'numexpr',
         'sklearn-pandas',
+        'sklearn>=0.18',
         'joblib',
         'tqdm',
     ],
