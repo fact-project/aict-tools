@@ -14,15 +14,19 @@ from ..preprocessing import convert_to_float32, check_valid_rows
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
-def main(configuration_path, data_path, model_path, predictions_path, key):
+@click.option(
+    '-N', '--chunksize', type=int,
+    help='If given, only process the given number of events at once',
+)
+def main(configuration_path, data_path, model_path, predictions_path, key, chunksize):
     '''
-    Apply loaded model to data.
-    The cuts applied during model training will also be applied here.
+    Apply given model to data. Two columns are added to the file, energy_prediction
+    and energy_prediction_std
 
-    CONFIGURATION_PATH: Path to the config yaml file.
-    DATA_PATH: path to the FACT data.
-    MODEL_PATH: Path to the pickled model.
-    PREDICTIONS_PATH: Path to the data with added prediction columns.
+    CONFIGURATION_PATH: Path to the config yaml file
+    DATA_PATH: path to the FACT data in a h5py hdf5 file, e.g. erna_gather_fits output
+    MODEL_PATH: Path to the pickled model
+    PREDICTIONS_PATH: Path to the data with added prediction columns
     '''
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
@@ -39,13 +43,10 @@ def main(configuration_path, data_path, model_path, predictions_path, key):
     log.info('Done')
 
     log.info('Loading data')
+
+    if chunksize is not None:
     df_data = read_data(data_path, key=key)
     df_data[training_variables] = convert_to_float32(df_data[training_variables])
-
-    query = config.get('query')
-    if query:
-        log.info('Quering with string: {}'.format(query))
-        df_data = df_data.copy().query(query)
 
     valid = check_valid_rows(df_data[training_variables])
 
@@ -60,9 +61,6 @@ def main(configuration_path, data_path, model_path, predictions_path, key):
     df_data.loc[valid, 'energy_prediction'] = np.mean(predictions, axis=0)
     # also store the standard deviation in the table
     df_data.loc[valid, 'energy_prediction_std'] = np.std(predictions, axis=0)
-
-    log.info('Writing data')
-    write_data(df_data, predictions_path)
 
 
 if __name__ == '__main__':
