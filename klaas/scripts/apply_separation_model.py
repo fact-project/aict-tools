@@ -3,8 +3,9 @@ from sklearn.externals import joblib
 import yaml
 import logging
 import h5py
+from tqdm import tqdm
 
-from ..io import read_data
+from ..io import read_h5py_chunked
 from ..features import find_used_source_features
 from ..apply import predict, predict_off_positions
 
@@ -37,22 +38,32 @@ def main(configuration_path, data_path, model_path, key, chunksize):
 
     training_variables = config['training_variables']
 
+    with h5py.File(data_path) as f:
+        if 'signal_prediction' in f[key].keys():
+            click.confirm(
+                'Dataset "signal_prediction" exists in file, overwrite?',
+                abort=True,
+            )
+
     log.info('Loading model')
     model = joblib.load(model_path)
     log.info('Done')
 
-    if chunksize is None:
-        log.info('Loading data')
-        df_data = read_data(data_path, key=key)
-        log.info('Done')
+    df_generator = read_h5py_chunked(
+        data_path,
+        key=key,
+        columns=training_variables,
+        chunksize=chunksize,
+    )
+
+    for df_data, start, end in tqdm(df_generator):
 
         log.info('Predicting on data...')
         signal_prediction = predict(df_data, model, training_variables)
 
         with h5py.File(data_path) as f:
             if 'signal_prediction' in f[key].keys():
-                log.warning('Overwriting existing signal_prediction')
-                f[key]['signal_prediction'][:] = signal_prediction
+                f[key]['signal_prediction'][start:end] = signal_prediction
             else:
                 f[key].create_dataset(
                     'signal_prediction', data=signal_prediction, maxshape=(None, )
@@ -73,8 +84,7 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                 for region in range(1, 5):
                     name = 'background_prediction_{}'.format(region)
                     if name in f[key].keys():
-                        log.warning('Overwriting existing {}'.format(name))
-                        f[key][name][:] = background_predictions[name]
+                        f[key][name][start:end] = background_predictions[name]
                     else:
                         f[key].create_dataset(
                             name, data=background_predictions[name], maxshape=(None, )
