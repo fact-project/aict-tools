@@ -91,6 +91,7 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                     'signal_prediction', data=signal_prediction, maxshape=(None, )
                 )
 
+        if len(used_source_features) > 1:
             background_predictions = predict_off_positions(
                 df_data, model, training_variables, used_source_features
             )
