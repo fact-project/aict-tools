@@ -43,8 +43,8 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs):
                 'Dataset "signal_prediction" exists in file, overwrite?',
                 abort=True,
             )
-        del f[key]['energy_prediction']
-        del f[key]['energy_prediction_std']
+            del f[key]['energy_prediction']
+            del f[key]['energy_prediction_std']
 
     log.info('Loading model')
     model = joblib.load(model_path)
