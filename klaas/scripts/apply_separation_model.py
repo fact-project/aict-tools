@@ -44,6 +44,11 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                 'Dataset "signal_prediction" exists in file, overwrite?',
                 abort=True,
             )
+        del f[key]['signal_prediction']
+        for region in range(1, 6):
+            dataset = 'background_prediction_{}'.format(region)
+            if dataset in f[key].keys():
+                del f[key][dataset]
 
     log.info('Loading model')
     model = joblib.load(model_path)
@@ -76,6 +81,9 @@ def main(configuration_path, data_path, model_path, key, chunksize):
 
         with h5py.File(data_path) as f:
             if 'signal_prediction' in f[key].keys():
+                n_existing = f[key]['signal_prediction'].shape[0]
+                n_new = signal_prediction.shape[0]
+                f[key]['signal_prediction'].resize(n_existing + n_new, axis=0)
                 f[key]['signal_prediction'][start:end] = signal_prediction
             else:
                 f[key].create_dataset(
@@ -90,6 +98,9 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                 for region in range(1, 5):
                     name = 'background_prediction_{}'.format(region)
                     if name in f[key].keys():
+                        n_existing = f[key][name].shape[0]
+                        n_new = background_predictions[name].shape[0]
+                        f[key][name].resize(n_existing + n_new, axis=0)
                         f[key][name][start:end] = background_predictions[name]
                     else:
                         f[key].create_dataset(
