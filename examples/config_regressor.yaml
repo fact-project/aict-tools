@@ -18,14 +18,14 @@ n_signal : 100000
 n_cross_validations : 5
 
 training_variables:
-   - 'Size'
-   - 'Length'
-   - 'Width'
-   - 'numIslands'
-   - 'Leakage'
-   - 'm3l'
-   - 'm3t'
-   - 'Disp'
-   - 'Timespread'
-   - 'arrivalTimeMean'
-   - 'ConcCore'
+   - Size
+   - Length
+   - Width
+   - numIslands
+   - Leakage
+   - m3l
+   - m3t
+   - Disp
+   - Timespread
+   - arrivalTimeMean
+   - ConcCore
