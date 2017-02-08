@@ -36,6 +36,7 @@ setup(
             'klaas_train_energy_regressor = klaas.scripts.train_energy_regressor:main',
             'klaas_apply_energy_regressor = klaas.scripts.apply_regression_model:main',
             'klaas_split_data = klaas.scripts.split_data:main',
+            'klaas_plot_separator_performance = klaas.scripts.plot_separator_performance:main',
         ],
     }
 )
