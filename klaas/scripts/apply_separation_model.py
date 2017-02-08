@@ -44,7 +44,8 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                 'Dataset "signal_prediction" exists in file, overwrite?',
                 abort=True,
             )
-        del f[key]['signal_prediction']
+            del f[key]['signal_prediction']
+
         for region in range(1, 6):
             dataset = 'background_prediction_{}'.format(region)
             if dataset in f[key].keys():
