@@ -56,9 +56,9 @@ def main(configuration_path, data_path, model_path, key, chunksize):
         chunksize=chunksize,
     )
 
+    log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
 
-        log.info('Predicting on data...')
         signal_prediction = predict(df_data, model, training_variables)
 
         with h5py.File(data_path) as f:
