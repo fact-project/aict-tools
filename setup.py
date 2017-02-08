@@ -32,9 +32,9 @@ setup(
     entry_points={
         'console_scripts': [
             'klaas_train_separation_model = klaas.scripts.train_separation_model:main',
-            'klaas_train_energy_regressor = klaas.scripts.train_energy_regressor:main',
             'klaas_apply_separation_model = klaas.scripts.apply_separation_model:main',
-            'klaas_apply_regression_model = klaas.scripts.apply_regression_model:main',
+            'klaas_train_energy_regressor = klaas.scripts.train_energy_regressor:main',
+            'klaas_apply_energy_regressor = klaas.scripts.apply_regression_model:main',
             'klaas_split_data = klaas.scripts.split_data:main',
         ],
     }
