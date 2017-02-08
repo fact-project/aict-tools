@@ -49,10 +49,17 @@ def main(configuration_path, data_path, model_path, key, chunksize):
     model = joblib.load(model_path)
     log.info('Done')
 
+    used_source_features = find_used_source_features(training_variables)
+    needed_features = [
+        var + '_Off_{}'.format(region)
+        for region in range(1, 6)
+        for var in used_source_features
+    ]
+
     df_generator = read_h5py_chunked(
         data_path,
         key=key,
-        columns=training_variables,
+        columns=training_variables + needed_features,
         chunksize=chunksize,
     )
 
@@ -69,15 +76,14 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                     'signal_prediction', data=signal_prediction, maxshape=(None, )
                 )
 
-        used_source_feautures = find_used_source_features(training_variables)
-        if len(used_source_feautures) > 0:
+        if len(used_source_features) > 0:
             log.info(
                 'Source dependent features used in model, '
                 'redoing classification for off regions'
             )
 
             background_predictions = predict_off_positions(
-                df_data, model, training_variables, used_source_feautures
+                df_data, model, training_variables, used_source_features
             )
 
             with h5py.File(data_path) as f:
