@@ -27,7 +27,7 @@ def predict_off_positions(df, model, features, used_source_feautures, n_off=5):
 
     predictions = pd.DataFrame(index=df.index)
     for region in range(1, n_off + 1):
-        log.info('Predicting off position {}'.format(region))
+        log.debug('Predicting off position {}'.format(region))
 
         for var in used_source_feautures:
             df[var] = df[var + '_Off_{}'.format(region)]

@@ -50,6 +50,12 @@ def main(configuration_path, data_path, model_path, key, chunksize):
     log.info('Done')
 
     used_source_features = find_used_source_features(training_variables)
+    if len(used_source_features) > 0:
+        log.info(
+            'Source dependent features used in model, '
+            'redoing classification for off regions'
+        )
+
     needed_features = [
         var + '_Off_{}'.format(region)
         for region in range(1, 6)
@@ -75,12 +81,6 @@ def main(configuration_path, data_path, model_path, key, chunksize):
                 f[key].create_dataset(
                     'signal_prediction', data=signal_prediction, maxshape=(None, )
                 )
-
-        if len(used_source_features) > 0:
-            log.info(
-                'Source dependent features used in model, '
-                'redoing classification for off regions'
-            )
 
             background_predictions = predict_off_positions(
                 df_data, model, training_variables, used_source_features
