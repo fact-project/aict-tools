@@ -6,7 +6,7 @@ import logging
 import h5py
 from tqdm import tqdm
 
-from ..io import check_extension, read_h5py_chunked
+from ..io import read_h5py_chunked
 from ..preprocessing import convert_to_float32, check_valid_rows
 
 
@@ -20,7 +20,7 @@ from ..preprocessing import convert_to_float32, check_valid_rows
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once',
 )
-def main(configuration_path, data_path, model_path, predictions_path, key, chunksize, n_jobs):
+def main(configuration_path, data_path, model_path, key, chunksize, n_jobs):
     '''
     Apply given model to data. Two columns are added to the file, energy_prediction
     and energy_prediction_std
@@ -28,12 +28,9 @@ def main(configuration_path, data_path, model_path, predictions_path, key, chunk
     CONFIGURATION_PATH: Path to the config yaml file
     DATA_PATH: path to the FACT data in a h5py hdf5 file, e.g. erna_gather_fits output
     MODEL_PATH: Path to the pickled model
-    PREDICTIONS_PATH: Path to the data with added prediction columns
     '''
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
-
-    check_extension(predictions_path)
 
     with open(configuration_path) as f:
         config = yaml.load(f)
