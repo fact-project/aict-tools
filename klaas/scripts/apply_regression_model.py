@@ -59,14 +59,11 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs):
         chunksize=chunksize,
     )
 
-    log.info('Applying model to data')
+    log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
 
         df_data[training_variables] = convert_to_float32(df_data[training_variables])
         valid = check_valid_rows(df_data[training_variables])
-
-        log.info('After query there are {} events left.'.format(len(df_data)))
-        log.info('Predicting on data...')
 
         energy_prediction = np.full(len(df_data), np.nan)
         energy_prediction_std = np.full(len(df_data), np.nan)
