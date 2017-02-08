@@ -24,7 +24,7 @@ def check_valid_rows(df):
         log.warning(
             'Data contains not-predictable events.\n'
             'There are nan-values in columns: {}'.format(
-                df.columns.loc[invalid_columns]
+                df.columns[invalid_columns]
             )
         )
 
