@@ -40,7 +40,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs):
     with h5py.File(data_path) as f:
         if 'energy_prediction' in f[key].keys():
             click.confirm(
-                'Dataset "signal_prediction" exists in file, overwrite?',
+                'Dataset "energy_prediction" exists in file, overwrite?',
                 abort=True,
             )
             del f[key]['energy_prediction']
