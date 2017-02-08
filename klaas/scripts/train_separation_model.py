@@ -123,7 +123,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
             'probabilities': y_probas,
             'cv_fold': fold
         }))
-        aucs.append(metrics.roc_auc_score(ytest, y_prediction))
+        aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
     log.info('Mean AUC ROC : {}'.format(np.array(aucs).mean()))
 
