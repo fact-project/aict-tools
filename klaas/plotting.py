@@ -19,7 +19,6 @@ def plot_roc(performace_df, model, ax=None):
     thresholds = np.linspace(0, 1, model.n_estimators + 2)
 
     for it, df in performace_df.groupby('cv_fold'):
-        print(it)
 
         fpr = []
         tpr = []
