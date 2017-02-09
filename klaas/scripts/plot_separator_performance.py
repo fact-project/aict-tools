@@ -56,7 +56,8 @@ def main(configuration_path, performance_path, model_path, output, key):
     fig_features = plt.figure()
     ax_features = fig_features.add_subplot(1, 1, 1)
 
-    plot_feature_importances(model, config['training_features'], ax=ax_features)
+    plot_feature_importances(model, config['training_variables'], ax=ax_features)
+
 
     if output is None:
         plt.show()

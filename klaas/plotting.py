@@ -51,6 +51,7 @@ def plot_roc(performace_df, model, ax=None):
 
     ax.set_xlabel('false positive rate')
     ax.set_ylabel('true positive rate')
+    ax.figure.tight_layout()
 
     return ax
 
@@ -69,6 +70,7 @@ def plot_probabilities(performace_df, model, ax=None, classnames=('Proton', 'Gam
 
     ax.legend()
     ax.set_xlabel('{} confidence'.format(classnames[1]))
+    ax.figure.tight_layout()
 
 
 def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
@@ -99,11 +101,14 @@ def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
 
     ax.legend()
     ax.set_xlabel('prediction threshold')
+    ax.figure.tight_layout()
 
 
 def plot_feature_importances(model, feature_names, ax=None):
 
     ax = ax or plt.gca()
+
+    y_pos = np.arange(len(feature_names))
 
     if hasattr(model, 'estimators_'):
 
@@ -117,13 +122,20 @@ def plot_feature_importances(model, feature_names, ax=None):
 
         df.sort_values('mean', inplace=True)
 
-        y_pos = np.arange(len(df))
         ax.barh(
             y_pos,
             df['mean'].values,
             xerr=[df['mean'] - df['p_low'], df['p_high'] - df['mean']],
         )
 
-        ax.set_yticks(y_pos)
-        ax.set_yticklabels(feature_names)
-        ax.set_xlabel('Feature importances')
+    else:
+        ax.barh(
+            y_pos,
+            model.feature_importances_,
+        )
+
+    ax.set_ylim(-0.5, y_pos.max() + 0.5)
+    ax.set_yticks(y_pos)
+    ax.set_yticklabels(feature_names)
+    ax.set_xlabel('Feature importances')
+    ax.figure.tight_layout()
