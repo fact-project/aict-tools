@@ -1,0 +1,14 @@
+selection:
+    numPixelInShower:
+      - '>='  # needs to be in quotes because > and ! are special character in yaml
+      - 10
+    numIslands:
+      - <=
+      - 5
+    Width:
+      - <=
+      - 50
+    # this makes no sense, just to illustrate that also strings work
+    Length:
+      - le # you can also use the string represantation of the operator
+      - 200
