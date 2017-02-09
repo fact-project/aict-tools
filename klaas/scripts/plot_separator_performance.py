@@ -6,7 +6,12 @@ from sklearn.externals import joblib
 import yaml
 import pandas as pd
 
-from ..plotting import plot_roc, plot_probabilities, plot_precision_recall
+from ..plotting import (
+    plot_roc,
+    plot_probabilities,
+    plot_precision_recall,
+    plot_feature_importances,
+)
 
 
 @click.command()
@@ -47,9 +52,15 @@ def main(configuration_path, performance_path, model_path, output, key):
 
     plot_precision_recall(df, model, ax=ax_scores)
 
+    # Plot feature importances
+    fig_features = plt.figure()
+    ax_features = fig_features.add_subplot(1, 1, 1)
+
+    plot_feature_importances(model, config['training_features'], ax=ax_features)
+
     if output is None:
         plt.show()
     else:
         with PdfPages(output) as pdf:
-            for fig in (fig_roc, fig_scores, fig_probas):
+            for fig in (fig_roc, fig_scores, fig_probas, fig_features):
                 pdf.savefig(fig)

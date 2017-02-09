@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import metrics
+import pandas as pd
 
 
 def plot_roc(performace_df, model, ax=None):
@@ -96,6 +97,33 @@ def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
     ax.plot(thresholds, recall, label='recall')
     ax.plot(thresholds, f_beta, label='$f_{{{:.2f}}}$'.format(beta))
 
-
     ax.legend()
     ax.set_xlabel('prediction threshold')
+
+
+def plot_feature_importances(model, feature_names, ax=None):
+
+    ax = ax or plt.gca()
+
+    if hasattr(model, 'estimators_'):
+
+        df = pd.DataFrame(index=feature_names)
+
+        feature_importances = [est.feature_importances_ for est in model.estimators_]
+
+        df['mean'] = np.mean(feature_importances, axis=0)
+        df['p_low'] = np.percentile(feature_importances, 15.87, axis=0)
+        df['p_high'] = np.percentile(feature_importances, 84.13, axis=0)
+
+        df.sort_values('mean', inplace=True)
+
+        y_pos = np.arange(len(df))
+        ax.barh(
+            y_pos,
+            df['mean'].values,
+            xerr=[df['mean'] - df['p_low'], df['p_high'] - df['mean']],
+        )
+
+        ax.set_yticks(y_pos)
+        ax.set_yticklabels(feature_names)
+        ax.set_xlabel('Feature importances')
