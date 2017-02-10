@@ -12,7 +12,7 @@ selection:
     Leakage:
       - <
       - 0.6
-    Leakage:
+    Leakage2:
       - lt # string representation also possible
       - 0.85
     Length:
