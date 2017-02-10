@@ -4,20 +4,10 @@ import pandas as pd
 from tqdm import tqdm
 import h5py
 import numpy as np
-import operator as o
 import logging
 
 from ..io import read_pandas_hdf5, write_data, h5py_get_n_events
-
-operators = {
-    '<': o.lt, 'lt': o.lt,
-    '<=': o.le, 'le': o.le,
-    '==': o.eq, 'eq': o.eq,
-    '=': o.eq,
-    '!=': o.ne, 'ne': o.ne,
-    '>=': o.ge, 'ge': o.ge,
-    '>': o.gt, 'gt': o.gt
-}
+from ..apply import create_mask_h5py, apply_cuts_h5py_chunked
 
 
 @click.command()
@@ -30,7 +20,8 @@ operators = {
 )
 @click.option('-N', '--chunksize', type=int, help='Chunksize to use')
 @click.option('-k', '--key', help='Name of the hdf5 group', default='table')
-def main(configuration_path, input_path, output_path, hdf_style, chunksize, key):
+@click.option('-v', '--verbose', help='Verbose log output', type=bool)
+def main(configuration_path, input_path, output_path, hdf_style, chunksize, key, verbose):
     '''
     Apply cuts given in CONFIGURATION_PATH to the data in INPUT_PATH and
     write the result to OUTPUT_PATH.
@@ -43,7 +34,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key)
         Width: ['<=', 50]
     ```
     '''
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
     with open(configuration_path) as f:
@@ -61,7 +52,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key)
 
         if chunksize is None:
             df = read_pandas_hdf5(input_path, key=key)
-            n_events  = len(df)
+            n_events = len(df)
             df = df.query(query)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, len(df)))
             write_data(df, output_path, hdf_key=key)
@@ -73,26 +64,26 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key)
 
     else:
         if chunksize is None:
+
             n_events = h5py_get_n_events(input_path, key=key)
-            mask = np.ones(n_events, dtype=bool)
+
+            mask = create_mask_h5py(input_path, selection, key=key)
+            log.info('Before cuts: {}, after cuts: {}'.format(n_events, mask.sum()))
 
             with h5py.File(input_path) as infile, h5py.File(output_path, 'w') as outfile:
-
-                for name, (operator, value) in selection.items():
-
-                    mask = np.logical_and(
-                        mask, operators[operator](infile[key][name][:], value)
-                    )
-
-                log.info('Before cuts: {}, after cuts: {}'.format(n_events, mask.sum()))
-
                 group = outfile.create_group(key)
 
                 for name, dataset in infile[key].items():
 
                     if dataset.ndim == 1:
-                        group.create_dataset(name, data=dataset[mask])
+                        group.create_dataset(name, data=dataset[mask], maxshape=(None, ))
+                    elif dataset.ndim == 2:
+                        group.create_dataset(
+                            name, data=dataset[mask, :], maxshape=(None, 2)
+                        )
                     else:
-                        log.warning('Skipping not 1d column {}'.format(name))
+                        log.warning('Skipping not 1d or 2d column {}'.format(name))
         else:
-            raise NotImplementedError('Chunking not yet implemented for h5py')
+            apply_cuts_h5py_chunked(
+                input_path, output_path, selection, chunksize=chunksize, key=key
+            )
