@@ -21,6 +21,28 @@ OPERATORS = {
     '>=': ge, 'ge': ge,
 }
 
+text2symbol = {
+    'lt': '<',
+    'le': '<=',
+    'eq': '==',
+    'ne': '!=',
+    'gt': '>',
+    'ge': '>=',
+}
+
+
+def build_query(selection_config):
+    queries = []
+    for k, (o, v) in selection_config.items():
+        o = text2symbol.get(o, o)
+
+        queries.append(
+            '{} {} {}'.format(k, o, '"' + v + '"' if isinstance(v, str) else v)
+        )
+
+    query = '(' + ') & ('.join(queries) + ')'
+    return query
+
 
 def predict(df, model, features):
     df[features] = convert_to_float32(df[features])

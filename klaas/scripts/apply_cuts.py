@@ -3,11 +3,10 @@ import yaml
 import pandas as pd
 from tqdm import tqdm
 import h5py
-import numpy as np
 import logging
 
 from ..io import read_pandas_hdf5, write_data, h5py_get_n_events
-from ..apply import create_mask_h5py, apply_cuts_h5py_chunked
+from ..apply import create_mask_h5py, apply_cuts_h5py_chunked, build_query
 
 
 @click.command()
@@ -44,10 +43,8 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
 
     if hdf_style == 'pandas':
 
-        queries = ('{} {} {}'.format(k, o, '"' + v + '"' if isinstance(v, str) else v)
-                   for k, (o, v) in selection.items())
+        query = build_query(selection)
 
-        query = '(' + ') & ('.join(queries) + ')'
         log.info('Using query: ' + query)
 
         if chunksize is None:
