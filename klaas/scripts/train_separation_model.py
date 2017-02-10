@@ -42,7 +42,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    query = config.get('query')
     n_background = config.get('n_background')
     n_signal = config.get('n_signal')
 
@@ -60,10 +59,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
 
-    if query is not None:
-        log.info('Using query {}'.format(query))
-        df_signal = df_signal.query(query)
-
     if n_signal is not None:
         log.info('Randomly sample {} events'.format(n_signal))
         df_signal = df_signal.sample(n_signal)
@@ -71,10 +66,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     df_background = read_data(file_path=background_path, key=key)
     df_background['label_text'] = 'background'
     df_background['label'] = 0
-
-    if query is not None:
-        log.info('Using query {}'.format(query))
-        df_background = df_background.query(query)
 
     if n_background is not None:
         log.info('Randomly sample {} events'.format(n_background))

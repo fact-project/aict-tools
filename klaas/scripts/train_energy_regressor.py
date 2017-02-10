@@ -41,7 +41,6 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    query = config.get('query')
     n_signal = config.get('n_signal')
 
     n_cross_validations = config['n_cross_validations']
@@ -56,10 +55,6 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
 
     df_train = convert_to_float32(df[training_variables])
     df_train.dropna(how='any', inplace=True)
-
-    if query:
-        log.info('Using query: {}'.format(query))
-        df_train = df_train.query(query)
 
     if n_signal:
         log.info('Sampling {} random events'.format(n_signal))

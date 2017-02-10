@@ -1,6 +1,3 @@
-#query to apply to the data before separation
-query : 'Leakage < 0.2'
-
 #the classifier to use
 classifier : |
   ensemble.RandomForestRegressor(

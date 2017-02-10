@@ -15,9 +15,6 @@ classifier : |
 n_background: 100000
 n_signal: 100000
 
-#query to apply to the data before separation
-query : 'Leakage < 0.2'
-
 # define the number of cross validations to perform
 n_cross_validations : 5
 
