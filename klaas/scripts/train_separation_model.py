@@ -46,7 +46,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     n_background = config.get('n_background')
     n_signal = config.get('n_signal')
 
-    num_cross_validations = config.get('n_cross_validations', 10)
+    n_cross_validations = config.get('n_cross_validations', 10)
 
     training_variables = config['training_variables']
 
@@ -90,10 +90,10 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     label = df_full.loc[df_training.index, 'label']
 
-    num_gammas = len(label[label == 1])
-    num_protons = len(label[label == 0])
+    n_gammas = len(label[label == 1])
+    n_protons = len(label[label == 0])
     log.info('Training classifier with {} protons and {} gammas'.format(
-        num_protons, num_gammas
+        n_protons, n_gammas
     ))
 
     # save prediction_path for each cv iteration
@@ -101,14 +101,14 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     # iterate over test and training sets
     X = df_training.values
     y = label.values
-    log.info('Starting {} fold cross validation... '.format(num_cross_validations))
+    log.info('Starting {} fold cross validation... '.format(n_cross_validations))
 
     stratified_kfold = model_selection.StratifiedKFold(
-        n_splits=num_cross_validations, shuffle=True,
+        n_splits=n_cross_validations, shuffle=True,
     )
 
     aucs = []
-    for fold, (train, test) in enumerate(tqdm(stratified_kfold.split(X, y))):
+    for fold, (train, test) in enumerate(tqdm(stratified_kfold.split(X, y), total=n_cross_validations)):
         # select data
         xtrain, xtest = X[train], X[test]
         ytrain, ytest = y[train], y[test]
