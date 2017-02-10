@@ -116,10 +116,10 @@ def apply_cuts_h5py_chunked(
             for name, dataset in infile[key].items():
                 if chunk == 0:
                     if dataset.ndim == 1:
-                        group.create_dataset(name, data=dataset[mask], maxshape=(None, ))
+                        group.create_dataset(name, data=dataset[start:end][mask], maxshape=(None, ))
                     elif dataset.ndim == 2:
                         group.create_dataset(
-                            name, data=dataset[mask, :], maxshape=(None, 2)
+                            name, data=dataset[start:end, :][mask, :], maxshape=(None, 2)
                         )
                     else:
                         log.warning('Skipping not 1d or 2d column {}'.format(name))
@@ -131,8 +131,8 @@ def apply_cuts_h5py_chunked(
                     group[name].resize(n_old + n_new, axis=0)
 
                     if dataset.ndim == 1:
-                        group[name][n_old:n_old + n_new] = dataset[mask]
+                        group[name][n_old:n_old + n_new] = dataset[start:end][mask]
                     elif dataset.ndim == 2:
-                        group[name][n_old:n_old + n_new, :] = dataset[mask, :]
+                        group[name][n_old:n_old + n_new, :] = dataset[start:end][mask, :]
                     else:
                         log.warning('Skipping not 1d or 2d column {}'.format(name))
