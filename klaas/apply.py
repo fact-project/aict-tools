@@ -133,6 +133,6 @@ def apply_cuts_h5py_chunked(
                     if dataset.ndim == 1:
                         group[name][n_old:n_old + n_new] = dataset[mask]
                     elif dataset.ndim == 2:
-                        group[name][n_old:n_old + n_new, :] = dataset[mask]
+                        group[name][n_old:n_old + n_new, :] = dataset[mask, :]
                     else:
                         log.warning('Skipping not 1d or 2d column {}'.format(name))
