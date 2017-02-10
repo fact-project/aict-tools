@@ -108,7 +108,7 @@ def plot_feature_importances(model, feature_names, ax=None):
 
     ax = ax or plt.gca()
 
-    y_pos = np.arange(len(feature_names))
+    y_pos = np.arange(len(feature_names[:20]))
 
     if hasattr(model, 'estimators_'):
 
@@ -121,6 +121,7 @@ def plot_feature_importances(model, feature_names, ax=None):
         df['p_high'] = np.percentile(feature_importances, 84.13, axis=0)
 
         df.sort_values('mean', inplace=True)
+        df = df.tail(20)
 
         ax.barh(
             y_pos,
@@ -129,13 +130,20 @@ def plot_feature_importances(model, feature_names, ax=None):
         )
 
     else:
+        df = pd.DataFrame(index=feature_names)
+        df['mean'] = model.feature_importances_
+
+        df.sort_values('mean', inplace=True)
+        df = df.tail(20)
+
         ax.barh(
             y_pos,
-            model.feature_importances_,
+            df['mean'].values
         )
 
     ax.set_ylim(-0.5, y_pos.max() + 0.5)
     ax.set_yticks(y_pos)
-    ax.set_yticklabels(feature_names)
+    ax.set_yticklabels(df.index.values)
     ax.set_xlabel('Feature importances')
+    ax.set_title('The {} most important features'.format(len(feature_names[:20])))
     ax.figure.tight_layout()
