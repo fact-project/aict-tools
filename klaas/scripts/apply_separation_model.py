@@ -19,7 +19,8 @@ from ..apply import predict, predict_off_positions
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once'
 )
-def main(configuration_path, data_path, model_path, key, chunksize):
+@click.option('-y', '--yes', help='Do not prompt for overwrites')
+def main(configuration_path, data_path, model_path, key, chunksize, yes):
     '''
     Apply loaded model to data.
 
@@ -40,10 +41,11 @@ def main(configuration_path, data_path, model_path, key, chunksize):
 
     with h5py.File(data_path) as f:
         if 'signal_prediction' in f[key].keys():
-            click.confirm(
-                'Dataset "signal_prediction" exists in file, overwrite?',
-                abort=True,
-            )
+            if not yes:
+                click.confirm(
+                    'Dataset "signal_prediction" exists in file, overwrite?',
+                    abort=True,
+                )
             del f[key]['signal_prediction']
 
         for region in range(1, 6):

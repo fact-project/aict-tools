@@ -16,11 +16,12 @@ from ..preprocessing import convert_to_float32, check_valid_rows
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5', default='events')
 @click.option('-n', '--n-jobs', type=int, help='Number of cores to use')
+@click.option('-y', '--yes', help='Do not prompt for overwrites')
 @click.option(
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once',
 )
-def main(configuration_path, data_path, model_path, key, chunksize, n_jobs):
+def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes):
     '''
     Apply given model to data. Two columns are added to the file, energy_prediction
     and energy_prediction_std
@@ -39,10 +40,11 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs):
 
     with h5py.File(data_path) as f:
         if 'energy_prediction' in f[key].keys():
-            click.confirm(
-                'Dataset "energy_prediction" exists in file, overwrite?',
-                abort=True,
-            )
+            if not yes:
+                click.confirm(
+                    'Dataset "energy_prediction" exists in file, overwrite?',
+                    abort=True,
+                )
             del f[key]['energy_prediction']
             del f[key]['energy_prediction_std']
 
