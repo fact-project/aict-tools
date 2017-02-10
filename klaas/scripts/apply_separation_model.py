@@ -19,7 +19,7 @@ from ..apply import predict, predict_off_positions
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once'
 )
-@click.option('-y', '--yes', help='Do not prompt for overwrites')
+@click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
 def main(configuration_path, data_path, model_path, key, chunksize, yes):
     '''
     Apply loaded model to data.

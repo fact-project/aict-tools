@@ -16,7 +16,7 @@ from ..preprocessing import convert_to_float32, check_valid_rows
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5', default='events')
 @click.option('-n', '--n-jobs', type=int, help='Number of cores to use')
-@click.option('-y', '--yes', help='Do not prompt for overwrites')
+@click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
 @click.option(
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once',
