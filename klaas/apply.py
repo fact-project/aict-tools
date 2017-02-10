@@ -49,7 +49,8 @@ def predict(df, model, features):
     valid = check_valid_rows(df[features])
 
     prediction = np.full(len(df), np.nan)
-    prediction[valid.values] = model.predict_proba(df.loc[valid, features])
+    probas = model.predict_proba(df.loc[valid, features])
+    prediction[valid.values] = probas[:, 1]
 
     return prediction
 
