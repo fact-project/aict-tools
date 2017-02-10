@@ -1,14 +1,21 @@
+# Quality cuts from Fabian Temme's phd thesis
 selection:
     numPixelInShower:
       - '>='  # needs to be in quotes because > and ! are special character in yaml
       - 10
     numIslands:
       - <=
-      - 5
+      - 8
     Width:
       - <=
-      - 50
-    # this makes no sense, just to illustrate that also strings work
+      - 30
+    Leakage:
+      - <
+      - 0.6
+    Leakage:
+      - lt # string representation also possible
+      - 0.85
     Length:
-      - le # you can also use the string represantation of the operator
-      - 200
+      - lt
+      - 70
+    
