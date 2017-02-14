@@ -7,7 +7,7 @@ import numpy as np
 import yaml
 from sklearn import ensemble
 
-from .. import write_data, pickle_model, read_data
+from ..io import write_data, pickle_model, read_data
 from ..preprocessing import convert_to_float32
 
 import logging

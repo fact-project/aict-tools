@@ -13,18 +13,19 @@ import warnings
     help='Fraction of events to use for this part'
 )
 @click.option('--name', '-n', multiple=True, help='name for one dataset')
+@click.option('-i', '--inkey', help='HDF5 key for pandas or h5py hdf5 of the input file')
 @click.option('--key', '-k', help='Name for the hdf5 group in the output', default='data')
 @click.option(
     '--fmt', type=click.Choice(['csv', 'hdf5']), default='hdf5',
     help='The output format',
 )
-def main(input_path, output_basename, fraction, name, key, fmt):
+def main(input_path, output_basename, fraction, name, inkey, key, fmt):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
     '''
 
-    data = read_data(input_path)
+    data = read_data(input_path, key=inkey)
 
     assert len(fraction) == len(name), 'You must give a name for each fraction'
 

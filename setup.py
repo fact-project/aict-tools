@@ -21,6 +21,7 @@ setup(
         'pyyaml',             # in anaconda
         'tables',           # needs to be installed by pip for some reason
         # 'hdf5',
+        'h5py',
         'click',
         'numexpr',
         'sklearn-pandas',
