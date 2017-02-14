@@ -1,0 +1,21 @@
+# Quality cuts from Fabian Temme's phd thesis
+selection:
+    numPixelInShower:
+      - '>='  # needs to be in quotes because > and ! are special character in yaml
+      - 10
+    numIslands:
+      - <=
+      - 8
+    Width:
+      - <=
+      - 30
+    Leakage:
+      - <
+      - 0.6
+    Leakage2:
+      - lt # string representation also possible
+      - 0.85
+    Length:
+      - lt
+      - 70
+    

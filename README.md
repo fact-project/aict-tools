@@ -1,64 +1,44 @@
-# classifier
-Scripts to classify FACT MC data and save models and stuff 
-These are some executables which take some configuration.yaml files as input (see examples folder) and do classification or regression tasks on them.
+# Klaas
 
-# installation
+Scripts to classify FACT MC data, do energy regression and save models and stuff.
 
-Clone the repo, `cd` into the folder and do the usual `pip install .` dance.
+These are some executables which take some configuration.yaml files as input (see examples folder)
+and do classification or regression tasks on them.
+
+# Installation
 
 You will have to install teh sklearn2pmml dependency by hand first.
 [https://github.com/jpmml/sklearn2pmml](https://github.com/jpmml/sklearn2pmml)
 
-# usage 
-
-### regressor
-
-    Usage: train_energy_regressor [OPTIONS] CONFIGURATION_PATH SIGNAL_PATH
-                                  PREDICTIONS_PATH MODEL_PATH
-    
-      Train a classifier on signal and background monte carlo data and write the
-      model to MODEL_PATH in pmml or pickle format.
-    
-      CONFIGURATION_PATH: Path to the config yaml file
-    
-      SIGNAL_PATH: Path to the signal data
-    
-      PREDICTIONS_PATH : path to the file where the mc predictions are stored.
-    
-      MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and
-      .pmml. If extension is .pmml, then both pmml and pkl file will be saved
-    
-    Options:
-      --help  Show this message and exit.
+Clone the repo, `cd` into the folder and do the usual `pip install .` dance.
 
 
-### seperator
+# Usage 
 
-    Usage: train_separation_model [OPTIONS] CONFIGURATION_PATH SIGNAL_PATH
-                                  BACKGROUND_PATH PREDICTIONS_PATH MODEL_PATH
-    
-      Train a classifier on signal and background monte carlo data and write the
-      model to MODEL_PATH in pmml or pickle format.
-    
-      CONFIGURATION_PATH: Path to the config yaml file
-    
-      BACKGROUND_PATH: Path to the background data
-    
-      SIGNAL_PATH: Path to the signal data
-    
-      PREDICTIONS_PATH : path to the file where the mc predictions are stored.
-    
-      MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and
-      .pmml. If extension is .pmml, then both pmml and pkl file will be saved
-    
-    Options:
-      --help  Show this message and exit.
+## Regression
+
+There are two programs, `klaas_train_energy_regressor` and `klaas_apply_energy_regressor`.
+
+To train a model, `klaas_train_energy_regressor` takes a yaml configuration file
+(see `examples/config_regressor.yaml`) and a hdf5 file with simulated gamma events. 
+The hdf5 file can either be a pandas hdf5 as created by the `erna` gridmap processing
+or an `h5py` hdf5 as created by the `erna_gather_fits` program.
+
+To apply a model, use `klaas_apply_energy_regressor`, which supports
+only h5py-like hdf5 files. 
+It can iterate over the files in chunks, thus supporting very large files.
 
 
-## Model application
+## Classification
 
-Two scripts are provided to apply the models to real data `apply_regression_model` and `apply_separation_model`.
+Like for the regression, there are two programs: `klaas_train_separation_model` and `klaas_apply_separation_model`.
 
+To train a model, `klaas_train_separation_model` takes a yaml configuration file
+(see `examples/config_regressor.yaml`), a hdf5 file with simulated gamma events and 
+a hdf5 file with simulated proton events. 
+The hdf5 files can either be pandas hdf5 as created by the `erna` gridmap processing
+or `h5py` hdf5 as created by the `erna_gather_fits` program.
 
-
-
+To apply a model, use `klaas_apply_separation_model`, which supports
+only h5py-like hdf5 files. 
+It can iterate over the files in chunks, thus supporting very large files.
