@@ -1,4 +1,4 @@
-![klaas][klaas.png]
+![klaas](https://github.com/fact-project/classifier-tools/raw/master/Klaas.png)
 
 # classifier
 Scripts to classify FACT MC data and save models and stuff 
