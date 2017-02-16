@@ -1,3 +1,5 @@
+![klaas][klaas.png]
+
 # classifier
 Scripts to classify FACT MC data and save models and stuff 
 These are some executables which take some configuration.yaml files as input (see examples folder) and do classification or regression tasks on them.
