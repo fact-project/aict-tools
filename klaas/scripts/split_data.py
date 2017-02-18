@@ -39,6 +39,9 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt):
 
     num_events = [int(round(n_total * f)) for f in fraction]
 
+    if sum(num_events) > n_total:
+        num_events[-1] -= sum(num_events) - n_total
+
     for n, part_name in zip(num_events, name):
         print(part_name, ': ', n, sep='')
 

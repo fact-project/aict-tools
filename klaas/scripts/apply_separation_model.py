@@ -99,7 +99,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes):
             )
 
             with h5py.File(data_path) as f:
-                for region in range(1, 5):
+                for region in range(1, 6):
                     name = 'background_prediction_{}'.format(region)
                     if name in f[key].keys():
                         n_existing = f[key][name].shape[0]
