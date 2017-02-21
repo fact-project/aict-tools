@@ -18,17 +18,23 @@ def write_data(df, file_path, hdf_key='table'):
 
 
 def read_data(file_path, query=None, sample=-1, hdf_key='table'):
-    name, extension =  path.splitext(file_path)
+    name, extension = path.splitext(file_path)
     if extension in ['.hdf', '.hdf5', '.h5']:
         try:
             df = pd.read_hdf(file_path, key=hdf_key)
         except KeyError:
             df = pd.read_hdf(file_path)
-    if extension == '.json':
+    elif extension == '.json':
         with open(file_path, 'r') as j:
             d = json.load(j)
             df = pd.DataFrame(d)
 
+    elif extension == '.csv':
+        df = pd.read_csv(file_path)
+
+    else:
+        raise Exception('output file forma: {} not supported'.format(extension))
+        
     if sample > 0:
         print('Taking {} random samples'.format(sample))
         df = df.sample(sample)
@@ -57,7 +63,7 @@ def pickle_model(classifier, feature_names, model_path, label_text = 'label'):
                                 (label_text, None)
                         ])
 
-        
+
         joblib.dump(classifier,p + '.pkl', compress = 4)
         sklearn2pmml(classifier, mapper,  model_path)
 
