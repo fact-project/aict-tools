@@ -14,6 +14,9 @@ query : 'Leakage < 0.2'
 # define th number of cross validations to perform
 num_cross_validations : 5
 
+# define the name of the target variable. For example
+# target_name : MCorsikaEvtHeader.fTotalEnergy (this is the default)
+
 # training_variables = ['Size', 'Length', 'Width', 'numIslands', 'Leakage',
 #         'm3l', 'm3t', 'Disp', 'Timespread', 'arrivalTimeMean',
 #        'ConcCore']
