@@ -37,11 +37,8 @@ def main(configuration_path, signal_path, predictions_path, model_path):
 
     sample = config['sample']
     query = config['query']
-    
-    try:
-        target_name = config['target_name']
-    except KeyError:
-        target_name = 'MCorsikaEvtHeader.fTotalEnergy'
+
+    target_name = config.get('target_name', 'MCorsikaEvtHeader.fTotalEnergy')
 
     num_cross_validations = config['num_cross_validations']
     training_variables = config['training_variables']
