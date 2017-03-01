@@ -84,3 +84,9 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
             apply_cuts_h5py_chunked(
                 input_path, output_path, selection, chunksize=chunksize, key=key
             )
+
+        with h5py.File(input_path) as infile, h5py.File(output_path, 'r+') as outfile:
+
+            if 'runs' in infile.keys():
+                log.info('Copying runs group to outputfile')
+                infile.copy('/runs', outfile['/'])
