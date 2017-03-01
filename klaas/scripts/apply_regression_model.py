@@ -38,7 +38,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes)
 
     training_variables = config['training_variables']
 
-    with h5py.File(data_path) as f:
+    with h5py.File(data_path, 'r+') as f:
         if 'energy_prediction' in f[key].keys():
             if not yes:
                 click.confirm(
@@ -79,7 +79,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes)
         # also store the standard deviation in the table
         energy_prediction_std[valid.values] = np.std(predictions, axis=0)
 
-        with h5py.File(data_path) as f:
+        with h5py.File(data_path, 'r+') as f:
             if 'energy_prediction' in f[key].keys():
 
                 n_existing = f[key]['energy_prediction'].shape[0]

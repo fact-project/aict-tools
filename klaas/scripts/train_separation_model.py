@@ -63,6 +63,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         log.info('Randomly sample {} events'.format(n_signal))
         df_signal = df_signal.sample(n_signal)
 
+    log.info('Loading background data')
     df_background = read_data(file_path=background_path, key=key)
     df_background['label_text'] = 'background'
     df_background['label'] = 0
@@ -70,6 +71,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     if n_background is not None:
         log.info('Randomly sample {} events'.format(n_background))
         df_background = df_background.sample(n_background)
+
 
     df_full = pd.concat([df_background, df_signal], ignore_index=True)
 
