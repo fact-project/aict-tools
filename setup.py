@@ -24,8 +24,7 @@ setup(
         # 'hdf5',
         'click',
         'numexpr',
-        'pytest', # also in  conda
-        'sklearn-pandas',
+        'pytest',  # also in  conda
         'joblib',
         'tqdm',
     ],
