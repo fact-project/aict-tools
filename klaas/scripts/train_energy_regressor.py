@@ -6,17 +6,28 @@ from sklearn import metrics
 from tqdm import tqdm
 import numpy as np
 import yaml
+# leave this import here. otherwise the import from the yaml model fails.
 from sklearn import ensemble
 from klaas import write_data, pickle_model, read_data
 
+
 @click.command()
-@click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
-@click.argument('signal_path', type=click.Path(exists=True, dir_okay=False, file_okay=True))
-@click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False, file_okay=True))
-@click.argument('model_path', type=click.Path(exists=False, dir_okay=False, file_okay=True))
-def main(configuration_path, signal_path, predictions_path, model_path):
+@click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False, ))
+@click.argument('signal_path', type=click.Path(exists=True, dir_okay=False, ))
+@click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False,))
+@click.argument('model_path', type=click.Path(exists=False, dir_okay=False,))
+@click.option(
+        '--target_name',
+        '-t',
+        help='the name of the target variable.'
+                    '(Defaults to MCorsikaEvtHeader.fTotalEnergy for now since that '
+                    'makes sense for current ERNA output)',
+        default='MCorsikaEvtHeader.fTotalEnergy',
+        )
+def main(configuration_path, signal_path, predictions_path, model_path, target_name):
     '''
-    Train a classifier on signal and background monte carlo data and write the model to MODEL_PATH in pmml or pickle format.
+    Train a classifier on signal and background monte carlo data and write the model
+    to MODEL_PATH in pmml or pickle format.
 
     CONFIGURATION_PATH: Path to the config yaml file
 
@@ -24,7 +35,8 @@ def main(configuration_path, signal_path, predictions_path, model_path):
 
     PREDICTIONS_PATH : path to the file where the mc predictions are stored.
 
-    MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml. If extension is .pmml, then both pmml and pkl file will be saved
+    MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml.
+    If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
     print("Loading data")
@@ -43,7 +55,7 @@ def main(configuration_path, signal_path, predictions_path, model_path):
 
     df_train = df[training_variables].astype('float32').replace([np.inf, -np.inf], np.nan).dropna(how='any')
 
-    df_target = df['MCorsikaEvtHeader.fTotalEnergy']
+    df_target = df[target_name]
     df_target.name = 'true_energy'
     df_target = df_target[df_train.index]
     # embed()
