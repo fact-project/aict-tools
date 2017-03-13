@@ -39,7 +39,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes):
 
     training_variables = config['training_variables']
 
-    with h5py.File(data_path) as f:
+    with h5py.File(data_path, 'r+') as f:
         if 'signal_prediction' in f[key].keys():
             if not yes:
                 click.confirm(
@@ -82,7 +82,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes):
 
         signal_prediction = predict(df_data, model, training_variables)
 
-        with h5py.File(data_path) as f:
+        with h5py.File(data_path, 'r+') as f:
             if 'signal_prediction' in f[key].keys():
                 n_existing = f[key]['signal_prediction'].shape[0]
                 n_new = signal_prediction.shape[0]
