@@ -11,6 +11,7 @@ from ..plotting import (
     plot_probabilities,
     plot_precision_recall,
     plot_feature_importances,
+    plot_binned_auc,
 )
 
 
@@ -22,6 +23,7 @@ from ..plotting import (
 @click.option('-k', '--key', help='HDF5 key for pandas hdf5', default='table')
 def main(configuration_path, performance_path, model_path, output, key):
     ''' Create some performance evaluation plots for the separator '''
+
 
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
@@ -35,33 +37,60 @@ def main(configuration_path, performance_path, model_path, output, key):
     with open(configuration_path) as f:
         config = yaml.load(f)
 
+    figures = []
+
     # Plot rocs
-    fig_roc = plt.figure()
-    ax_roc = fig_roc.add_subplot(1, 1, 1)
-    plot_roc(df, model, ax=ax_roc)
+    figures.append(plt.figure())
+    ax = figures[-1].add_subplot(1, 1, 1)
+    plot_roc(df, model, ax=ax)
+
+    # Plot roc_auc vs. size
+    figures.append(plt.figure())
+    ax = figures[-1].add_subplot(1, 1, 1)
+
+    ax.set_title('Area under ROC curve vs. Size')
+    plot_binned_auc(
+        df,
+        key='size',
+        xlabel=r'$\log_{10}(\mathtt{Size})$',
+        n_bins=15,
+        ax=ax,
+    )
+
+    # Plot roc_auc vs. size
+    figures.append(plt.figure())
+    ax = figures[-1].add_subplot(1, 1, 1)
+
+    ax.set_title('Area under ROC curve vs. MC Energy')
+    plot_binned_auc(
+        df,
+        key='energy',
+        xlabel=r'$\log_{10}(E \,/\, \mathrm{GeV})$',
+        n_bins=15,
+        ax=ax,
+    )
 
     # Plot hists of probas
-    fig_probas = plt.figure()
-    ax_probas = fig_probas.add_subplot(1, 1, 1)
+    figures.append(plt.figure())
+    ax = figures[-1].add_subplot(1, 1, 1)
 
-    plot_probabilities(df, model, ax=ax_probas)
+    plot_probabilities(df, model, ax=ax)
 
     # Plot hists of probas
-    fig_scores = plt.figure()
-    ax_scores = fig_scores.add_subplot(1, 1, 1)
+    figures.append(plt.figure())
+    ax = figures[-1].add_subplot(1, 1, 1)
 
-    plot_precision_recall(df, model, ax=ax_scores)
+    plot_precision_recall(df, model, ax=ax)
 
     # Plot feature importances
-    fig_features = plt.figure()
-    ax_features = fig_features.add_subplot(1, 1, 1)
+    figures.append(plt.figure())
+    ax = figures[-1].add_subplot(1, 1, 1)
 
-    plot_feature_importances(model, config['training_variables'], ax=ax_features)
-
+    plot_feature_importances(model, config['training_variables'], ax=ax)
 
     if output is None:
         plt.show()
     else:
         with PdfPages(output) as pdf:
-            for fig in (fig_roc, fig_scores, fig_probas, fig_features):
+            for fig in figures:
                 pdf.savefig(fig)

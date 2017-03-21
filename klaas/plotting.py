@@ -147,3 +147,69 @@ def plot_feature_importances(model, feature_names, ax=None):
     ax.set_xlabel('Feature importances')
     ax.set_title('The {} most important features'.format(len(feature_names[:20])))
     ax.figure.tight_layout()
+
+
+def plot_binned_auc(
+            performace_df,
+            key='energy',
+            log=True,
+            n_bins=20,
+            xlabel=None,
+            ax=None,
+        ):
+    performace_df = performace_df.copy()
+
+    if log:
+        performace_df['log_' + key] = np.log10(performace_df[key])
+        key = 'log_' + key
+
+    bins_min = performace_df.groupby(['label', 'cv_fold'])[key].min().max()
+    bins_max = performace_df.groupby(['label', 'cv_fold'])[key].max().min()
+
+    bins = np.linspace(bins_min, bins_max, n_bins + 1)
+
+    bin_centers = 0.5 * (bins[:-1] + bins[1:])
+    bin_widths = np.diff(bins)
+
+    performace_df['bin'] = performace_df[key].apply(
+        np.digitize, bins=bins
+    )
+
+    performace_df = performace_df.query('(bin > 0) & (bin <= @n_bins)')
+
+    ax = ax or plt.gca()
+
+    roc_aucs_mean = []
+    roc_aucs_err_low = []
+    roc_aucs_err_high = []
+
+    for it, df_energy in performace_df.groupby('bin'):
+        roc_aucs = []
+
+        for it, df in df_energy.groupby('cv_fold'):
+            if df.label.nunique() < 2:
+                roc_aucs.append(np.nan)
+                continue
+
+            roc_aucs.append(
+                metrics.roc_auc_score(df['label'], df['probabilities'])
+            )
+
+        mean = np.nanmean(roc_aucs)
+        roc_aucs_mean.append(mean)
+        roc_aucs_err_low.append(mean - np.nanpercentile(roc_aucs, 15))
+        roc_aucs_err_high.append(np.nanpercentile(roc_aucs, 85) - mean)
+
+    ax.errorbar(
+        bin_centers,
+        roc_aucs_mean,
+        xerr=bin_widths / 2,
+        yerr=[roc_aucs_err_low, roc_aucs_err_high],
+        linestyle='none',
+    )
+    ax.set_xlabel(xlabel or key)
+    ax.set_ylabel('ROC AUC')
+
+    ax.figure.tight_layout()
+
+    return ax

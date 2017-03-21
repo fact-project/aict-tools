@@ -108,13 +108,19 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         # fit and predict
         classifier.fit(xtrain, ytrain)
 
+        idx = df_training.index.values[test]
+        energy = df_full['MCorsikaEvtHeader.fTotalEnergy'].loc[idx].values
+        size = df_full['Size'].loc[idx].values
+
         y_probas = classifier.predict_proba(xtest)[:, 1]
         y_prediction = classifier.predict(xtest)
         cv_predictions.append(pd.DataFrame({
             'label': ytest,
             'label_prediction': y_prediction,
             'probabilities': y_probas,
-            'cv_fold': fold
+            'cv_fold': fold,
+            'energy': energy,
+            'size': size,
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
