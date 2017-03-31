@@ -8,7 +8,7 @@ import yaml
 import logging
 from sklearn import ensemble
 
-from ..io import pickle_mode
+from ..io import pickle_model
 from fact.io import read_data, write_data, check_extension
 from ..preprocessing import convert_to_float32
 
