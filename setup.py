@@ -38,6 +38,7 @@ setup(
             'klaas_apply_energy_regressor = klaas.scripts.apply_regression_model:main',
             'klaas_split_data = klaas.scripts.split_data:main',
             'klaas_plot_separator_performance = klaas.scripts.plot_separator_performance:main',
+            'klaas_plot_regressor_performance = klaas.scripts.plot_regressor_performance:main',
             'klaas_apply_cuts = klaas.scripts.apply_cuts:main',
             'klaas_convert_pandas2h5py = klaas.scripts.convert_pandas2h5py:main',
         ],
