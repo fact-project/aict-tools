@@ -52,7 +52,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
             n_events = len(df)
             df = df.query(query)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, len(df)))
-            write_data(df, output_path, hdf_key=key)
+            write_data(df, output_path, key=key)
         else:
             with pd.HDFStore(output_path, mode='w') as store:
                 it = pd.read_hdf(input_path, key=key, chunksize=chunksize)
