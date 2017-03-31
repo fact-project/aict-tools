@@ -5,7 +5,7 @@ from tqdm import tqdm
 import h5py
 import logging
 
-from fact.io import read_data, write_data, h5py_get_n_events
+from fact.io import read_data, write_data, h5py_get_n_rows
 from ..apply import create_mask_h5py, apply_cuts_h5py_chunked, build_query
 
 
@@ -62,7 +62,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
     else:
         if chunksize is None:
 
-            n_events = h5py_get_n_events(input_path, key=key)
+            n_events = h5py_get_n_rows(input_path, key=key)
 
             mask = create_mask_h5py(input_path, selection, key=key)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, mask.sum()))

@@ -6,7 +6,7 @@ import h5py
 from tqdm import tqdm
 
 from .preprocessing import convert_to_float32, check_valid_rows
-from fact.io import h5py_get_n_events
+from fact.io import h5py_get_n_rows
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ def create_mask_h5py(input_path, selection_config, key='events', start=None, end
 
     with h5py.File(input_path) as infile:
 
-        n_events = h5py_get_n_events(input_path, key=key)
+        n_events = h5py_get_n_rows(input_path, key=key)
         start = start or 0
         end = min(n_events, end) if end else n_events
 
@@ -121,7 +121,7 @@ def apply_cuts_h5py_chunked(
     outputpath. Apply cuts to chunksize events at a time.
     '''
 
-    n_events = h5py_get_n_events(input_path, key=key)
+    n_events = h5py_get_n_rows(input_path, key=key)
     n_chunks = int(np.ceil(n_events / chunksize))
     log.debug('Using {} chunks of size {}'.format(n_chunks, chunksize))
 
