@@ -46,7 +46,9 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
     n_cross_validations = config['n_cross_validations']
     training_variables = config['training_variables']
 
-    classifier = eval(config['classifier'])
+    log_target = config.get('log_target', False)
+
+    regressor = eval(config['regressor'])
 
     log.info('Loading data')
     df = read_data(file_path=signal_path, key=key)
@@ -65,6 +67,9 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
     target = df['MCorsikaEvtHeader.fTotalEnergy'].loc[df_train.index]
     target.name = 'true_energy'
 
+    if log_target is True:
+        target = np.log(target)
+
     log.info('Starting {} fold cross validation... '.format(n_cross_validations))
     scores = []
     cv_predictions = []
@@ -76,8 +81,12 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
         cv_x_train, cv_x_test = df_train.values[train], df_train.values[test]
         cv_y_train, cv_y_test = target.values[train], target.values[test]
 
-        classifier.fit(cv_x_train, cv_y_train)
-        cv_y_prediction = classifier.predict(cv_x_test)
+        regressor.fit(cv_x_train, cv_y_train)
+        cv_y_prediction = regressor.predict(cv_x_test)
+
+        if log_target is True:
+            cv_y_test = np.exp(cv_y_test)
+            cv_y_prediction = np.exp(cv_y_prediction)
 
         scores.append(metrics.r2_score(cv_y_test, cv_y_prediction))
 
@@ -99,11 +108,11 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
     ))
 
     log.info('Building new model on complete data set...')
-    classifier.fit(df_train.values, target.values)
+    regressor.fit(df_train.values, target.values)
 
     log.info('Pickling model to {} ...'.format(model_path))
     pickle_model(
-            classifier=classifier,
+            regressor,
             feature_names=list(df_train.columns),
             model_path=model_path,
             label_text='estimated_energy',

@@ -37,6 +37,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes)
         config = yaml.load(f)
 
     training_variables = config['training_variables']
+    log_target = config.get('log_target', False)
 
     with h5py.File(data_path, 'r+') as f:
         if 'energy_prediction' in f[key].keys():
@@ -51,6 +52,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes)
     log.info('Loading model')
     model = joblib.load(model_path)
     log.info('Done')
+
     if n_jobs:
         model.n_jobs = n_jobs
 
@@ -73,6 +75,9 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes)
             t.predict(df_data.loc[valid, training_variables])
             for t in model.estimators_
         ])
+
+        if log_target is True:
+            predictions = np.exp(predictions)
 
         # this is equivalent to  model.predict(df_data[training_variables])
         energy_prediction[valid.values] = np.mean(predictions, axis=0)
