@@ -2,6 +2,85 @@ import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import metrics
 import pandas as pd
+from matplotlib.colors import LogNorm
+
+
+def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None):
+
+    ax = ax or plt.gca()
+
+    label = performace_df.label.copy()
+    prediction = performace_df.label_prediction.copy()
+
+    if log_xy is True:
+        label = np.log10(label)
+        prediction = np.log10(prediction)
+
+    limits = [
+        min(prediction.min(), label.min()),
+        max(prediction.max(), label.max()),
+    ]
+
+    counts, x_edges, y_edges, img = ax.hist2d(
+        label,
+        prediction,
+        bins=[100, 100],
+        range=[limits, limits],
+        norm=LogNorm() if log_z is True else None,
+    )
+    ax.set_aspect(1)
+    ax.figure.colorbar(img, ax=ax)
+
+    if log_xy is True:
+        ax.set_xlabel(r'$\log_{10}(E_{\mathrm{MC}} \,\, / \,\, \mathrm{GeV})$')
+        ax.set_ylabel(r'$\log_{10}(E_{\mathrm{Est}} \,\, / \,\, \mathrm{GeV})$')
+    else:
+        ax.set_xlabel(r'$E_{\mathrm{MC}} \,\, / \,\, \mathrm{GeV}$')
+        ax.set_ylabel(r'$E_{\mathrm{Est}} \,\, / \,\, \mathrm{GeV}$')
+
+    return ax
+
+
+def plot_bias_resolution(performace_df, bins=10, ax=None):
+    df = performace_df.copy()
+
+    ax = ax or plt.gca()
+
+    if np.isscalar(bins):
+        bins = np.logspace(
+            np.log10(df.label.min()),
+            np.log10(df.label.max()),
+            bins + 1
+        )
+
+    df['bin'] = np.digitize(df.label, bins)
+    df['rel_error'] = (df.label_prediction - df.label) / df.label
+
+    binned = pd.DataFrame(index=np.arange(1, len(bins)))
+    binned['center'] = 0.5 * (bins[:-1] + bins[1:])
+    binned['width'] = np.diff(bins)
+
+    grouped = df.groupby('bin')
+    binned['bias'] = grouped['rel_error'].mean()
+    binned['bias_median'] = grouped['rel_error'].median()
+    binned['lower_sigma'] = grouped['rel_error'].agg(lambda s: np.percentile(s, 15))
+    binned['upper_sigma'] = grouped['rel_error'].agg(lambda s: np.percentile(s, 85))
+    binned['resolution_quantiles'] = (binned.upper_sigma - binned.lower_sigma) / 2
+    binned['resolution'] = grouped['rel_error'].std()
+
+    for key in ('bias', 'resolution', 'resolution_quantiles'):
+
+        ax.errorbar(
+            binned['center'],
+            binned[key],
+            xerr=0.5 * binned['width'],
+            label=key,
+            linestyle='',
+        )
+    ax.legend()
+    ax.set_xscale('log')
+
+    return ax
 
 
 def plot_roc(performace_df, model, ax=None):
