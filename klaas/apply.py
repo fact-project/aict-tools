@@ -6,7 +6,7 @@ import h5py
 from tqdm import tqdm
 
 from .preprocessing import convert_to_float32, check_valid_rows
-from .io import h5py_get_n_events
+from fact.io import h5py_get_n_events
 
 log = logging.getLogger(__name__)
 

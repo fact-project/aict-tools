@@ -3,7 +3,7 @@ from tqdm import tqdm
 import numpy as np
 import h5py
 
-from ..io import read_data
+from fact.io import read_data
 
 import logging
 
@@ -26,7 +26,7 @@ def main(inputfile, outputfile, input_key, output_key, verbose):
     log = logging.getLogger()
 
     log.info('Reading input data')
-    df = read_data(inputfile, input_key)
+    df = read_data(inputfile, key=input_key)
     log.info('done')
 
     with h5py.File(outputfile, 'w') as f:

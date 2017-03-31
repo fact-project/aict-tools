@@ -6,7 +6,7 @@ import logging
 import h5py
 from tqdm import tqdm
 
-from ..io import read_h5py_chunked
+from fact.io import read_h5py_chunked
 from ..preprocessing import convert_to_float32, check_valid_rows
 
 

@@ -1,7 +1,7 @@
 import click
 import numpy as np
 
-from ..io import read_data
+from fact.io import read_data
 import warnings
 
 

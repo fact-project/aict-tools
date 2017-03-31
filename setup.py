@@ -28,6 +28,7 @@ setup(
         'scikit-learn>=0.18',
         'joblib',
         'tqdm',
+        'pyfact>=0.9.1',
     ],
     zip_safe=False,
     entry_points={

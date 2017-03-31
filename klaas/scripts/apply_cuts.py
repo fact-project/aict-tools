@@ -5,7 +5,7 @@ from tqdm import tqdm
 import h5py
 import logging
 
-from ..io import read_pandas_hdf5, write_data, h5py_get_n_events
+from fact.io import read_data, write_data, h5py_get_n_events
 from ..apply import create_mask_h5py, apply_cuts_h5py_chunked, build_query
 
 
@@ -28,7 +28,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
     example:
     ```
     selection:
-        numPixelInShower: ['>=', 10']
+        numPixelInShower: ['>=', 10]
         numIslands: ['<=', 5]
         Width: ['<=', 50]
     ```
@@ -48,14 +48,14 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
         log.info('Using query: ' + query)
 
         if chunksize is None:
-            df = read_pandas_hdf5(input_path, key=key)
+            df = read_data(input_path, key=key)
             n_events = len(df)
             df = df.query(query)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, len(df)))
             write_data(df, output_path, hdf_key=key)
         else:
             with pd.HDFStore(output_path, mode='w') as store:
-                it = read_pandas_hdf5(input_path, key=key, chunksize=chunksize)
+                it = pd.read_hdf(input_path, key=key, chunksize=chunksize)
                 for df in tqdm(it):
                     store.append(key, df.query(query))
 

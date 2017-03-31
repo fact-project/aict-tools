@@ -5,7 +5,7 @@ import logging
 import h5py
 from tqdm import tqdm
 
-from ..io import read_h5py_chunked
+from fact.io import read_h5py_chunked
 from ..features import find_used_source_features
 from ..apply import predict, predict_off_positions
 
