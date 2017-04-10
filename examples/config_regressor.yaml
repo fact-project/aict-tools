@@ -1,5 +1,5 @@
 #the classifier to use
-classifier : |
+regressor : |
   ensemble.RandomForestRegressor(
     n_estimators=30,
     max_features='sqrt',
