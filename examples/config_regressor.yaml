@@ -9,7 +9,7 @@ classifier : |
 
 
 # randomly sample the data if you dont want to use the whole set
-n_signal : 100000
+n_signal : 500
 
 # define th number of cross validations to perform
 n_cross_validations : 5
