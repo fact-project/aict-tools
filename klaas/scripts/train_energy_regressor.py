@@ -65,7 +65,9 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target = df['MCorsikaEvtHeader.fTotalEnergy'].loc[df_train.index]
+    target_name = config.get('target_name', 'MCorsikaEvtHeader.fTotalEnergy')
+
+    target = df[target_name].loc[df_train.index]
     target.name = 'true_energy'
 
     if log_target is True:
@@ -121,4 +123,4 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
 
 
 if __name__ == '__main__':
-    main(o)
+    main()

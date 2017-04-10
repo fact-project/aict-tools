@@ -14,6 +14,9 @@ n_signal : 100000
 # define th number of cross validations to perform
 n_cross_validations : 5
 
+# define the name of the regression target
+target_name: MCorsikaEvtHeader.fTotalEnergy
+
 training_variables:
    - Size
    - Length
