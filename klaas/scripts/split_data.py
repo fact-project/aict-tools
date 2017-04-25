@@ -1,5 +1,6 @@
 import click
 import numpy as np
+import logging
 
 from fact.io import read_data
 import warnings
@@ -19,13 +20,17 @@ import warnings
     '--fmt', type=click.Choice(['csv', 'hdf5']), default='hdf5',
     help='The output format',
 )
-def main(input_path, output_basename, fraction, name, inkey, key, fmt):
+@click.option('-v', '--verbose', help='Verbose log output', type=bool)
+def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
 
     Example call: klaas_split_data input.hdf5 output_base -n test -f 0.5 -n train -f 0.5
     '''
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+    log = logging.getLogger()
+    log.debug("input_path: {}".format(input_path))
 
     data = read_data(input_path, key=inkey)
 
@@ -35,7 +40,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt):
         warnings.warn('Fractions do not sum up to 1')
 
     n_total = len(data)
-    print('Found a total of {} events'.format(n_total))
+    log.info('Found a total of {} events'.format(n_total))
 
     num_events = [int(round(n_total * f)) for f in fraction]
 
@@ -48,7 +53,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt):
         all_idx = np.arange(len(data))
         selected = np.random.choice(all_idx, size=n, replace=False)
 
-        print(len(selected))
+        log.info(len(selected))
 
         if fmt == 'hdf5':
             data.iloc[selected].to_hdf(
