@@ -9,7 +9,6 @@ from tqdm import tqdm
 from fact.io import read_h5py_chunked
 from ..preprocessing import convert_to_float32, check_valid_rows
 
-
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
