@@ -55,7 +55,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     log.info('Loading data')
     df = read_data(file_path=signal_path, key=key,
-                   columns=training_variables+['MCorsikaEvtHeader.fTotalEnergy']
+                   columns=training_variables+[target_name]
                    )
 
     log.info('Total number of events: {}'.format(len(df)))
