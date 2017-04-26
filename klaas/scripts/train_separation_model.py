@@ -49,14 +49,17 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     n_cross_validations = config.get('n_cross_validations', 10)
 
     training_variables = config['training_variables']
-
+    
     classifier = eval(config['classifier'])
 
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
     log.info('Loading signal data')
-    df_signal = read_data(file_path=signal_path, key=key)
+    df_signal = read_data(file_path=signal_path, key=key,
+                          columns=training_variables.append(
+                              'MCorsikaEvtHeader.fTotalEnergy')
+                          )
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
 
@@ -65,7 +68,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         df_signal = df_signal.sample(n_signal)
 
     log.info('Loading background data')
-    df_background = read_data(file_path=background_path, key=key)
+    df_background = read_data(file_path=background_path, key=key,
+                          columns=training_variables.append(
+                              'MCorsikaEvtHeader.fTotalEnergy'))
     df_background['label_text'] = 'background'
     df_background['label'] = 0
 
