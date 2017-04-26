@@ -15,12 +15,13 @@ from ..apply import predict, predict_off_positions
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5', default='events')
+@click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 @click.option(
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once'
 )
 @click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
-def main(configuration_path, data_path, model_path, key, chunksize, yes):
+def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose):
     '''
     Apply loaded model to data.
 
@@ -31,7 +32,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes):
     The program adds the following columns to the inputfile:
         signal_prediction: the output of model.predict_proba for the signal class
     '''
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
     with open(configuration_path) as f:
