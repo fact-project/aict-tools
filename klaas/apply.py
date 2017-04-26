@@ -83,11 +83,11 @@ def predict_off_positions(df, model, features, used_source_feautures, n_off=5):
     return predictions
 
 
-def create_mask_h5py(input_path, selection_config, key='events', start=None, end=None):
+def create_mask_h5py(input_path, selection_config, key='events', start=None, end=None, mode="r"):
 
     with h5py.File(input_path) as infile:
 
-        n_events = h5py_get_n_rows(input_path, key=key)
+        n_events = h5py_get_n_rows(input_path, key=key, mode=mode)
         start = start or 0
         end = min(n_events, end) if end else n_events
 
@@ -121,11 +121,11 @@ def apply_cuts_h5py_chunked(
     outputpath. Apply cuts to chunksize events at a time.
     '''
 
-    n_events = h5py_get_n_rows(input_path, key=key)
+    n_events = h5py_get_n_rows(input_path, key=key, mode="r")
     n_chunks = int(np.ceil(n_events / chunksize))
     log.debug('Using {} chunks of size {}'.format(n_chunks, chunksize))
 
-    with h5py.File(input_path) as infile, h5py.File(output_path, 'w') as outfile:
+    with h5py.File(input_path, 'r') as infile, h5py.File(output_path, 'w') as outfile:
         group = outfile.create_group(key)
 
         for chunk in tqdm(range(n_chunks), disable=not progress):
