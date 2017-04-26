@@ -19,7 +19,7 @@ from ..apply import create_mask_h5py, apply_cuts_h5py_chunked, build_query
 )
 @click.option('-N', '--chunksize', type=int, help='Chunksize to use')
 @click.option('-k', '--key', help='Name of the hdf5 group', default='table')
-@click.option('-v', '--verbose', help='Verbose log output', type=bool)
+@click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 def main(configuration_path, input_path, output_path, hdf_style, chunksize, key, verbose):
     '''
     Apply cuts given in CONFIGURATION_PATH to the data in INPUT_PATH and
