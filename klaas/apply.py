@@ -83,11 +83,11 @@ def predict_off_positions(df, model, features, used_source_feautures, n_off=5):
     return predictions
 
 
-def create_mask_h5py(input_path, selection_config, key='events', start=None, end=None):
+def create_mask_h5py(input_path, selection_config, key='events', start=None, end=None, mode="r"):
 
     with h5py.File(input_path) as infile:
 
-        n_events = h5py_get_n_rows(input_path, key=key, mode="r")
+        n_events = h5py_get_n_rows(input_path, key=key, mode=mode)
         start = start or 0
         end = min(n_events, end) if end else n_events
 
