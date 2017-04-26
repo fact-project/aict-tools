@@ -52,7 +52,10 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
     regressor = eval(config['regressor'])
 
     log.info('Loading data')
-    df = read_data(file_path=signal_path, key=key)
+    df = read_data(file_path=signal_path, key=key,
+                   columns=training_variables.append(
+                       'MCorsikaEvtHeader.fTotalEnergy')
+                   )
 
     log.info('Total number of events: {}'.format(len(df)))
 
