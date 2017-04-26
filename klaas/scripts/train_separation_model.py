@@ -57,8 +57,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     log.info('Loading signal data')
     df_signal = read_data(file_path=signal_path, key=key,
-                          columns=training_variables.append(
-                              'MCorsikaEvtHeader.fTotalEnergy')
+                          columns=training_variables+['MCorsikaEvtHeader.fTotalEnergy']
                           )
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
@@ -69,8 +68,8 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     log.info('Loading background data')
     df_background = read_data(file_path=background_path, key=key,
-                          columns=training_variables.append(
-                              'MCorsikaEvtHeader.fTotalEnergy'))
+                          columns=training_variables+['MCorsikaEvtHeader.fTotalEnergy']
+                          )
     df_background['label_text'] = 'background'
     df_background['label'] = 0
 
