@@ -20,7 +20,8 @@ import logging
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
-def main(configuration_path, signal_path, predictions_path, model_path, key):
+@click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
+def main(configuration_path, signal_path, predictions_path, model_path, key, verbose):
     '''
     Train an energy regressor simulated gamma.
     Both pmml and pickle format are supported for the output.
@@ -36,7 +37,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
     with open(configuration_path) as f:
@@ -46,6 +47,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
 
     n_cross_validations = config['n_cross_validations']
     training_variables = config['training_variables']
+    target_name = config.get('target_name', 'MCorsikaEvtHeader.fTotalEnergy')
 
     log_target = config.get('log_target', False)
 
@@ -67,7 +69,6 @@ def main(configuration_path, signal_path, predictions_path, model_path, key):
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target_name = config.get('target_name', 'MCorsikaEvtHeader.fTotalEnergy')
 
     target = df[target_name].loc[df_train.index]
     target.name = 'true_energy'

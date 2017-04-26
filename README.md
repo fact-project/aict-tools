@@ -7,10 +7,14 @@ and do classification or regression tasks on them.
 
 # Installation
 
-You will have to install teh sklearn2pmml dependency by hand first.
+You will have to install the sklearn2pmml dependency by hand first.
 [https://github.com/jpmml/sklearn2pmml](https://github.com/jpmml/sklearn2pmml)
+`pip install https://github.com/jpmml/sklearn2pmml/archive/0.20.0.tar.gz`
 
-Clone the repo, `cd` into the folder and do the usual `pip install .` dance.
+Then you can install the classifiertools by:
+`pip install https://github.com/fact-project/classifier-tools/archive/v0.0.5.tar.gz`
+
+Alternatively you can clone the repo, `cd` into the folder and do `pip install -r requirements.txt` and then the usual `pip install .` dance.
 
 
 # Usage 

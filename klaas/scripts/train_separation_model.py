@@ -20,7 +20,8 @@ from ..preprocessing import convert_to_float32
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
-def main(configuration_path, signal_path, background_path, predictions_path, model_path, key):
+@click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
+def main(configuration_path, signal_path, background_path, predictions_path, model_path, key, verbose):
     '''
     Train a classifier on signal and background monte carlo data and write the model
     to MODEL_PATH in pmml or pickle format.
@@ -37,7 +38,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
     with open(configuration_path) as f:
