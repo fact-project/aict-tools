@@ -51,7 +51,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     training_variables = config['training_variables']
 
-    true_energy = config['true_energy']
+    true_energy = config.get('true_energy', 'MCorsikaEvtHeader.fTotalEnergy')
 
     classifier = eval(config['classifier'])
 
