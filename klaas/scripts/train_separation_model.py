@@ -50,7 +50,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     n_cross_validations = config.get('n_cross_validations', 10)
 
     training_variables = config['training_variables']
-    
+
+    true_energy = config['true_energy']
+
     classifier = eval(config['classifier'])
 
     check_extension(predictions_path)
@@ -58,7 +60,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     log.info('Loading signal data')
     df_signal = read_data(file_path=signal_path, key=key,
-                          columns=training_variables+['MCorsikaEvtHeader.fTotalEnergy']
+                          columns=training_variables+[true_energy]
                           )
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
@@ -69,7 +71,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     log.info('Loading background data')
     df_background = read_data(file_path=background_path, key=key,
-                          columns=training_variables+['MCorsikaEvtHeader.fTotalEnergy']
+                          columns=training_variables+[true_energy]
                           )
     df_background['label_text'] = 'background'
     df_background['label'] = 0
@@ -115,7 +117,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         classifier.fit(xtrain, ytrain)
 
         idx = df_training.index.values[test]
-        energy = df_full['MCorsikaEvtHeader.fTotalEnergy'].loc[idx].values
+        energy = df_full[true_energy].loc[idx].values
         size = df_full['Size'].loc[idx].values
 
         y_probas = classifier.predict_proba(xtest)[:, 1]
