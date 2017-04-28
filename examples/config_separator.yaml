@@ -18,6 +18,8 @@ n_signal: 500
 # define the number of cross validations to perform
 n_cross_validations : 5
 
+true_energy: MCorsikaEvtHeader.fTotalEnergy
+
 training_variables:
   - Size
   - Length

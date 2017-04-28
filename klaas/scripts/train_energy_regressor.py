@@ -47,13 +47,16 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     n_cross_validations = config['n_cross_validations']
     training_variables = config['training_variables']
+    target_name = config.get('target_name', 'MCorsikaEvtHeader.fTotalEnergy')
 
     log_target = config.get('log_target', False)
 
     regressor = eval(config['regressor'])
 
     log.info('Loading data')
-    df = read_data(file_path=signal_path, key=key)
+    df = read_data(file_path=signal_path, key=key,
+                   columns=training_variables+[target_name]
+                   )
 
     log.info('Total number of events: {}'.format(len(df)))
 
@@ -66,7 +69,6 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target_name = config.get('target_name', 'MCorsikaEvtHeader.fTotalEnergy')
 
     target = df[target_name].loc[df_train.index]
     target.name = 'true_energy'
