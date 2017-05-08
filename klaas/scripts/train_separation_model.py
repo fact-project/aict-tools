@@ -7,10 +7,11 @@ from sklearn import metrics
 import yaml
 import logging
 from sklearn import ensemble
+from fact.io import read_data, write_data, check_extension
 
 from ..io import pickle_model
-from fact.io import read_data, write_data, check_extension
 from ..preprocessing import convert_to_float32
+from ..feature_generation import feature_generation
 
 
 @click.command()
@@ -58,10 +59,20 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
+    columns_to_read = training_variables + [true_energy]
+
+    # Also read columns needed for feature generation
+    generation_config = config.get('feature_generation')
+    if generation_config:
+        columns_to_read.extend(generation_config.get('needed_keys', []))
+    print(columns_to_read)
+
     log.info('Loading signal data')
-    df_signal = read_data(file_path=signal_path, key=key,
-                          columns=training_variables+[true_energy]
-                          )
+    df_signal = read_data(
+        file_path=signal_path,
+        key=key,
+        columns=columns_to_read,
+    )
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
 
@@ -70,9 +81,10 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         df_signal = df_signal.sample(n_signal)
 
     log.info('Loading background data')
-    df_background = read_data(file_path=background_path, key=key,
-                          columns=training_variables+[true_energy]
-                          )
+    df_background = read_data(
+        file_path=background_path, key=key,
+        columns=columns_to_read,
+    )
     df_background['label_text'] = 'background'
     df_background['label'] = 0
 
@@ -80,8 +92,13 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         log.info('Randomly sample {} events'.format(n_background))
         df_background = df_background.sample(n_background)
 
-
     df_full = pd.concat([df_background, df_signal], ignore_index=True)
+
+    # generate features if given in config
+    if generation_config:
+        gen_config = config['feature_generation']
+        training_variables.extend(gen_config['features'].keys())
+        feature_generation(df_full, gen_config, inplace=True)
 
     df_training = convert_to_float32(df_full[training_variables])
     log.info('Total training events: {}'.format(len(df_training)))

@@ -8,6 +8,7 @@ from tqdm import tqdm
 from fact.io import read_h5py_chunked
 from ..features import find_used_source_features
 from ..apply import predict, predict_off_positions
+from ..feature_generation import feature_generation
 
 
 @click.command()
@@ -58,7 +59,15 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
     model = joblib.load(model_path)
     log.info('Done')
 
-    used_source_features = find_used_source_features(training_variables)
+    generation_config = config.get('feature_generation')
+    used_source_features = find_used_source_features(
+        training_variables
+    )
+    if generation_config:
+        used_source_features = used_source_features.union(
+            find_used_source_features(generation_config['needed_keys'])
+        )
+
     if len(used_source_features) > 0:
         log.info(
             'Source dependent features used in model, '
@@ -71,6 +80,9 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         for var in used_source_features
     ]
 
+    if generation_config:
+        needed_features.extend(generation_config['needed_keys'])
+
     df_generator = read_h5py_chunked(
         data_path,
         key=key,
@@ -78,8 +90,18 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         chunksize=chunksize,
     )
 
+    if generation_config:
+        training_variables.extend(generation_config['features'])
+
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
+
+        if generation_config:
+            feature_generation(
+                df_data,
+                generation_config,
+                inplace=True,
+            )
 
         signal_prediction = predict(df_data, model, training_variables)
 
@@ -96,7 +118,11 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
 
         if len(used_source_features) > 0:
             background_predictions = predict_off_positions(
-                df_data, model, training_variables, used_source_features
+                df_data,
+                model,
+                training_variables,
+                used_source_features,
+                generation_config,
             )
 
             with h5py.File(data_path) as f:

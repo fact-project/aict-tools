@@ -10,6 +10,7 @@ from sklearn import ensemble
 from fact.io import write_data, read_data
 from ..io import pickle_model
 from ..preprocessing import convert_to_float32
+from ..feature_generation import feature_generation
 
 import logging
 
@@ -53,12 +54,27 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     regressor = eval(config['regressor'])
 
+    columns_to_read = training_variables + [target_name]
+
+    # Also read columns needed for feature generation
+    generation_config = config.get('feature_generation')
+    if generation_config:
+        columns_to_read.extend(generation_config.get('needed_keys', []))
+
     log.info('Loading data')
-    df = read_data(file_path=signal_path, key=key,
-                   columns=training_variables+[target_name]
-                   )
+    df = read_data(
+        file_path=signal_path,
+        key=key,
+        columns=columns_to_read,
+    )
 
     log.info('Total number of events: {}'.format(len(df)))
+
+    # generate features if given in config
+    if generation_config:
+        gen_config = config['feature_generation']
+        training_variables.extend(gen_config['features'])
+        feature_generation(df, gen_config, inplace=True)
 
     df_train = convert_to_float32(df[training_variables])
     df_train.dropna(how='any', inplace=True)
@@ -68,7 +84,6 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
         df_train = df_train.sample(n_signal)
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
-
 
     target = df[target_name].loc[df_train.index]
     target.name = 'true_energy'

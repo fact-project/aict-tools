@@ -8,6 +8,7 @@ from tqdm import tqdm
 
 from fact.io import read_h5py_chunked
 from ..preprocessing import convert_to_float32, check_valid_rows
+from ..feature_generation import feature_generation
 
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
@@ -56,6 +57,10 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
     if n_jobs:
         model.n_jobs = n_jobs
 
+    generation_config = config.get('feature_generation')
+    if generation_config:
+        training_variables.extend(generation_config.get('needed_keys', []))
+
     df_generator = read_h5py_chunked(
         data_path,
         key=key,
@@ -65,6 +70,13 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
 
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
+
+        if generation_config:
+            feature_generation(
+                df_data,
+                generation_config,
+                inplace=True,
+            )
 
         df_data[training_variables] = convert_to_float32(df_data[training_variables])
         valid = check_valid_rows(df_data[training_variables])
