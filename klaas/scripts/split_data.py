@@ -48,12 +48,10 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
         num_events[-1] -= sum(num_events) - n_total
 
     for n, part_name in zip(num_events, name):
-        log.info(part_name, ': ', n, sep='')
+        log.info('{}: {}'.format(part_name, n))
 
         all_idx = np.arange(len(data))
         selected = np.random.choice(all_idx, size=n, replace=False)
-
-        log.info(len(selected))
 
         if fmt == 'hdf5':
             data.iloc[selected].to_hdf(
