@@ -10,6 +10,7 @@ from fact.io import read_h5py_chunked
 from ..preprocessing import convert_to_float32, check_valid_rows
 from ..feature_generation import feature_generation
 
+
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
@@ -70,8 +71,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
     )
 
     if generation_config:
-        training_variables.extend(generation_config['features'])
-    print(training_variables)
+        training_variables.extend(sorted(generation_config['features']))
 
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):

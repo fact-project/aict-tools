@@ -65,7 +65,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     generation_config = config.get('feature_generation')
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
-    print(columns_to_read)
 
     log.info('Loading signal data')
     df_signal = read_data(
@@ -97,7 +96,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     # generate features if given in config
     if generation_config:
         gen_config = config['feature_generation']
-        training_variables.extend(gen_config['features'].keys())
+        training_variables.extend(sorted(gen_config['features']))
         feature_generation(df_full, gen_config, inplace=True)
 
     df_training = convert_to_float32(df_full[training_variables])
@@ -113,6 +112,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log.info('Training classifier with {} protons and {} gammas'.format(
         n_protons, n_gammas
     ))
+    log.info(training_variables)
 
     # save prediction_path for each cv iteration
     cv_predictions = []

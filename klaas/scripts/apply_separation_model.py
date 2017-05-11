@@ -91,7 +91,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
     )
 
     if generation_config:
-        training_variables.extend(generation_config['features'])
+        training_variables.extend(sorted(generation_config['features']))
 
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
@@ -119,10 +119,10 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         if len(used_source_features) > 0:
             background_predictions = predict_off_positions(
                 df_data,
-                model,
-                training_variables,
-                used_source_features,
-                generation_config,
+                model=model,
+                features=training_variables,
+                used_source_features=used_source_features,
+                feature_generation_config=generation_config,
             )
 
             with h5py.File(data_path) as f:

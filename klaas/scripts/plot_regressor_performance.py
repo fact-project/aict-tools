@@ -59,7 +59,7 @@ def main(configuration_path, performance_path, model_path, output, key):
 
     training_variables = config['training_variables']
     if 'feature_generation' in config:
-        training_variables.extend(config['feature_generation']['features'])
+        training_variables.extend(sorted(config['feature_generation']['features']))
 
     plot_feature_importances(model, training_variables, ax=ax)
 

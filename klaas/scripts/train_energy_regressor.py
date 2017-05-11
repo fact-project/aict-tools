@@ -73,7 +73,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
     # generate features if given in config
     if generation_config:
         gen_config = config['feature_generation']
-        training_variables.extend(gen_config['features'])
+        training_variables.extend(sorted(gen_config['features']))
         feature_generation(df, gen_config, inplace=True)
 
     df_train = convert_to_float32(df[training_variables])
