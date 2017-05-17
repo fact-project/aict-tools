@@ -15,7 +15,7 @@ setup(
     install_requires=[
         'pandas',           # in anaconda
         'numpy',            # in anaconda
-        'matplotlib>=1.4',  # in anaconda
+        'matplotlib>=2.0',  # in anaconda
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
