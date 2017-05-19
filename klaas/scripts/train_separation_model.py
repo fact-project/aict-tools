@@ -28,9 +28,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     CONFIGURATION_PATH: Path to the config yaml file
 
-    BACKGROUND_PATH: Path to the background data
-
     SIGNAL_PATH: Path to the signal data
+
+    BACKGROUND_PATH: Path to the background data
 
     PREDICTIONS_PATH : path to the file where the mc predictions are stored.
 
