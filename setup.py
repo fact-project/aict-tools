@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='klaas',
-    version='0.1.0',
+    version='0.1.1',
     description='KLAssification And regression Scripts.  yay',
     url='https://github.com/fact-project/klaas',
     author='Kai Brügge',
@@ -15,7 +15,7 @@ setup(
     install_requires=[
         'pandas',           # in anaconda
         'numpy',            # in anaconda
-        'matplotlib>=1.4',  # in anaconda
+        'matplotlib>=2.0',  # in anaconda
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
