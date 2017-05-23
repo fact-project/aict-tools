@@ -2,7 +2,7 @@ import click
 import numpy as np
 import logging
 
-from fact.io import read_data
+from fact.io import read_data, write_data
 import warnings
 
 
@@ -13,9 +13,24 @@ import warnings
     '--fraction', '-f', multiple=True, type=float,
     help='Fraction of events to use for this part'
 )
-@click.option('--name', '-n', multiple=True, help='name for one dataset')
-@click.option('-i', '--inkey', help='HDF5 key for pandas or h5py hdf5 of the input file')
-@click.option('--key', '-k', help='Name for the hdf5 group in the output', default='data')
+@click.option(
+    '--name',
+    '-n',
+    multiple=True,
+    help='name for one dataset'
+)
+@click.option(
+    '-i',
+    '--inkey',
+    help='HDF5 key for pandas or h5py hdf5 of the input file',
+    default='events'
+)
+@click.option(
+    '--key',
+    '-k',
+    help='Name for the hdf5 group in the output',
+    default='events'
+)
 @click.option(
     '--fmt', type=click.Choice(['csv', 'hdf5']), default='hdf5',
     help='The output format',
@@ -56,10 +71,9 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
         log.info(len(selected))
 
         if fmt == 'hdf5':
-            data.iloc[selected].to_hdf(
-                output_basename + '_' + part_name + '.hdf5',
-                key=key
-            )
+            path = output_basename + '_' + part_name + '.hdf5'
+            write_data(data.iloc[selected], path, key=key, use_hp5y=True)
+
         elif fmt == 'csv':
             data.iloc[selected].to_csv(output_basename + '_' + part_name + '.csv')
 

@@ -40,17 +40,19 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
 
     training_variables = config['training_variables']
 
+    class_name = config.get('class_name', 'gamma') + '_prediction'
+
     with h5py.File(data_path, 'r+') as f:
-        if 'signal_prediction' in f[key].keys():
+        if class_name in f[key].keys():
             if not yes:
                 click.confirm(
                     'Dataset "signal_prediction" exists in file, overwrite?',
                     abort=True,
                 )
-            del f[key]['signal_prediction']
+            del f[key][class_name]
 
         for region in range(1, 6):
-            dataset = 'background_prediction_{}'.format(region)
+            dataset = 'gamma_prediction_off_{}'.format(region)
             if dataset in f[key].keys():
                 del f[key][dataset]
 
@@ -84,14 +86,14 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         signal_prediction = predict(df_data, model, training_variables)
 
         with h5py.File(data_path, 'r+') as f:
-            if 'signal_prediction' in f[key].keys():
-                n_existing = f[key]['signal_prediction'].shape[0]
+            if class_name in f[key].keys():
+                n_existing = f[key][class_name].shape[0]
                 n_new = signal_prediction.shape[0]
-                f[key]['signal_prediction'].resize(n_existing + n_new, axis=0)
-                f[key]['signal_prediction'][start:end] = signal_prediction
+                f[key][class_name].resize(n_existing + n_new, axis=0)
+                f[key][class_name][start:end] = signal_prediction
             else:
                 f[key].create_dataset(
-                    'signal_prediction', data=signal_prediction, maxshape=(None, )
+                    class_name, data=signal_prediction, maxshape=(None, )
                 )
 
         if len(used_source_features) > 0:
@@ -101,7 +103,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
 
             with h5py.File(data_path) as f:
                 for region in range(1, 6):
-                    name = 'background_prediction_{}'.format(region)
+                    name = 'gamma_prediction_off_{}'.format(region)
                     if name in f[key].keys():
                         n_existing = f[key][name].shape[0]
                         n_new = background_predictions[name].shape[0]

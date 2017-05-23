@@ -20,7 +20,7 @@ from ..plotting import (
 @click.argument('performance_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
 @click.option('-o', '--output', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for pandas hdf5', default='table')
+@click.option('-k', '--key', help='HDF5 key for pandas hdf5', default='data')
 def main(configuration_path, performance_path, model_path, output, key):
     ''' Create some performance evaluation plots for the separator '''
 
