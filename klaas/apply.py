@@ -68,14 +68,14 @@ def predict_off_positions(df, model, features, used_source_feautures, n_off=5):
         log.debug('Predicting off position {}'.format(region))
 
         for var in used_source_feautures:
-            df[var] = df[var + '_Off_{}'.format(region)]
+            df[var] = df[var + '_off_{}'.format(region)]
 
         valid = check_valid_rows(df[features])
 
         prediction = np.full(len(df), np.nan)
         prediction[valid.values] = model.predict_proba(df.loc[valid, features])[:, 1]
 
-        predictions['background_prediction_{}'.format(region)] = prediction
+        predictions['gamma_prediction_off_{}'.format(region)] = prediction
 
     for var, data in stored_vars.items():
         df[var] = data

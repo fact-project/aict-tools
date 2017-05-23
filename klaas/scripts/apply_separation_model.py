@@ -46,7 +46,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         if class_name in f[key].keys():
             if not yes:
                 click.confirm(
-                    'Dataset "signal_prediction" exists in file, overwrite?',
+                    'Dataset "gamma_prediction" exists in file, overwrite?',
                     abort=True,
                 )
             del f[key][class_name]
@@ -68,7 +68,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         )
 
     needed_features = [
-        var + '_Off_{}'.format(region)
+        var + '_off_{}'.format(region)
         for region in range(1, 6)
         for var in used_source_features
     ]
@@ -98,7 +98,10 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
 
         if len(used_source_features) > 0:
             background_predictions = predict_off_positions(
-                df_data, model, training_variables, used_source_features
+                df_data,
+                model,
+                training_variables,
+                used_source_features,
             )
 
             with h5py.File(data_path) as f:
