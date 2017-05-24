@@ -3,6 +3,7 @@ source_dependent_features = {
     'cos_delta_alpha',
     'distance',
     'theta',
+    'theta_deg',
 }
 
 
