@@ -38,16 +38,18 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
 
     training_variables = config['training_variables']
     log_target = config.get('log_target', False)
+    class_name = config.get('class_name', 'gamma_energy') + '_prediction'
+
 
     with h5py.File(data_path, 'r+') as f:
-        if 'energy_prediction' in f[key].keys():
+        if class_name in f[key].keys():
             if not yes:
                 click.confirm(
-                    'Dataset "energy_prediction" exists in file, overwrite?',
+                    'Dataset "{}" exists in file, overwrite?'.format(class_name),
                     abort=True,
                 )
-            del f[key]['energy_prediction']
-            del f[key]['energy_prediction_std']
+            del f[key][class_name]
+            del f[key]['{}_std'.format(class_name)]
 
     log.info('Loading model')
     model = joblib.load(model_path)
@@ -85,22 +87,22 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
         energy_prediction_std[valid.values] = np.std(predictions, axis=0)
 
         with h5py.File(data_path, 'r+') as f:
-            if 'energy_prediction' in f[key].keys():
+            if class_name in f[key].keys():
 
-                n_existing = f[key]['energy_prediction'].shape[0]
+                n_existing = f[key][class_name].shape[0]
                 n_new = energy_prediction.shape[0]
 
-                f[key]['energy_prediction'].resize(n_existing + n_new, axis=0)
-                f[key]['energy_prediction'][start:end] = energy_prediction
+                f[key][class_name].resize(n_existing + n_new, axis=0)
+                f[key][class_name][start:end] = energy_prediction
 
-                f[key]['energy_prediction_std'].resize(n_existing + n_new, axis=0)
-                f[key]['energy_prediction_std'][start:end] = energy_prediction_std
+                f[key]['{}_std'.format(class_name)].resize(n_existing + n_new, axis=0)
+                f[key]['{}_std'.format(class_name)][start:end] = energy_prediction_std
             else:
                 f[key].create_dataset(
-                    'energy_prediction', data=energy_prediction, maxshape=(None, )
+                    class_name, data=energy_prediction, maxshape=(None, )
                 )
                 f[key].create_dataset(
-                    'energy_prediction_std', data=energy_prediction_std, maxshape=(None, )
+                    '{}_std'.format(class_name), data=energy_prediction_std, maxshape=(None, )
                 )
 
 

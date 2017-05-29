@@ -30,7 +30,16 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
     MODEL_PATH: Path to the pickled model.
 
     The program adds the following columns to the inputfile:
-        signal_prediction: the output of model.predict_proba for the signal class
+        <class_name>_prediction: the output of model.predict_proba for the
+        class name given in the config file.
+
+    If source dependent features are part of the training variables the
+    columns
+        <class_name>_prediction_off_(1...n)
+    will also be added.
+
+    If the class name is not given in the config file, the default value of "gamma"
+    will be used.
     '''
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
@@ -40,17 +49,19 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
 
     training_variables = config['training_variables']
 
+    prediction_column_name = config.get('class_name', 'gamma') + '_prediction'
+
     with h5py.File(data_path, 'r+') as f:
-        if 'signal_prediction' in f[key].keys():
+        if prediction_column_name in f[key].keys():
             if not yes:
                 click.confirm(
-                    'Dataset "signal_prediction" exists in file, overwrite?',
+                    'Column "{}" exists in file, overwrite?'.format(prediction_column_name),
                     abort=True,
                 )
-            del f[key]['signal_prediction']
+            del f[key][prediction_column_name]
 
         for region in range(1, 6):
-            dataset = 'background_prediction_{}'.format(region)
+            dataset = '{}_off_{}'.format(prediction_column_name, region)
             if dataset in f[key].keys():
                 del f[key][dataset]
 
@@ -66,7 +77,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         )
 
     needed_features = [
-        var + '_Off_{}'.format(region)
+        var + '_off_{}'.format(region)
         for region in range(1, 6)
         for var in used_source_features
     ]
@@ -84,24 +95,27 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         signal_prediction = predict(df_data, model, training_variables)
 
         with h5py.File(data_path, 'r+') as f:
-            if 'signal_prediction' in f[key].keys():
-                n_existing = f[key]['signal_prediction'].shape[0]
+            if prediction_column_name in f[key].keys():
+                n_existing = f[key][prediction_column_name].shape[0]
                 n_new = signal_prediction.shape[0]
-                f[key]['signal_prediction'].resize(n_existing + n_new, axis=0)
-                f[key]['signal_prediction'][start:end] = signal_prediction
+                f[key][prediction_column_name].resize(n_existing + n_new, axis=0)
+                f[key][prediction_column_name][start:end] = signal_prediction
             else:
                 f[key].create_dataset(
-                    'signal_prediction', data=signal_prediction, maxshape=(None, )
+                    prediction_column_name, data=signal_prediction, maxshape=(None, )
                 )
 
         if len(used_source_features) > 0:
             background_predictions = predict_off_positions(
-                df_data, model, training_variables, used_source_features
+                df_data,
+                model,
+                training_variables,
+                used_source_features,
             )
 
             with h5py.File(data_path) as f:
                 for region in range(1, 6):
-                    name = 'background_prediction_{}'.format(region)
+                    name = '{}_off_{}'.format(prediction_column_name, region)
                     if name in f[key].keys():
                         n_existing = f[key][name].shape[0]
                         n_new = background_predictions[name].shape[0]

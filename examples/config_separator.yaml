@@ -1,5 +1,4 @@
 # hmm realy tasty config for realy tasty classification stuff
-
 #the classifier to use
 classifier : |
   ensemble.RandomForestClassifier(
@@ -18,17 +17,21 @@ n_signal: 500
 # define the number of cross validations to perform
 n_cross_validations : 5
 
-true_energy: MCorsikaEvtHeader.fTotalEnergy
+true_energy: corsika_evt_header_total_energy
+
+# Define the name of the category you want to find. The default is 'gamma'.
+# It will be written as <class_name>_prediction into the file when applying the model.
+class_name: gamma
 
 training_variables:
-  - Size
-  - Length
-  - Width
-  - numIslands
-  - Leakage
+  - size
+  - length
+  - width
+  - num_islands
+  - leakage
   - m3l
   - m3t
-  - Disp
-  - Timespread
-  - arrivalTimeMean
-  - ConcCore
+  - disp
+  - timespread
+  - arrival_time_mean
+  - conc_core

@@ -19,7 +19,7 @@ from ..preprocessing import convert_to_float32
 @click.argument('background_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
+@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 def main(configuration_path, signal_path, background_path, predictions_path, model_path, key, verbose):
     '''
@@ -48,10 +48,8 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     n_signal = config.get('n_signal')
 
     n_cross_validations = config.get('n_cross_validations', 10)
-
     training_variables = config['training_variables']
-
-    true_energy = config.get('true_energy', 'MCorsikaEvtHeader.fTotalEnergy')
+    true_energy = config.get('true_energy', 'corsika_evt_header_total_energy')
 
     classifier = eval(config['classifier'])
 
@@ -93,7 +91,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     n_gammas = len(label[label == 1])
     n_protons = len(label[label == 0])
-    log.info('Training classifier with {} protons and {} gammas'.format(
+    log.info('Training classifier with {} background and {} signal events'.format(
         n_protons, n_gammas
     ))
 
@@ -118,7 +116,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
         idx = df_training.index.values[test]
         energy = df_full[true_energy].loc[idx].values
-        size = df_full['Size'].loc[idx].values
+        size = df_full['size'].loc[idx].values
 
         y_probas = classifier.predict_proba(xtest)[:, 1]
         y_prediction = classifier.predict(xtest)

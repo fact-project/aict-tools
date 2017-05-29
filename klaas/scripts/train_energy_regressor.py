@@ -19,7 +19,7 @@ import logging
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5')
+@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 def main(configuration_path, signal_path, predictions_path, model_path, key, verbose):
     '''
@@ -47,7 +47,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     n_cross_validations = config['n_cross_validations']
     training_variables = config['training_variables']
-    target_name = config.get('target_name', 'MCorsikaEvtHeader.fTotalEnergy')
+    target_name = config.get('target_name', 'corsika_evt_header_total_energy')
 
     log_target = config.get('log_target', False)
 
