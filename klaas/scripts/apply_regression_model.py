@@ -64,7 +64,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
     if generation_config:
         columns_to_read.extend(generation_config['needed_keys'])
 
-    print(columns_to_read)
     df_generator = read_h5py_chunked(
         data_path,
         key=key,
@@ -76,9 +75,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
         training_variables.extend(sorted(generation_config['features']))
 
     log.info('Predicting on data...')
-    print(columns_to_read)
     for df_data, start, end in tqdm(df_generator):
-        print(columns_to_read)
 
         if generation_config:
             feature_generation(
