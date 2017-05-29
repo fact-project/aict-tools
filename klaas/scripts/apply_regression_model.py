@@ -42,7 +42,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
     log_target = config.get('log_target', False)
     class_name = config.get('class_name', 'gamma_energy') + '_prediction'
 
-
     with h5py.File(data_path, 'r+') as f:
         if class_name in f[key].keys():
             if not yes:
@@ -60,11 +59,12 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
     if n_jobs:
         model.n_jobs = n_jobs
 
-    columns_to_read = training_variables
+    columns_to_read = training_variables.copy()
     generation_config = config.get('feature_generation')
     if generation_config:
         columns_to_read.extend(generation_config['needed_keys'])
 
+    print(columns_to_read)
     df_generator = read_h5py_chunked(
         data_path,
         key=key,
@@ -76,7 +76,9 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
         training_variables.extend(sorted(generation_config['features']))
 
     log.info('Predicting on data...')
+    print(columns_to_read)
     for df_data, start, end in tqdm(df_generator):
+        print(columns_to_read)
 
         if generation_config:
             feature_generation(
