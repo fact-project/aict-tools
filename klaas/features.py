@@ -1,8 +1,9 @@
 source_dependent_features = {
-    'Alpha',
-    'CosDeltaAlpha',
-    'Distance',
-    'Theta',
+    'alpha',
+    'cos_delta_alpha',
+    'distance',
+    'theta',
+    'theta_deg',
 }
 
 

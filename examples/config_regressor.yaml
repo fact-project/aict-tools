@@ -15,21 +15,26 @@ n_signal : 500
 n_cross_validations : 5
 
 # define the name of the regression target
-target_name: MCorsikaEvtHeader.fTotalEnergy
+target_name: corsika_evt_header_total_energy
+
+
+# Define the name of the variable you want estimate by regression. The default is 'energy'.
+# It will be written as <class_name>_prediction into the file when applying the model.
+class_name: gamma_energy
+
 
 training_variables:
-   - Size
-   - Length
-   - Width
-   - numIslands
-   - Leakage
-   - m3l
-   - m3t
-   - Disp
-   - Timespread
-   - arrivalTimeMean
-   - ConcCore
- 
+  - size
+  - length
+  - width
+  - num_islands
+  - leakage
+  - m3l
+  - m3t
+  - disp
+  - timespread
+  - arrival_time_mean
+  - conc_core
 
 # Generate some features using pd.DataFrame.eval
 # List all keys that have to be read from the input files
@@ -37,8 +42,7 @@ training_variables:
 # features must be a mapping of feature name -> expression
 feature_generation:
   needed_keys:
-    - Width
-    - Length
+    - width
+    - length
   features:
-    Area: Width * Length * @pi
-   
+    Area: width * length * @pi

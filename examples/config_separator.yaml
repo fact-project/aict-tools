@@ -1,5 +1,4 @@
 # hmm realy tasty config for realy tasty classification stuff
-
 #the classifier to use
 classifier : |
   ensemble.RandomForestClassifier(
@@ -18,20 +17,24 @@ n_signal: 500
 # define the number of cross validations to perform
 n_cross_validations : 5
 
-true_energy: MCorsikaEvtHeader.fTotalEnergy
+true_energy: corsika_evt_header_total_energy
+
+# Define the name of the category you want to find. The default is 'gamma'.
+# It will be written as <class_name>_prediction into the file when applying the model.
+class_name: gamma
 
 training_variables:
-  - Size
-  - Length
-  - Width
-  - numIslands
-  - Leakage
+  - size
+  - length
+  - width
+  - num_islands
+  - leakage
   - m3l
   - m3t
-  - Disp
-  - Timespread
-  - arrivalTimeMean
-  - ConcCore
+  - disp
+  - timespread
+  - arrival_time_mean
+  - conc_core
 
 # Generate some features using pd.DataFrame.eval
 # List all keys that have to be read from the input files
@@ -39,10 +42,9 @@ training_variables:
 # features must be a mapping of feature name -> expression
 feature_generation:
   needed_keys:
-    - Width
-    - Length
-    - Theta
+    - width
+    - length
+    - theta
   features:
-    Area: Width * Length * @pi
-    Theta2: Theta**2
-   
+    Area: width * length * @pi
+    Theta2: theta**2
