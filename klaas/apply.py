@@ -85,6 +85,7 @@ def predict_off_positions(
                 inplace=True,
             )
 
+        df[features] = convert_to_float32(df[features])
         valid = check_valid_rows(df[features])
 
         prediction = np.full(len(df), np.nan)
