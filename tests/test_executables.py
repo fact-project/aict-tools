@@ -2,6 +2,7 @@ import sys
 import tempfile
 import os
 from click.testing import CliRunner
+import shutil
 
 
 def test_train_regressor():
@@ -32,11 +33,13 @@ def test_apply_regression():
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
         runner = CliRunner()
 
+        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+
         result = runner.invoke(
             train,
             [
                 'examples/config_regressor.yaml',
-                'examples/signal.hdf',
+                os.path.join(d, 'signal.hdf'),
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
@@ -49,7 +52,7 @@ def test_apply_regression():
             main,
             [
                 'examples/config_regressor.yaml',
-                'examples/signal.hdf',
+                os.path.join(d, 'signal.hdf'),
                 os.path.join(d, 'test.pkl'),
                 '--yes',
             ]
@@ -88,8 +91,10 @@ def test_apply_separator():
     from klaas.scripts.apply_separation_model import main
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
-        runner = CliRunner()
 
+        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+
+        runner = CliRunner()
         result = runner.invoke(
             train,
             [
@@ -108,7 +113,7 @@ def test_apply_separator():
             main,
             [
                 'examples/config_separator.yaml',
-                'examples/signal.hdf',
+                os.path.join(d, 'signal.hdf'),
                 os.path.join(d, 'test.pkl'),
                 '--yes',
             ]
