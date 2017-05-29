@@ -12,6 +12,8 @@ setup(
         'klaas',
         'klaas.scripts',
     ],
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest'],
     install_requires=[
         'pandas',           # in anaconda
         'numpy',            # in anaconda
