@@ -46,5 +46,5 @@ feature_generation:
     - length
     - theta
   features:
-    Area: width * length * @pi
-    Theta2: theta**2
+    area: width * length * @pi
+    theta_squared: theta**2

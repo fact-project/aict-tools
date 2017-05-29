@@ -45,4 +45,4 @@ feature_generation:
     - width
     - length
   features:
-    Area: width * length * @pi
+    area: width * length * @pi
