@@ -1,4 +1,4 @@
-# Klaas
+# klaas [![Build Status](https://travis-ci.org/fact-project/classifier-tools.svg?branch=master)](https://travis-ci.org/fact-project/classifier-tools)
 
 Scripts to classify FACT MC data, do energy regression and save models and stuff.
 

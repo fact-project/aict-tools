@@ -24,7 +24,6 @@ from ..plotting import (
 def main(configuration_path, performance_path, model_path, output, key):
     ''' Create some performance evaluation plots for the separator '''
 
-
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
 
@@ -86,7 +85,11 @@ def main(configuration_path, performance_path, model_path, output, key):
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
 
-    plot_feature_importances(model, config['training_variables'], ax=ax)
+    training_variables = config['training_variables']
+    if 'feature_generation' in config:
+        training_variables.extend(sorted(config['feature_generation']['features']))
+
+    plot_feature_importances(model, training_variables, ax=ax)
 
     if output is None:
         plt.show()

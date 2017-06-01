@@ -8,6 +8,8 @@ from tqdm import tqdm
 
 from fact.io import read_h5py_chunked
 from ..preprocessing import convert_to_float32, check_valid_rows
+from ..feature_generation import feature_generation
+
 
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
@@ -40,7 +42,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
     log_target = config.get('log_target', False)
     class_name = config.get('class_name', 'gamma_energy') + '_prediction'
 
-
     with h5py.File(data_path, 'r+') as f:
         if class_name in f[key].keys():
             if not yes:
@@ -58,15 +59,30 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
     if n_jobs:
         model.n_jobs = n_jobs
 
+    columns_to_read = training_variables.copy()
+    generation_config = config.get('feature_generation')
+    if generation_config:
+        columns_to_read.extend(generation_config['needed_keys'])
+
     df_generator = read_h5py_chunked(
         data_path,
         key=key,
-        columns=training_variables,
+        columns=columns_to_read,
         chunksize=chunksize,
     )
 
+    if generation_config:
+        training_variables.extend(sorted(generation_config['features']))
+
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
+
+        if generation_config:
+            feature_generation(
+                df_data,
+                generation_config,
+                inplace=True,
+            )
 
         df_data[training_variables] = convert_to_float32(df_data[training_variables])
         valid = check_valid_rows(df_data[training_variables])

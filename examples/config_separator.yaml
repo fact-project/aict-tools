@@ -35,3 +35,16 @@ training_variables:
   - timespread
   - arrival_time_mean
   - conc_core
+
+# Generate some features using pd.DataFrame.eval
+# List all keys that have to be read from the input files
+# in needed keys. 
+# features must be a mapping of feature name -> expression
+feature_generation:
+  needed_keys:
+    - width
+    - length
+    - theta
+  features:
+    area: width * length * @pi
+    theta_squared: theta**2
