@@ -14,7 +14,7 @@ def test_train_regressor():
         result = runner.invoke(
             main,
             [
-                'examples/config_regressor.yaml',
+                'examples/config_energy.yaml',
                 'examples/signal.hdf',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
@@ -38,7 +38,7 @@ def test_apply_regression():
         result = runner.invoke(
             train,
             [
-                'examples/config_regressor.yaml',
+                'examples/config_energy.yaml',
                 os.path.join(d, 'signal.hdf'),
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
@@ -51,7 +51,7 @@ def test_apply_regression():
         result = runner.invoke(
             main,
             [
-                'examples/config_regressor.yaml',
+                'examples/config_energy.yaml',
                 os.path.join(d, 'signal.hdf'),
                 os.path.join(d, 'test.pkl'),
                 '--yes',
