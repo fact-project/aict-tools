@@ -33,7 +33,7 @@ import warnings
     default='events'
 )
 @click.option(
-    '--fmt', type=click.Choice(['csv', 'hdf5']), default='hdf5',
+    '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
     help='The output format',
 )
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
@@ -47,8 +47,11 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
     log.debug("input_path: {}".format(input_path))
-
-    data = read_data(input_path, key=inkey)
+    
+    if fmt in ['hdf5', 'hdf', 'h5']:
+        data = read_data(input_path, key=inkey)
+    elif fmt == 'csv':
+        data = read_data(input_path)
 
     assert len(fraction) == len(name), 'You must give a name for each fraction'
 
@@ -70,14 +73,14 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
         selected = np.random.choice(all_idx, size=n, replace=False)
         
         base_path = os.path.dirname(input_path)
-        if fmt == 'hdf5':
+        if fmt == ['hdf5', 'hdf', 'h5']:
             file_name = output_basename + '_' + part_name + '.hdf5'
-            output_path = os.path.join([base_path, file_name])
+            output_path = os.path.join(base_path, file_name)
             write_data(data.iloc[selected], output_path, key=key, use_hp5y=True)
 
         elif fmt == 'csv':
             file_name = output_basename + '_' + part_name + '.csv'
-            output_path = os.path.join([base_path, file_name])
+            output_path = os.path.join(base_path, file_name)
             data.iloc[selected].to_csv(output_path)
 
         data = data.iloc[list(set(all_idx) - set(selected))]
