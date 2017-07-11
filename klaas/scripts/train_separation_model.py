@@ -56,7 +56,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
-    columns_to_read = training_variables
+    columns_to_read = [] + training_variables
 
     # Also read columns needed for feature generation
     generation_config = config.get('feature_generation')
