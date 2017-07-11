@@ -50,14 +50,13 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     n_cross_validations = config.get('n_cross_validations', 10)
     training_variables = config['training_variables']
-    true_energy = config.get('true_energy', 'corsika_evt_header_total_energy')
 
     classifier = eval(config['classifier'])
 
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
-    columns_to_read = training_variables + [true_energy]
+    columns_to_read = training_variables
 
     # Also read columns needed for feature generation
     generation_config = config.get('feature_generation')
@@ -132,8 +131,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         classifier.fit(xtrain, ytrain)
 
         idx = df_training.index.values[test]
-        energy = df_full[true_energy].loc[idx].values
-        size = df_full['size'].loc[idx].values
 
         y_probas = classifier.predict_proba(xtest)[:, 1]
         y_prediction = classifier.predict(xtest)
@@ -142,8 +139,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
             'label_prediction': y_prediction,
             'probabilities': y_probas,
             'cv_fold': fold,
-            'energy': energy,
-            'size': size,
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
