@@ -11,7 +11,6 @@ from ..plotting import (
     plot_probabilities,
     plot_precision_recall,
     plot_feature_importances,
-    plot_binned_auc,
 )
 
 
@@ -43,31 +42,6 @@ def main(configuration_path, performance_path, model_path, output, key):
     ax = figures[-1].add_subplot(1, 1, 1)
     plot_roc(df, model, ax=ax)
 
-    # Plot roc_auc vs. size
-    figures.append(plt.figure())
-    ax = figures[-1].add_subplot(1, 1, 1)
-
-    ax.set_title('Area under ROC curve vs. Size')
-    plot_binned_auc(
-        df,
-        key='size',
-        xlabel=r'$\log_{10}(\mathtt{Size})$',
-        n_bins=15,
-        ax=ax,
-    )
-
-    # Plot roc_auc vs. size
-    figures.append(plt.figure())
-    ax = figures[-1].add_subplot(1, 1, 1)
-
-    ax.set_title('Area under ROC curve vs. MC Energy')
-    plot_binned_auc(
-        df,
-        key='energy',
-        xlabel=r'$\log_{10}(E \,/\, \mathrm{GeV})$',
-        n_bins=15,
-        ax=ax,
-    )
 
     # Plot hists of probas
     figures.append(plt.figure())
