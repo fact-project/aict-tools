@@ -130,8 +130,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         # fit and predict
         classifier.fit(xtrain, ytrain)
 
-        idx = df_training.index.values[test]
-
         y_probas = classifier.predict_proba(xtest)[:, 1]
         y_prediction = classifier.predict(xtest)
         cv_predictions.append(pd.DataFrame({
