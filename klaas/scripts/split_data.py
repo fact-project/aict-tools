@@ -32,11 +32,18 @@ import warnings
     default='events'
 )
 @click.option(
+    '--event_id_key',
+    '-id',
+    help='Name of the colum containing the event id.'
+         'If provided it will not split up rows that belong to the same event.',
+    default=None
+)
+@click.option(
     '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
     help='The output format',
 )
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -46,7 +53,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
     log.debug("input_path: {}".format(input_path))
-    
+
     if fmt in ['hdf5', 'hdf', 'h5']:
         data = read_data(input_path, key=inkey)
     elif fmt == 'csv':
@@ -58,24 +65,38 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
         warnings.warn('Fractions do not sum up to 1')
 
     n_total = len(data)
-    log.info('Found a total of {} events'.format(n_total))
+    ids = data.index.values
 
-    num_events = [int(round(n_total * f)) for f in fraction]
+    if event_id_key:
+        ids = data[event_id_key].unique()
+        n_total = len(ids)
 
-    if sum(num_events) > n_total:
-        num_events[-1] -= sum(num_events) - n_total
+    log.info('Found {} array events'.format(n_total))
+    log.info('Found a total of {} single-telescope events in the file'.format(len(data)))
 
-    for n, part_name in zip(num_events, name):
-        log.info('{}: {}'.format(part_name, n))
+    num_ids = [int(round(n_total * f)) for f in fraction]
 
-        all_idx = np.arange(len(data))
-        selected = np.random.choice(all_idx, size=n, replace=False)
-        
+    if sum(num_ids) > n_total:
+        num_ids[-1] -= sum(num_ids) - n_total
+
+    for n, part_name in zip(num_ids, name):
+        log.info('Writing {} array events to: {} set.'.format(n, part_name))
+        selected_ids = np.random.choice(ids, size=n, replace=False)
+        if event_id_key:
+            selected_data = data.loc[data.unique_id.isin(selected_ids)]
+        else:
+            selected_data = data.loc[selected_ids]
+
         if fmt in ['hdf5', 'hdf', 'h5']:
             path = output_basename + '_' + part_name + '.hdf5'
-            write_data(data.iloc[selected], path, key=key, use_hp5y=True)
+            write_data(selected_data, path, key=key, use_hp5y=True)
 
         elif fmt == 'csv':
-            data.iloc[selected].to_csv(output_basename + '_' + part_name + '.csv')
+            filename = output_basename + '_' + part_name + '.csv'
+            selected_data.to_csv(filename, index=False)
 
-        data = data.iloc[list(set(all_idx) - set(selected))]
+        data = data.iloc[list(set(data.index.values) - set(selected_data.index))]
+        if event_id_key:
+            ids = data[event_id_key].unique()
+        else:
+            ids = data.index.values
