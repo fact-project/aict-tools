@@ -34,8 +34,9 @@ import warnings
 @click.option(
     '--event_id_key',
     '-id',
-    help='Name of the colum containing the event id.'
-         'If provided it will not split up rows that belong to the same event.',
+    help='Name of the colum containing a unique id for each array-wide event.'
+         'If provided it will not split up rows that belong to the same event but to '
+         'different telescopes',
     default=None
 )
 @click.option(
@@ -71,7 +72,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
         ids = data[event_id_key].unique()
         n_total = len(ids)
 
-    log.info('Found {} array events'.format(n_total))
+    log.info('Found {} telescope-array events'.format(n_total))
     log.info('Found a total of {} single-telescope events in the file'.format(len(data)))
 
     num_ids = [int(round(n_total * f)) for f in fraction]
@@ -80,7 +81,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
         num_ids[-1] -= sum(num_ids) - n_total
 
     for n, part_name in zip(num_ids, name):
-        log.info('Writing {} array events to: {} set.'.format(n, part_name))
+        log.info('Writing {} telescope-array events to: {} set.'.format(n, part_name))
         selected_ids = np.random.choice(ids, size=n, replace=False)
         if event_id_key:
             selected_data = data.loc[data.unique_id.isin(selected_ids)]
@@ -96,6 +97,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
             selected_data.to_csv(filename, index=False)
 
         data = data.iloc[list(set(data.index.values) - set(selected_data.index))]
+
         if event_id_key:
             ids = data[event_id_key].unique()
         else:
