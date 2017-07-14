@@ -83,7 +83,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
     for n, part_name in zip(num_ids, name):
         selected_ids = np.random.choice(ids, size=n, replace=False)
         if event_id_key:
-            selected_data = data.loc[data.unique_id.isin(selected_ids)]
+            selected_data = data.loc[data[event_id_key].isin(selected_ids)]
         else:
             selected_data = data.loc[selected_ids]
 
