@@ -81,7 +81,6 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
         num_ids[-1] -= sum(num_ids) - n_total
 
     for n, part_name in zip(num_ids, name):
-        log.info('Writing {} telescope-array events to: {} set.'.format(n, part_name))
         selected_ids = np.random.choice(ids, size=n, replace=False)
         if event_id_key:
             selected_data = data.loc[data.unique_id.isin(selected_ids)]
@@ -89,11 +88,13 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
             selected_data = data.loc[selected_ids]
 
         if fmt in ['hdf5', 'hdf', 'h5']:
-            path = output_basename + '_' + part_name + '.hdf5'
-            write_data(selected_data, path, key=key, use_hp5y=True)
+            filename = output_basename + '_' + part_name + '.hdf5'
+            log.info('Writing {} telescope-array events to: {}'.format(n, filename))
+            write_data(selected_data, filename, key=key, use_hp5y=True)
 
         elif fmt == 'csv':
             filename = output_basename + '_' + part_name + '.csv'
+            log.info('Writing {} telescope-array events to: {}'.format(n, filename))
             selected_data.to_csv(filename, index=False)
 
         data = data.iloc[list(set(data.index.values) - set(selected_data.index))]

@@ -14,6 +14,29 @@ from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
 
 
+logging.basicConfig()
+log = logging.getLogger()
+
+
+def read_and_sample_data(path, key, columns_to_read, n_sample):
+    df = read_data(
+        file_path=path,
+        key=key,
+        columns=columns_to_read,
+    )
+
+    if n_sample is not None:
+        if n_sample > len(df):
+            log.error(
+                'number of sampled events {} must be smaller than number events in file {} ({})'
+                .format(n_sample, path, len(df))
+            )
+            raise ValueError
+        log.info('Randomly sample {} events'.format(n_sample))
+        df = df.sample(n_sample)
+    return df
+
+
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
@@ -39,9 +62,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
-
+    logging.getLogger().setLevel(logging.DEBUG if verbose else logging.INFO)
     with open(configuration_path) as f:
         config = yaml.load(f)
 
@@ -64,29 +85,14 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         columns_to_read.extend(generation_config.get('needed_keys', []))
 
     log.info('Loading signal data')
-    df_signal = read_data(
-        file_path=signal_path,
-        key=key,
-        columns=columns_to_read,
-    )
+    df_signal = read_and_sample_data(signal_path, key, columns_to_read, n_signal)
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
 
-    if n_signal is not None:
-        log.info('Randomly sample {} events'.format(n_signal))
-        df_signal = df_signal.sample(n_signal)
-
     log.info('Loading background data')
-    df_background = read_data(
-        file_path=background_path, key=key,
-        columns=columns_to_read,
-    )
+    df_background = read_and_sample_data(background_path, key, columns_to_read, n_background)
     df_background['label_text'] = 'background'
     df_background['label'] = 0
-
-    if n_background is not None:
-        log.info('Randomly sample {} events'.format(n_background))
-        df_background = df_background.sample(n_background)
 
     df_full = pd.concat([df_background, df_signal], ignore_index=True)
 
