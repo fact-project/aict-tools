@@ -37,6 +37,29 @@ def read_and_sample_data(path, key, columns_to_read, n_sample):
     return df
 
 
+def read_config(configuration_path):
+    '''
+    Read and return the values from the configuration file
+    '''
+    with open(configuration_path) as f:
+        config = yaml.load(f)
+
+    n_background = config.get('n_background')
+    n_signal = config.get('n_signal')
+
+    n_cross_validations = config.get('n_cross_validations', 10)
+    training_variables = config['training_variables']
+
+    classifier = eval(config['classifier'])
+
+    generation_config = config.get('feature_generation')
+
+    telescope_type_column = config.get('telescope_type_key', None)
+
+    return (n_background, n_signal, n_cross_validations, training_variables, classifier,
+            generation_config, telescope_type_column)
+
+
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
@@ -74,17 +97,19 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     classifier = eval(config['classifier'])
 
+
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
+
+    (n_background, n_signal, n_cross_validations, training_variables, classifier,
+        generation_config, telescope_type_column) = read_config(configuration_path)
 
     columns_to_read = [] + training_variables
 
     # Also read columns needed for feature generation
-    generation_config = config.get('feature_generation')
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
 
-    telescope_type_column = config.get('telescope_type_key', None)
     if telescope_type_column:
         if telescope_type_column not in columns_to_read:
             columns_to_read.append(telescope_type_column)
