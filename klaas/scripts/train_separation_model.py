@@ -118,9 +118,8 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     # generate features if given in config
     if generation_config:
-        gen_config = config['feature_generation']
-        training_variables.extend(sorted(gen_config['features']))
-        feature_generation(df_full, gen_config, inplace=True)
+        training_variables.extend(sorted(generation_config['features']))
+        feature_generation(df_full, generation_config, inplace=True)
 
     df_training = convert_to_float32(df_full[training_variables])
     log.info('Total training events: {}'.format(len(df_training)))
