@@ -86,17 +86,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     '''
 
     logging.getLogger().setLevel(logging.DEBUG if verbose else logging.INFO)
-    with open(configuration_path) as f:
-        config = yaml.load(f)
-
-    n_background = config.get('n_background')
-    n_signal = config.get('n_signal')
-
-    n_cross_validations = config.get('n_cross_validations', 10)
-    training_variables = config['training_variables']
-
-    classifier = eval(config['classifier'])
-
 
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
