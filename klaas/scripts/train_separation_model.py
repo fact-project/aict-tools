@@ -84,6 +84,12 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
 
+    telescope_type_column = config.get('telescope_type_key', None)
+    if telescope_type_column:
+        if telescope_type_column not in columns_to_read:
+            columns_to_read.append(telescope_type_column)
+
+
     log.info('Loading signal data')
     df_signal = read_and_sample_data(signal_path, key, columns_to_read, n_signal)
     df_signal['label_text'] = 'signal'
@@ -138,11 +144,14 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
         y_probas = classifier.predict_proba(xtest)[:, 1]
         y_prediction = classifier.predict(xtest)
+
+        telescope_types = df_full.iloc[test][telescope_type_column] if telescope_type_column else 0
         cv_predictions.append(pd.DataFrame({
             'label': ytest,
             'label_prediction': y_prediction,
             'probabilities': y_probas,
             'cv_fold': fold,
+            'telescope_type': telescope_types
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
