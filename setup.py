@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='klaas',
-    version='0.3.1',
+    version='0.3.2',
     description='KLAssification And regression Scripts.  yay',
     url='https://github.com/fact-project/klaas',
     author='Kai Brügge',
@@ -28,7 +28,7 @@ setup(
         'scikit-learn==0.18.1',
         'joblib',
         'tqdm',
-        'pyfact>=0.9.2',
+        'pyfact>=0.12.0',
     ],
     zip_safe=False,
     entry_points={
