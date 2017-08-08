@@ -122,3 +122,65 @@ def test_apply_separator():
         if result.exit_code != 0:
             print(result.output)
         assert result.exit_code == 0
+
+
+def test_train_disp():
+    from klaas.scripts.train_disp_regressor import main as train
+
+    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+
+        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+
+        runner = CliRunner()
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_source.yaml',
+                'examples/signal.hdf',
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+        assert result.exit_code == 0
+
+
+def test_apply_disp():
+    from klaas.scripts.train_disp_regressor import main as train
+    from klaas.scripts.apply_disp_regressor import main as apply_model
+
+    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+
+        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+
+        runner = CliRunner()
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_source.yaml',
+                'examples/signal.hdf',
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            apply_model,
+            [
+                'examples/config_source.yaml',
+                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+                '--yes',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+        assert result.exit_code == 0
