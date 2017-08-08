@@ -1,6 +1,7 @@
 import click
 import numpy as np
 import logging
+import os
 
 from fact.io import read_data, write_data
 import warnings
@@ -71,11 +72,15 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
         all_idx = np.arange(len(data))
         selected = np.random.choice(all_idx, size=n, replace=False)
         
-        if fmt in ['hdf5', 'hdf', 'h5']:
-            path = output_basename + '_' + part_name + '.hdf5'
-            write_data(data.iloc[selected], path, key=key, use_hp5y=True)
+        base_path = os.path.dirname(input_path)
+        if fmt == ['hdf5', 'hdf', 'h5']:
+            file_name = output_basename + '_' + part_name + '.hdf5'
+            output_path = os.path.join(base_path, file_name)
+            write_data(data.iloc[selected], output_path, key=key, use_hp5y=True)
 
         elif fmt == 'csv':
-            data.iloc[selected].to_csv(output_basename + '_' + part_name + '.csv')
+            file_name = output_basename + '_' + part_name + '.csv'
+            output_path = os.path.join(base_path, file_name)
+            data.iloc[selected].to_csv(output_path)
 
         data = data.iloc[list(set(all_idx) - set(selected))]
