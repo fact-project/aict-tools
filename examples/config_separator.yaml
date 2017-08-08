@@ -1,4 +1,5 @@
-# hmm realy tasty config for realy tasty classification stuff
+#Configuration file for model training and application.
+
 #the classifier to use
 classifier : |
   ensemble.RandomForestClassifier(
@@ -16,8 +17,6 @@ n_signal: 500
 
 # define the number of cross validations to perform
 n_cross_validations : 5
-
-true_energy: corsika_evt_header_total_energy
 
 # Define the name of the category you want to find. The default is 'gamma'.
 # It will be written as <class_name>_prediction into the file when applying the model.
@@ -38,7 +37,7 @@ training_variables:
 
 # Generate some features using pd.DataFrame.eval
 # List all keys that have to be read from the input files
-# in needed keys. 
+# in needed keys.
 # features must be a mapping of feature name -> expression
 feature_generation:
   needed_keys:

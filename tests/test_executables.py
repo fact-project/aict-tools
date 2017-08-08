@@ -88,7 +88,7 @@ def test_train_separator():
 
 def test_apply_separator():
     from klaas.scripts.train_separation_model import main as train
-    from klaas.scripts.apply_separation_model import main
+    from klaas.scripts.apply_separation_model import main as apply_model
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
@@ -110,7 +110,7 @@ def test_apply_separator():
         assert result.exit_code == 0
 
         result = runner.invoke(
-            main,
+            apply_model,
             [
                 'examples/config_separator.yaml',
                 os.path.join(d, 'signal.hdf'),
