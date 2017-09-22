@@ -53,6 +53,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         'theta',
         'theta_deg',
         'theta_rec_pos',
+        'disp_prediction',
     ]
     for i in range(1, 6):
         columns_to_delete.extend([
@@ -149,14 +150,16 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
                 f[key]['theta_deg'][start:end] = camera_distance_mm_to_deg(theta)
                 f[key]['reconstructed_source_position'].resize(n_existing + n_new, axis=0)
                 f[key]['reconstructed_source_position'][start:end, :] = source_pos
+                f[key]['disp_prediction'].resize(n_existing + n_new, axis=0)
+                f[key]['disp_prediction'][start:end] = disp * sign
 
                 for i in range(1, 6):
                     f[key]['theta_off_' + str(i)].resize(n_existing + n_new, axis=0)
                     f[key]['theta_off_' + str(i)][start:end] = theta_offs[i]
 
-                    f[key]['theta_deg_off_' + str(i)].resize(n_existing + n_new, axis=0)
-                    f[key]['theta_deg_off_' + str(i)][start:end] = camera_distance_mm_to_deg(theta_offs[i])
-
+                    col = 'theta_deg_off_' + str(i)
+                    f[key][col].resize(n_existing + n_new, axis=0)
+                    f[key][col][start:end] = camera_distance_mm_to_deg(theta_offs[i])
             else:
                 f[key].create_dataset('theta', data=theta, maxshape=(None, ))
                 f[key].create_dataset(
@@ -169,6 +172,12 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
                     data=source_pos,
                     maxshape=(None, 2),
                 )
+                f[key].create_dataset(
+                    'disp_prediction',
+                    data=disp * sign,
+                    maxshape=(None, )
+                )
+
                 for i in range(1, 6):
                     f[key].create_dataset(
                         'theta_off_' + str(i),
