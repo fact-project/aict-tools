@@ -48,8 +48,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     training_variables = config['training_variables']
 
     columns_to_delete = [
-        'reconstructed_source_position_x',
-        'reconstructed_source_position_y',
+        'reconstructed_source_position',
         'theta',
         'theta_deg',
         'theta_rec_pos',
