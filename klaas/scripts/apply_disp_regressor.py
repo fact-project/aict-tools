@@ -108,14 +108,12 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         df_data[training_variables] = convert_to_float32(df_data[training_variables])
         valid = check_valid_rows(df_data[training_variables])
 
-        rec_pos = np.full((len(df_data), 2), np.nan)
-
         disp = disp_model.predict(df_data.loc[valid, training_variables])
         sign = sign_model.predict(df_data.loc[valid, training_variables])
 
-        rec_pos = np.empty((len(df_data), 2))
-        rec_pos[:, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
-        rec_pos[:, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
+        rec_pos = np.full((len(df_data), 2), np.nan)
+        rec_pos[valid, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
+        rec_pos[valid, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
 
         source_pos = df_data.loc[:, ['source_position_0', 'source_position_1']].values
         theta = np.linalg.norm(rec_pos - source_pos, axis=1)
