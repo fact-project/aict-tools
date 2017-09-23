@@ -12,10 +12,6 @@ from ..preprocessing import convert_to_float32, check_valid_rows
 from ..feature_generation import feature_generation
 
 
-def euclidean_distance(x1, y1, x2, y2):
-    return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
-
-
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
@@ -112,30 +108,23 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         df_data[training_variables] = convert_to_float32(df_data[training_variables])
         valid = check_valid_rows(df_data[training_variables])
 
-        source_pos = np.full((len(df_data), 2), np.nan)
+        rec_pos = np.full((len(df_data), 2), np.nan)
 
         disp = disp_model.predict(df_data.loc[valid, training_variables])
         sign = sign_model.predict(df_data.loc[valid, training_variables])
 
-        source_pos = np.empty((len(df_data), 2))
-        source_pos[:, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
-        source_pos[:, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
+        rec_pos = np.empty((len(df_data), 2))
+        rec_pos[:, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
+        rec_pos[:, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
 
-        theta = euclidean_distance(
-            source_pos[:, 0],
-            source_pos[:, 1],
-            df_data['source_position_0'].values,
-            df_data['source_position_1'].values,
-        )
+        source_pos = df_data.loc[:, ['source_position_0', 'source_position_1']].values
+        theta = np.linalg.norm(rec_pos - source_pos, axis=1)
 
         theta_offs = {}
         for i in range(1, 6):
-            theta_offs[i] = euclidean_distance(
-                source_pos[:, 0],
-                source_pos[:, 1],
-                df_data['anti_source_position_{}_0'.format(i)].values,
-                df_data['anti_source_position_{}_1'.format(i)].values,
-            )
+            cols = ['anti_source_position_{}_{}'.format(i, j) for j in range(2)]
+            off_pos = df_data.loc[:, cols].values
+            theta_offs[i] = np.linalg.norm(rec_pos - off_pos, axis=1)
 
         with h5py.File(data_path, 'r+') as f:
             if 'theta' in f[key].keys():
@@ -148,7 +137,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
                 f[key]['theta_deg'].resize(n_existing + n_new, axis=0)
                 f[key]['theta_deg'][start:end] = camera_distance_mm_to_deg(theta)
                 f[key]['reconstructed_source_position'].resize(n_existing + n_new, axis=0)
-                f[key]['reconstructed_source_position'][start:end, :] = source_pos
+                f[key]['reconstructed_source_position'][start:end, :] = rec_pos
                 f[key]['disp_prediction'].resize(n_existing + n_new, axis=0)
                 f[key]['disp_prediction'][start:end] = disp * sign
 
@@ -168,7 +157,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
                 )
                 f[key].create_dataset(
                     'reconstructed_source_position',
-                    data=source_pos,
+                    data=rec_pos,
                     maxshape=(None, 2),
                 )
                 f[key].create_dataset(
