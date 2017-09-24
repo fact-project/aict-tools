@@ -10,6 +10,7 @@ from fact.io import read_h5py_chunked
 from fact.instrument import camera_distance_mm_to_deg
 from ..preprocessing import convert_to_float32, check_valid_rows
 from ..feature_generation import feature_generation
+from ..io import append_to_h5py
 
 
 @click.command()
@@ -125,56 +126,15 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
             theta_offs[i] = np.linalg.norm(rec_pos - off_pos, axis=1)
 
         with h5py.File(data_path, 'r+') as f:
-            if 'theta' in f[key].keys():
+            append_to_h5py(f, theta, key, 'theta')
+            append_to_h5py(f, camera_distance_mm_to_deg(theta), key, 'theta_deg')
+            append_to_h5py(f, rec_pos, key, 'reconstructed_source_position')
+            append_to_h5py(f, disp * sign, key, 'disp_prediction')
 
-                n_existing = f[key]['theta'].shape[0]
-                n_new = theta.shape[0]
-
-                f[key]['theta'].resize(n_existing + n_new, axis=0)
-                f[key]['theta'][start:end] = theta
-                f[key]['theta_deg'].resize(n_existing + n_new, axis=0)
-                f[key]['theta_deg'][start:end] = camera_distance_mm_to_deg(theta)
-                f[key]['reconstructed_source_position'].resize(n_existing + n_new, axis=0)
-                f[key]['reconstructed_source_position'][start:end, :] = rec_pos
-                f[key]['disp_prediction'].resize(n_existing + n_new, axis=0)
-                f[key]['disp_prediction'][start:end] = disp * sign
-
-                for i in range(1, 6):
-                    f[key]['theta_off_' + str(i)].resize(n_existing + n_new, axis=0)
-                    f[key]['theta_off_' + str(i)][start:end] = theta_offs[i]
-
-                    col = 'theta_deg_off_' + str(i)
-                    f[key][col].resize(n_existing + n_new, axis=0)
-                    f[key][col][start:end] = camera_distance_mm_to_deg(theta_offs[i])
-            else:
-                f[key].create_dataset('theta', data=theta, maxshape=(None, ))
-                f[key].create_dataset(
-                    'theta_deg',
-                    data=camera_distance_mm_to_deg(theta),
-                    maxshape=(None, )
-                )
-                f[key].create_dataset(
-                    'reconstructed_source_position',
-                    data=rec_pos,
-                    maxshape=(None, 2),
-                )
-                f[key].create_dataset(
-                    'disp_prediction',
-                    data=disp * sign,
-                    maxshape=(None, )
-                )
-
-                for i in range(1, 6):
-                    f[key].create_dataset(
-                        'theta_off_' + str(i),
-                        data=theta_offs[i],
-                        maxshape=(None, ),
-                    )
-                    f[key].create_dataset(
-                        'theta_deg_off_' + str(i),
-                        data=camera_distance_mm_to_deg(theta_offs[i]),
-                        maxshape=(None, ),
-                    )
+            for i in range(1, 6):
+                append_to_h5py(f, theta_offs[i], key, 'theta_off_' + str(i))
+                col = 'theta_deg_off_' + str(i)
+                append_to_h5py(f, camera_distance_mm_to_deg(theta_offs[i]),  key, col)
 
 
 if __name__ == '__main__':
