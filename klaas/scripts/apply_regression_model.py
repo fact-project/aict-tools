@@ -7,8 +7,10 @@ import h5py
 from tqdm import tqdm
 
 from fact.io import read_h5py_chunked
+
 from ..preprocessing import convert_to_float32, check_valid_rows
 from ..feature_generation import feature_generation
+from ..io import append_to_h5py
 
 
 @click.command()
@@ -103,23 +105,8 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
         energy_prediction_std[valid.values] = np.std(predictions, axis=0)
 
         with h5py.File(data_path, 'r+') as f:
-            if class_name in f[key].keys():
-
-                n_existing = f[key][class_name].shape[0]
-                n_new = energy_prediction.shape[0]
-
-                f[key][class_name].resize(n_existing + n_new, axis=0)
-                f[key][class_name][start:end] = energy_prediction
-
-                f[key]['{}_std'.format(class_name)].resize(n_existing + n_new, axis=0)
-                f[key]['{}_std'.format(class_name)][start:end] = energy_prediction_std
-            else:
-                f[key].create_dataset(
-                    class_name, data=energy_prediction, maxshape=(None, )
-                )
-                f[key].create_dataset(
-                    '{}_std'.format(class_name), data=energy_prediction_std, maxshape=(None, )
-                )
+            append_to_h5py(f, energy_prediction, key, class_name)
+            append_to_h5py(f, energy_prediction_std, key, class_name + '_std')
 
 
 if __name__ == '__main__':
