@@ -109,8 +109,10 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         df_data[training_variables] = convert_to_float32(df_data[training_variables])
         valid = check_valid_rows(df_data[training_variables])
 
+        disp_prediction = np.full(len(df_data), np.nan)
         disp = disp_model.predict(df_data.loc[valid, training_variables])
         sign = sign_model.predict(df_data.loc[valid, training_variables])
+        disp_prediction[valid] = disp * sign
 
         rec_pos = np.full((len(df_data), 2), np.nan)
         rec_pos[valid, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
@@ -129,7 +131,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
             append_to_h5py(f, theta, key, 'theta')
             append_to_h5py(f, camera_distance_mm_to_deg(theta), key, 'theta_deg')
             append_to_h5py(f, rec_pos, key, 'reconstructed_source_position')
-            append_to_h5py(f, disp * sign, key, 'disp_prediction')
+            append_to_h5py(f, disp_prediction, key, 'disp_prediction')
 
             for i in range(1, 6):
                 append_to_h5py(f, theta_offs[i], key, 'theta_off_' + str(i))
