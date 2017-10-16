@@ -24,7 +24,7 @@ Alternatively you can clone the repo, `cd` into the folder and do the usual `pip
 
 For each task, there are two executables, installed to your `PATH`.
 Each take `yaml` configuration files and `h5py` style hdf5 files as input.
-The models are saved as `pickle` using `joblib` and/or `pmmml`.
+The models are saved as `pickle` using `joblib` and/or `pmml` using `sklearn2pmml`.
  
 * `klass_train_<...>`   
   This script is used to train a model on events with known truth
