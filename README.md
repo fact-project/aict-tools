@@ -12,10 +12,12 @@ As of version `0.4.0`, all three tasks of gamma-ray astronomy can be solved usin
 
 # Installation
 
-Then you can install the classifiertools by:
-`pip install https://github.com/fact-project/classifier-tools/archive/v0.4.0.tar.gz`
+Then you can install the classifier-tools by:
+```
+pip install https://github.com/fact-project/classifier-tools/archive/v0.4.0.tar.gz
+```
 
-Alternatively you can clone the repo, `cd` into the folder and do `pip install -r requirements.txt` and then the usual `pip install .` dance.
+Alternatively you can clone the repo, `cd` into the folder and do and then the usual `pip install .` dance.
 
 
 # Usage 

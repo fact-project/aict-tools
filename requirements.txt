@@ -1,1 +1,0 @@
-https://github.com/jpmml/sklearn2pmml/archive/0.20.0.tar.gz
