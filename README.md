@@ -17,7 +17,7 @@ Then you can install the classifier-tools by:
 pip install https://github.com/fact-project/classifier-tools/archive/v0.4.0.tar.gz
 ```
 
-Alternatively you can clone the repo, `cd` into the folder and do and then the usual `pip install .` dance.
+Alternatively you can clone the repo, `cd` into the folder and do the usual `pip install .` dance.
 
 
 # Usage 
