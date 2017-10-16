@@ -2,12 +2,12 @@ from setuptools import setup
 
 setup(
     name='klaas',
-    version='0.3.1',
+    version='0.4.0',
     description='KLAssification And regression Scripts.  yay',
     url='https://github.com/fact-project/klaas',
-    author='Kai Brügge',
+    author='Kai Brügge, Maximilian Nöthe, Jens Buss',
     author_email='kai.bruegge@tu-dortmund.de',
-    license='BEER',
+    license='MIT',
     packages=[
         'klaas',
         'klaas.scripts',
@@ -15,20 +15,21 @@ setup(
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
-        'pandas',           # in anaconda
-        'numpy',            # in anaconda
+        'click',
+        'h5py',
+        'joblib',
         'matplotlib>=2.0',  # in anaconda
+        'numexpr',
+        'numpy',            # in anaconda
+        'pandas',           # in anaconda
+        'pyfact>=0.13.0',
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
-        'tables',           # needs to be installed by pip for some reason
-        'h5py',
-        'click',
-        'numexpr',
         'scikit-learn==0.18.1',
-        'joblib',
+        'sklearn2pmml',
+        'tables',           # needs to be installed by pip for some reason
         'tqdm',
-        'pyfact>=0.9.2',
     ],
     zip_safe=False,
     entry_points={
