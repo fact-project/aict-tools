@@ -35,8 +35,11 @@ import warnings
     '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
     help='The output format',
 )
+@click.option(
+    '--use-h5py', is_flag=True, help='Write h5py output files',
+)
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_h5py, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -73,7 +76,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, verbose):
         
         if fmt in ['hdf5', 'hdf', 'h5']:
             path = output_basename + '_' + part_name + '.hdf5'
-            write_data(data.iloc[selected], path, key=key, use_hp5y=True)
+            write_data(data.iloc[selected], path, key=key, use_hp5y=use_h5py)
 
         elif fmt == 'csv':
             data.iloc[selected].to_csv(output_basename + '_' + part_name + '.csv')

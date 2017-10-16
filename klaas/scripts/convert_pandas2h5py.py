@@ -35,12 +35,17 @@ def main(inputfile, outputfile, input_key, output_key, verbose):
         for column, data in df.items():
 
             if data.dtype == object:
+                log.debug('Columns has dtype object: {}'.format(column))
 
                 if isinstance(data.iloc[0], str):
-                    array = data.astype('S')
-                    g.create_dataset(column, data=array, maxshape=(None, ))
+                    log.debug('Columns is str: {}'.format(column))
+                    dt = h5py.special_dtype(vlen=str)
+                    g.create_dataset(
+                        column, data=data.values, dtype=dt, maxshape=(None, )
+                    )
 
                 elif isinstance(data.iloc[0], list):
+                    log.debug('Columns is list: {}'.format(column))
                     array = np.array([o for o in data.values])
                     shape = list(array.shape)
                     shape[0] = None
