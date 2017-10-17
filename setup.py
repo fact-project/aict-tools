@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='klaas',
-    version='0.4.0',
+    version='0.4.1',
     description='KLAssification And regression Scripts.  yay',
     url='https://github.com/fact-project/klaas',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
@@ -26,7 +26,7 @@ setup(
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
-        'scikit-learn==0.18.1',
+        'scikit-learn==0.19.0',
         'sklearn2pmml',
         'tables',           # needs to be installed by pip for some reason
         'tqdm',
