@@ -7,7 +7,6 @@ import h5py
 from tqdm import tqdm
 
 from fact.io import read_h5py_chunked
-from fact.instrument import camera_distance_mm_to_deg
 from ..preprocessing import convert_to_float32, check_valid_rows
 from ..feature_generation import feature_generation
 from ..io import append_to_h5py
@@ -45,7 +44,8 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     training_variables = config['training_variables']
 
     columns_to_delete = [
-        'reconstructed_source_position',
+        'source_x_prediction',
+        'source_y_prediction',
         'theta',
         'theta_deg',
         'theta_rec_pos',
@@ -118,7 +118,8 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         rec_pos[valid, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
 
         with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, rec_pos, key, 'source_position_prediction')
+            append_to_h5py(f, rec_pos[:, 0], key, 'source_x_prediction')
+            append_to_h5py(f, rec_pos[:, 1], key, 'source_y_prediction')
             append_to_h5py(f, disp_prediction, key, 'disp_prediction')
 
 
