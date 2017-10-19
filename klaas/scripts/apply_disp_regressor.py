@@ -83,8 +83,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     if generation_config:
         columns_to_read.extend(generation_config['needed_keys'])
 
-    columns_to_read.extend(['source_position', 'cog_x', 'cog_y', 'delta'])
-    columns_to_read.extend('anti_source_position_{}'.format(i) for i in range(1, 6))
+    columns_to_read.extend(['cog_x', 'cog_y', 'delta'])
 
     df_generator = read_h5py_chunked(
         data_path,
@@ -118,25 +117,9 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         rec_pos[valid, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
         rec_pos[valid, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
 
-        source_pos = df_data.loc[:, ['source_position_0', 'source_position_1']].values
-        theta = np.linalg.norm(rec_pos - source_pos, axis=1)
-
-        theta_offs = {}
-        for i in range(1, 6):
-            cols = ['anti_source_position_{}_{}'.format(i, j) for j in range(2)]
-            off_pos = df_data.loc[:, cols].values
-            theta_offs[i] = np.linalg.norm(rec_pos - off_pos, axis=1)
-
         with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, theta, key, 'theta')
-            append_to_h5py(f, camera_distance_mm_to_deg(theta), key, 'theta_deg')
-            append_to_h5py(f, rec_pos, key, 'reconstructed_source_position')
+            append_to_h5py(f, rec_pos, key, 'source_position_prediction')
             append_to_h5py(f, disp_prediction, key, 'disp_prediction')
-
-            for i in range(1, 6):
-                append_to_h5py(f, theta_offs[i], key, 'theta_off_' + str(i))
-                col = 'theta_deg_off_' + str(i)
-                append_to_h5py(f, camera_distance_mm_to_deg(theta_offs[i]),  key, col)
 
 
 if __name__ == '__main__':
