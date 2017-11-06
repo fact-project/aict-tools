@@ -1,0 +1,37 @@
+disp_regressor : |
+  ensemble.RandomForestRegressor(
+      n_estimators=30,
+      max_features='sqrt',
+      n_jobs=-1,
+      max_depth=20,
+  )
+
+sign_classifier: |
+  ensemble.RandomForestClassifier(
+      n_estimators=30,
+      max_features='sqrt',
+      n_jobs=-1,
+      max_depth=20,
+  )
+
+
+
+# randomly sample the data if you dont want to use the whole set
+n_signal : 500
+
+# define th number of cross validations to perform
+n_cross_validations : 5
+
+training_variables:
+  - conc_cog
+  - conc_core
+  - delta
+  - disp
+  - leakage
+  - leakage2
+  - length
+  - m3l
+  - m3t
+  - num_islands
+  - size
+  - width

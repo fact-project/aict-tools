@@ -6,9 +6,11 @@ import h5py
 from tqdm import tqdm
 
 from fact.io import read_h5py_chunked
+
 from ..features import find_used_source_features
 from ..apply import predict, predict_off_positions
 from ..feature_generation import feature_generation
+from ..io import append_to_h5py
 
 
 @click.command()
@@ -117,15 +119,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         signal_prediction = predict(df_data, model, training_variables)
 
         with h5py.File(data_path, 'r+') as f:
-            if prediction_column_name in f[key].keys():
-                n_existing = f[key][prediction_column_name].shape[0]
-                n_new = signal_prediction.shape[0]
-                f[key][prediction_column_name].resize(n_existing + n_new, axis=0)
-                f[key][prediction_column_name][start:end] = signal_prediction
-            else:
-                f[key].create_dataset(
-                    prediction_column_name, data=signal_prediction, maxshape=(None, )
-                )
+            append_to_h5py(f, signal_prediction, key, prediction_column_name)
 
         if len(used_source_features) > 0:
             background_predictions = predict_off_positions(
@@ -139,15 +133,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
             with h5py.File(data_path) as f:
                 for region in range(1, 6):
                     name = '{}_off_{}'.format(prediction_column_name, region)
-                    if name in f[key].keys():
-                        n_existing = f[key][name].shape[0]
-                        n_new = background_predictions[name].shape[0]
-                        f[key][name].resize(n_existing + n_new, axis=0)
-                        f[key][name][start:end] = background_predictions[name]
-                    else:
-                        f[key].create_dataset(
-                            name, data=background_predictions[name], maxshape=(None, )
-                        )
+                    append_to_h5py(f, background_predictions[name], key, name)
 
 
 if __name__ == '__main__':

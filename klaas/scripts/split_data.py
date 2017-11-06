@@ -43,8 +43,11 @@ import warnings
     '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
     help='The output format',
 )
+@click.option(
+    '--use-h5py', is_flag=True, help='Write h5py output files',
+)
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_h5py, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -88,9 +91,10 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
             selected_data = data.loc[selected_ids]
 
         if fmt in ['hdf5', 'hdf', 'h5']:
-            filename = output_basename + '_' + part_name + '.hdf5'
+            path = output_basename + '_' + part_name + '.hdf5'
             log.info('Writing {} telescope-array events to: {}'.format(n, filename))
-            write_data(selected_data, filename, key=key, use_hp5y=True)
+            write_data(selected_data, path, key=key, use_hp5y=use_h5py)
+
 
         elif fmt == 'csv':
             filename = output_basename + '_' + part_name + '.csv'

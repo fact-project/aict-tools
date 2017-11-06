@@ -5,7 +5,7 @@ from tqdm import tqdm
 import h5py
 import logging
 
-from fact.io import read_data, write_data, h5py_get_n_rows
+from fact.io import read_data, h5py_get_n_rows
 from ..apply import create_mask_h5py, apply_cuts_h5py_chunked, build_query
 
 
