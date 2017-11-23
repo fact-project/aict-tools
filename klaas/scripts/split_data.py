@@ -36,10 +36,10 @@ import warnings
     help='The output format',
 )
 @click.option(
-    '--use-h5py', is_flag=True, help='Write h5py output files',
+    '--use-pandas', is_flag=True, help='Write pandas hdf5 output files',
 )
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_h5py, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_pandas, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -49,7 +49,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_h5py,
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
     log.debug("input_path: {}".format(input_path))
-    
+
     if fmt in ['hdf5', 'hdf', 'h5']:
         data = read_data(input_path, key=inkey)
     elif fmt == 'csv':
@@ -73,10 +73,10 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_h5py,
 
         all_idx = np.arange(len(data))
         selected = np.random.choice(all_idx, size=n, replace=False)
-        
+
         if fmt in ['hdf5', 'hdf', 'h5']:
             path = output_basename + '_' + part_name + '.hdf5'
-            write_data(data.iloc[selected], path, key=key, use_hp5y=use_h5py)
+            write_data(data.iloc[selected], path, key=key, use_hp5y=not use_pandas)
 
         elif fmt == 'csv':
             data.iloc[selected].to_csv(output_basename + '_' + part_name + '.csv')
