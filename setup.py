@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='klaas',
-    version='0.6.0',
+    version='0.7.0',
     description='KLAssification And regression Scripts.  yay',
     url='https://github.com/fact-project/klaas',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
