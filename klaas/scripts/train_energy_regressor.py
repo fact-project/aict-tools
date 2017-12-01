@@ -44,7 +44,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    config.get('seed', 0)
+    seed = config.get('seed', 0)
     np.random.seed(seed)
 
     n_signal = config.get('n_signal')
