@@ -44,6 +44,9 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
     with open(configuration_path) as f:
         config = yaml.load(f)
 
+    config.get('seed', 0)
+    np.random.seed(seed)
+
     n_signal = config.get('n_signal')
 
     n_cross_validations = config['n_cross_validations']
@@ -53,6 +56,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
     log_target = config.get('log_target', False)
 
     regressor = eval(config['regressor'])
+    regressor.random_state = seed
 
     columns_to_read = training_variables + [target_name]
 
@@ -81,7 +85,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     if n_signal:
         log.info('Sampling {} random events'.format(n_signal))
-        df_train = df_train.sample(n_signal)
+        df_train = df_train.sample(n_signal, random_state=seed)
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
@@ -95,7 +99,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
     scores = []
     cv_predictions = []
 
-    kfold = model_selection.KFold(n_splits=n_cross_validations, shuffle=True)
+    kfold = model_selection.KFold(n_splits=n_cross_validations, shuffle=True, random_state=seed)
 
     for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):
 

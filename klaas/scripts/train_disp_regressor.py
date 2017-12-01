@@ -54,6 +54,10 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     with open(configuration_path) as f:
         config = yaml.load(f)
 
+    seed = config.get('seed', 0)
+
+    np.random.seed(seed)
+
     n_signal = config.get('n_signal')
 
     n_cross_validations = config['n_cross_validations']
@@ -61,6 +65,9 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     disp_regressor = eval(config['disp_regressor'])
     sign_classifier = eval(config['sign_classifier'])
+
+    disp_regressor.random_state = seed
+    sign_classifier.random_state = seed
 
     az_source_col = config.get('source_azimuth_column', 'az_source')
     zd_source_col = config.get('source_zenith_column', 'zd_source')
@@ -113,7 +120,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     if n_signal:
         log.info('Sampling {} random events'.format(n_signal))
-        df_train = df_train.sample(n_signal)
+        df_train = df_train.sample(n_signal, random_state=seed)
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
@@ -125,7 +132,11 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     scores_sign = []
     cv_predictions = []
 
-    kfold = model_selection.KFold(n_splits=n_cross_validations, shuffle=True)
+    kfold = model_selection.KFold(
+        n_splits=n_cross_validations,
+        shuffle=True,
+        random_state=seed,
+    )
 
     for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):
 

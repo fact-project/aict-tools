@@ -23,23 +23,25 @@ import warnings
     '-i',
     '--inkey',
     help='HDF5 key for pandas or h5py hdf5 of the input file',
-    default='events'
+    default='events', show_default=True,
 )
 @click.option(
     '--key',
     '-k',
     help='Name for the hdf5 group in the output',
-    default='events'
+    default='events',
+    show_default=True,
 )
 @click.option(
     '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
-    help='The output format',
+    show_default=True, help='The output format',
 )
 @click.option(
     '--use-pandas', is_flag=True, help='Write pandas hdf5 output files',
 )
+@click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_pandas, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_pandas, seed, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -49,6 +51,8 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_panda
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
     log.debug("input_path: {}".format(input_path))
+
+    np.random.seed(seed)
 
     if fmt in ['hdf5', 'hdf', 'h5']:
         data = read_data(input_path, key=inkey)
