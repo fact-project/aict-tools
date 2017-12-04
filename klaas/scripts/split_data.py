@@ -44,10 +44,10 @@ import warnings
     help='The output format',
 )
 @click.option(
-    '--use-h5py', is_flag=True, help='Write h5py output files',
+    '--use-pandas', is_flag=True, help='Write pandas hdf5 output files',
 )
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_h5py, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_pandas, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -68,18 +68,18 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
     if sum(fraction) != 1:
         warnings.warn('Fractions do not sum up to 1')
 
-    n_total = len(data)
+    # set the ids we can split by to be either telescope events or array-wide events
     ids = data.index.values
-
+    n_total = len(data)
     if event_id_key:
         ids = data[event_id_key].unique()
         n_total = len(ids)
+        log.info('Found {} telescope-array events'.format(n_total))
 
-    log.info('Found {} telescope-array events'.format(n_total))
     log.info('Found a total of {} single-telescope events in the file'.format(len(data)))
 
+    # find number of events in each split. The last split may contain less events.
     num_ids = [int(round(n_total * f)) for f in fraction]
-
     if sum(num_ids) > n_total:
         num_ids[-1] -= sum(num_ids) - n_total
 
@@ -92,9 +92,8 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
 
         if fmt in ['hdf5', 'hdf', 'h5']:
             path = output_basename + '_' + part_name + '.hdf5'
-            log.info('Writing {} telescope-array events to: {}'.format(n, filename))
-            write_data(selected_data, path, key=key, use_hp5y=use_h5py)
-
+            log.info('Writing {} telescope-array events to: {}'.format(n, path))
+            write_data(selected_data, path, key=key, use_hp5y=not use_pandas)
 
         elif fmt == 'csv':
             filename = output_basename + '_' + part_name + '.csv'

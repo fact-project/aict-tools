@@ -14,7 +14,7 @@ from ..apply import create_mask_h5py, apply_cuts_h5py_chunked, build_query
 @click.argument('input_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output_path', type=click.Path(exists=False, dir_okay=False))
 @click.option(
-    '-h', '--hdf-style', default='pandas', type=click.Choice(['pandas', 'h5py']),
+    '-h', '--hdf-style', default='h5py', type=click.Choice(['pandas', 'h5py']),
     help='Wether to use pandas or h5py for the output file'
 )
 @click.option('-N', '--chunksize', type=int, help='Chunksize to use')

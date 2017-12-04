@@ -14,6 +14,10 @@ sign_classifier: |
       max_depth=20,
   )
 
+source_azimuth_column: az_source_calc
+source_zenith_column: zd_source_calc
+pointing_azimuth_column: az_tracking
+pointing_zenith_column: zd_tracking
 
 
 # randomly sample the data if you dont want to use the whole set

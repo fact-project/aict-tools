@@ -8,6 +8,7 @@ import yaml
 from sklearn import ensemble
 
 from fact.io import write_data, read_data
+from fact.coordinates.utils import horizontal_to_camera
 from ..io import pickle_model
 from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
@@ -61,8 +62,15 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     disp_regressor = eval(config['disp_regressor'])
     sign_classifier = eval(config['sign_classifier'])
 
+    az_source_col = config.get('source_azimuth_column', 'az_source')
+    zd_source_col = config.get('source_zenith_column', 'zd_source')
+    az_pointing_col = config.get('pointing_azimuth_column', 'az_tracking')
+    zd_pointing_col = config.get('pointing_zenith_column', 'zd_tracking')
+
     columns_to_read = training_variables + [
-        'source_position', 'cog_x', 'cog_y', 'delta'
+        'cog_x', 'cog_y', 'delta',
+        az_source_col, zd_source_col,
+        az_pointing_col, zd_pointing_col
     ]
 
     # Also read columns needed for feature generation
@@ -76,18 +84,21 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         key=key,
         columns=columns_to_read,
     )
-
     log.info('Total number of events: {}'.format(len(df)))
+
+    source_x, source_y = horizontal_to_camera(
+        az=df[az_source_col], zd=df[zd_source_col],
+        az_pointing=df[az_pointing_col], zd_pointing=df[zd_pointing_col],
+    )
+
     df['true_disp'] = euclidean_distance(
-        df.source_position_0,
-        df.source_position_1,
-        df.cog_x,
-        df.cog_y
+        source_x, source_y,
+        df.cog_x, df.cog_y
     )
 
     true_delta = np.arctan2(
-        df.cog_y - df.source_position_1,
-        df.cog_x - df.source_position_0,
+        df.cog_y - source_y,
+        df.cog_x - source_x,
     )
     df['true_sign'] = np.sign(np.abs(df.delta - true_delta) - np.pi / 2)
 
