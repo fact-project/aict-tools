@@ -18,7 +18,11 @@ logging.basicConfig()
 log = logging.getLogger()
 
 
-def read_and_sample_data(path, key, columns_to_read, n_sample):
+def read_and_sample_data(path, key, columns_to_read, n_sample=None):
+    '''
+    Read given columns from data and perform a random sample if n_sample is supplied.
+    Returns a single pandas data frame
+    '''
     df = read_data(
         file_path=path,
         key=key,
@@ -39,7 +43,7 @@ def read_and_sample_data(path, key, columns_to_read, n_sample):
 
 def read_config(configuration_path):
     '''
-    Read and return the values from the configuration file
+    Read and return the values from the configuration file as a tuple
     '''
     with open(configuration_path) as f:
         config = yaml.load(f)
