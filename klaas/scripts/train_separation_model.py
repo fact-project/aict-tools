@@ -62,7 +62,7 @@ def read_config(configuration_path):
 
     seed = config.get('seed', 0)
 
-    np.random.seed = seed
+    np.random.seed(seed)
     classifier.random_state = seed
 
     return (n_background, n_signal, n_cross_validations, training_variables, classifier,
