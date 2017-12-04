@@ -14,6 +14,11 @@ sign_classifier: |
       max_depth=20,
   )
 
+
+# seed for the random number generators, to make things reproducible
+seed: 0
+
+# columns containing coordinates of the source and of the pointing
 source_azimuth_column: az_source_calc
 source_zenith_column: zd_source_calc
 pointing_azimuth_column: az_tracking

@@ -60,8 +60,13 @@ def read_config(configuration_path):
 
     telescope_type_column = config.get('telescope_type_key', None)
 
+    seed = config.get('seed', 0)
+
+    np.random.seed = seed
+    classifier.random_state = seed
+
     return (n_background, n_signal, n_cross_validations, training_variables, classifier,
-            generation_config, telescope_type_column)
+            generation_config, telescope_type_column, seed)
 
 
 @click.command()
@@ -95,7 +100,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
     (n_background, n_signal, n_cross_validations, training_variables, classifier,
-        generation_config, telescope_type_column) = read_config(configuration_path)
+        generation_config, telescope_type_column, seed) = read_config(configuration_path)
 
     columns_to_read = [] + training_variables
 
@@ -148,7 +153,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log.info('Starting {} fold cross validation... '.format(n_cross_validations))
 
     stratified_kfold = model_selection.StratifiedKFold(
-        n_splits=n_cross_validations, shuffle=True,
+        n_splits=n_cross_validations, shuffle=True, random_state=seed
     )
 
     aucs = []
@@ -156,6 +161,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         # select data
         xtrain, xtest = X[train], X[test]
         ytrain, ytest = y[train], y[test]
+
         # fit and predict
         classifier.fit(xtrain, ytrain)
 
