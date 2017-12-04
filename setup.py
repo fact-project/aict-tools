@@ -26,7 +26,7 @@ setup(
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
-        'scikit-learn==0.19.0',
+        'scikit-learn==0.19.1',
         'sklearn2pmml',
         'tables',           # needs to be installed by pip for some reason
         'tqdm',
