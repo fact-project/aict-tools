@@ -4,6 +4,18 @@ import logging
 
 from fact.io import read_data, write_data
 import warnings
+from math import ceil
+
+
+def split_indices(idx, n_total, fractions):
+    '''
+    splits idx containing n_total distinct events into fractions given in fractions list.
+    returns the number of events in each split
+    '''
+    num_ids = [ceil(n_total * f) for f in fractions]
+    if sum(num_ids) > n_total:
+        num_ids[-1] -= sum(num_ids) - n_total
+    return num_ids
 
 
 @click.command()
@@ -33,6 +45,14 @@ import warnings
     show_default=True,
 )
 @click.option(
+    '--event_id_key',
+    '-d',
+    help='Name of the colum containing a unique id for each array-wide event.'
+         'If provided it will not split up rows that belong to the same event but to '
+         'different telescopes',
+    default=None
+)
+@click.option(
     '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
     show_default=True, help='The output format',
 )
@@ -41,7 +61,7 @@ import warnings
 )
 @click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_pandas, seed, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_pandas, seed, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -64,25 +84,39 @@ def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_panda
     if sum(fraction) != 1:
         warnings.warn('Fractions do not sum up to 1')
 
+    # set the ids we can split by to be either telescope events or array-wide events
+    ids = data.index.values
     n_total = len(data)
-    log.info('Found a total of {} events'.format(n_total))
 
-    num_events = [int(round(n_total * f)) for f in fraction]
+    if event_id_key:
+        ids = data[event_id_key].unique()
+        n_total = len(ids)
+        log.info('Found {} telescope-array events'.format(n_total))
 
-    if sum(num_events) > n_total:
-        num_events[-1] -= sum(num_events) - n_total
+    log.info('Found a total of {} single-telescope events in the file'.format(len(data)))
 
-    for n, part_name in zip(num_events, name):
-        log.info('{}: {}'.format(part_name, n))
+    num_ids = split_indices(ids, n_total, fractions=fraction)
 
-        all_idx = np.arange(len(data))
-        selected = np.random.choice(all_idx, size=n, replace=False)
+    for n, part_name in zip(num_ids, name):
+        selected_ids = np.random.choice(ids, size=n, replace=False)
+        if event_id_key:
+            selected_data = data.loc[data[event_id_key].isin(selected_ids)]
+        else:
+            selected_data = data.loc[selected_ids]
 
         if fmt in ['hdf5', 'hdf', 'h5']:
             path = output_basename + '_' + part_name + '.hdf5'
-            write_data(data.iloc[selected], path, key=key, use_hp5y=not use_pandas)
+            log.info('Writing {} telescope-array events to: {}'.format(n, path))
+            write_data(selected_data, path, key=key, use_hp5y=not use_pandas)
 
         elif fmt == 'csv':
-            data.iloc[selected].to_csv(output_basename + '_' + part_name + '.csv')
+            filename = output_basename + '_' + part_name + '.csv'
+            log.info('Writing {} telescope-array events to: {}'.format(n, filename))
+            selected_data.to_csv(filename, index=False)
 
-        data = data.iloc[list(set(all_idx) - set(selected))]
+        data = data.iloc[list(set(data.index.values) - set(selected_data.index))]
+
+        if event_id_key:
+            ids = data[event_id_key].unique()
+        else:
+            ids = data.index.values

@@ -14,6 +14,61 @@ from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
 
 
+logging.basicConfig()
+log = logging.getLogger()
+
+
+def read_and_sample_data(path, key, columns_to_read, n_sample=None):
+    '''
+    Read given columns from data and perform a random sample if n_sample is supplied.
+    Returns a single pandas data frame
+    '''
+    df = read_data(
+        file_path=path,
+        key=key,
+        columns=columns_to_read,
+    )
+
+    if n_sample is not None:
+        if n_sample > len(df):
+            log.error(
+                'number of sampled events {} must be smaller than number events in file {} ({})'
+                .format(n_sample, path, len(df))
+            )
+            raise ValueError
+        log.info('Randomly sample {} events'.format(n_sample))
+        df = df.sample(n_sample)
+    return df
+
+
+def read_config(configuration_path):
+    '''
+    Read and return the values from the configuration file as a tuple
+    '''
+    with open(configuration_path) as f:
+        config = yaml.load(f)
+
+    n_background = config.get('n_background')
+    n_signal = config.get('n_signal')
+
+    n_cross_validations = config.get('n_cross_validations', 10)
+    training_variables = config['training_variables']
+
+    classifier = eval(config['classifier'])
+
+    generation_config = config.get('feature_generation')
+
+    telescope_type_column = config.get('telescope_type_key', None)
+
+    seed = config.get('seed', 0)
+
+    np.random.seed(seed)
+    classifier.random_state = seed
+
+    return (n_background, n_signal, n_cross_validations, training_variables, classifier,
+            generation_config, telescope_type_column, seed)
+
+
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
@@ -39,66 +94,41 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
 
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
-
-    with open(configuration_path) as f:
-        config = yaml.load(f)
-
-    seed = config.get('seed', 0)
-    np.random.seed(seed)
-
-    n_background = config.get('n_background')
-    n_signal = config.get('n_signal')
-
-    n_cross_validations = config.get('n_cross_validations', 10)
-    training_variables = config['training_variables']
-
-    classifier = eval(config['classifier'])
-    classifier.random_state = seed
+    logging.getLogger().setLevel(logging.DEBUG if verbose else logging.INFO)
 
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
+    (n_background, n_signal, n_cross_validations, training_variables, classifier,
+        generation_config, telescope_type_column, seed) = read_config(configuration_path)
+
     columns_to_read = [] + training_variables
 
     # Also read columns needed for feature generation
-    generation_config = config.get('feature_generation')
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
 
+    if telescope_type_column:
+        if telescope_type_column not in columns_to_read:
+            columns_to_read.append(telescope_type_column)
+
+
     log.info('Loading signal data')
-    df_signal = read_data(
-        file_path=signal_path,
-        key=key,
-        columns=columns_to_read,
-    )
+    df_signal = read_and_sample_data(signal_path, key, columns_to_read, n_signal)
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
 
-    if n_signal is not None:
-        log.info('Randomly sample {} events'.format(n_signal))
-        df_signal = df_signal.sample(n_signal, random_state=seed)
-
     log.info('Loading background data')
-    df_background = read_data(
-        file_path=background_path, key=key,
-        columns=columns_to_read,
-    )
+    df_background = read_and_sample_data(background_path, key, columns_to_read, n_background)
     df_background['label_text'] = 'background'
     df_background['label'] = 0
-
-    if n_background is not None:
-        log.info('Randomly sample {} events'.format(n_background))
-        df_background = df_background.sample(n_background, random_state=seed)
 
     df_full = pd.concat([df_background, df_signal], ignore_index=True)
 
     # generate features if given in config
     if generation_config:
-        gen_config = config['feature_generation']
-        training_variables.extend(sorted(gen_config['features']))
-        feature_generation(df_full, gen_config, inplace=True)
+        training_variables.extend(sorted(generation_config['features']))
+        feature_generation(df_full, generation_config, inplace=True)
 
     df_training = convert_to_float32(df_full[training_variables])
     log.info('Total training events: {}'.format(len(df_training)))
@@ -137,11 +167,14 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
         y_probas = classifier.predict_proba(xtest)[:, 1]
         y_prediction = classifier.predict(xtest)
+
+        telescope_types = df_full.iloc[test][telescope_type_column] if telescope_type_column else 0
         cv_predictions.append(pd.DataFrame({
             'label': ytest,
             'label_prediction': y_prediction,
             'probabilities': y_probas,
             'cv_fold': fold,
+            'telescope_type': telescope_types
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 

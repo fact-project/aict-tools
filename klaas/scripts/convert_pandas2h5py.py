@@ -1,5 +1,4 @@
 import click
-from tqdm import tqdm
 import numpy as np
 import h5py
 
