@@ -183,3 +183,34 @@ def test_apply_disp():
         if result.exit_code != 0:
             print(result.output)
         assert result.exit_code == 0
+
+
+def test_split_data_executable():
+    from klaas.scripts.split_data import main as split
+
+    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+
+        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+
+        runner = CliRunner()
+        result = runner.invoke(
+            split,
+            [
+                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'signal'),
+                '-ntest',  # no spaces here. maybe a bug in click?
+                '-f0.5',
+                '-ntrain',
+                '-f0.5',
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+        assert result.exit_code == 0
+
+        print(os.listdir(d))
+        test_path = os.path.join(d, 'signal_test.hdf5')
+        assert os.path.isfile(test_path)
+
+        train_path = os.path.join(d, 'signal_train.hdf5')
+        assert os.path.isfile(train_path)

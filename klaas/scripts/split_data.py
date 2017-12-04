@@ -4,6 +4,18 @@ import logging
 
 from fact.io import read_data, write_data
 import warnings
+from math import ceil
+
+
+def split_indices(idx, n_total, fractions):
+    '''
+    splits idx containing n_total distinct events into fractions given in fractions list.
+    returns the number of events in each split
+    '''
+    num_ids = [ceil(n_total * f) for f in fractions]
+    if sum(num_ids) > n_total:
+        num_ids[-1] -= sum(num_ids) - n_total
+    return num_ids
 
 
 @click.command()
@@ -71,6 +83,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
     # set the ids we can split by to be either telescope events or array-wide events
     ids = data.index.values
     n_total = len(data)
+
     if event_id_key:
         ids = data[event_id_key].unique()
         n_total = len(ids)
@@ -78,10 +91,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
 
     log.info('Found a total of {} single-telescope events in the file'.format(len(data)))
 
-    # find number of events in each split. The last split may contain less events.
-    num_ids = [int(round(n_total * f)) for f in fraction]
-    if sum(num_ids) > n_total:
-        num_ids[-1] -= sum(num_ids) - n_total
+    num_ids = split_indices(ids, n_total, fractions=fraction)
 
     for n, part_name in zip(num_ids, name):
         selected_ids = np.random.choice(ids, size=n, replace=False)
