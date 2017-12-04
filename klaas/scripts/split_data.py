@@ -61,11 +61,7 @@ def split_indices(idx, n_total, fractions):
 )
 @click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-<<<<<<< HEAD
-def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_pandas, verbose):
-=======
-def main(input_path, output_basename, fraction, name, inkey, key, fmt, use_pandas, seed, verbose):
->>>>>>> master
+def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_pandas, seed, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
