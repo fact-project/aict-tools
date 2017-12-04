@@ -121,6 +121,11 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
             append_to_h5py(f, rec_pos[:, 0], key, 'source_x_prediction')
             append_to_h5py(f, rec_pos[:, 1], key, 'source_y_prediction')
             append_to_h5py(f, disp_prediction, key, 'disp_prediction')
+            
+    log.warn("Note that theta features were deleted from the feature set."
+             + "They need to be calculated from the predicted source possition."
+             + "You can use e.g. `fact_calculate_theta` from pyfact for this."
+             )
 
 
 if __name__ == '__main__':
