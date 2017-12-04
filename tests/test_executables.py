@@ -1,4 +1,3 @@
-import sys
 import tempfile
 import os
 from click.testing import CliRunner
