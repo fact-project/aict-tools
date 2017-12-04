@@ -45,6 +45,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     with open(configuration_path) as f:
         config = yaml.load(f)
 
+    seed = config.get('seed', 0)
+    np.random.seed(seed)
+
     n_background = config.get('n_background')
     n_signal = config.get('n_signal')
 
@@ -52,6 +55,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     training_variables = config['training_variables']
 
     classifier = eval(config['classifier'])
+    classifier.random_state = seed
 
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
@@ -74,7 +78,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     if n_signal is not None:
         log.info('Randomly sample {} events'.format(n_signal))
-        df_signal = df_signal.sample(n_signal)
+        df_signal = df_signal.sample(n_signal, random_state=seed)
 
     log.info('Loading background data')
     df_background = read_data(
@@ -86,7 +90,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     if n_background is not None:
         log.info('Randomly sample {} events'.format(n_background))
-        df_background = df_background.sample(n_background)
+        df_background = df_background.sample(n_background, random_state=seed)
 
     df_full = pd.concat([df_background, df_signal], ignore_index=True)
 
@@ -119,7 +123,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log.info('Starting {} fold cross validation... '.format(n_cross_validations))
 
     stratified_kfold = model_selection.StratifiedKFold(
-        n_splits=n_cross_validations, shuffle=True,
+        n_splits=n_cross_validations, shuffle=True, random_state=seed
     )
 
     aucs = []
@@ -127,6 +131,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         # select data
         xtrain, xtest = X[train], X[test]
         ytrain, ytest = y[train], y[test]
+
         # fit and predict
         classifier.fit(xtrain, ytrain)
 
