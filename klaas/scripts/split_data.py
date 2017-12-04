@@ -33,7 +33,7 @@ import warnings
 )
 @click.option(
     '--event_id_key',
-    '-id',
+    '-d',
     help='Name of the colum containing a unique id for each array-wide event.'
          'If provided it will not split up rows that belong to the same event but to '
          'different telescopes',
