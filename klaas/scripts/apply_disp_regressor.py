@@ -58,7 +58,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
             'theta_off_rec_pos_' + str(i),
         ])
     
-    int n_del_cols = 0;
+    int n_del_cols = 0
     
     with h5py.File(data_path, 'r+') as f:
         for column in columns_to_delete:
