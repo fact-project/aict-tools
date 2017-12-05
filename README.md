@@ -79,6 +79,9 @@ Training requires simulated diffuse gamma-ray events.
 
 An example configuration can be found in [examples/config_disp.yaml](examples/config_disp.yaml).
 
+**Note: By applying the disp regressor, `Theta` wil be deleted from the feature set.** 
+Theta has to be calculated from the source prediction e.g. by using `fact_calculate_theta` from pyfact.
+
 
 # Utility scripts
 

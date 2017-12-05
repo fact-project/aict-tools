@@ -57,7 +57,9 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
             'theta_deg_off_' + str(i),
             'theta_off_rec_pos_' + str(i),
         ])
-
+    
+    n_del_cols = 0
+    
     with h5py.File(data_path, 'r+') as f:
         for column in columns_to_delete:
             if column in f[key].keys():
@@ -68,6 +70,12 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
                     )
                     yes = True
                 del f[key][column]
+                log.warn("Deleted {} from the feature set.".format(column))
+                n_del_cols += 1
+    
+    if n_del_cols > 0:
+        log.warn("Source dependent features need to be calculated from the predicted source possition. "
+                 + "Use e.g. `fact_calculate_theta` from https://github.com/fact-project/pyfact.")
 
     log.info('Loading model')
     disp_model = joblib.load(disp_model_path)
@@ -122,6 +130,6 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
             append_to_h5py(f, rec_pos[:, 1], key, 'source_y_prediction')
             append_to_h5py(f, disp_prediction, key, 'disp_prediction')
 
-
+            
 if __name__ == '__main__':
     main()
