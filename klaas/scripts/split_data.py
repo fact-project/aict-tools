@@ -60,8 +60,9 @@ def split_indices(idx, n_total, fractions):
     '--use-pandas', is_flag=True, help='Write pandas hdf5 output files',
 )
 @click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
+@click.option('-m', '--mode', help='Excess mode of the input file', default='r')
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_pandas, seed, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_pandas, seed, mode, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -75,7 +76,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
     np.random.seed(seed)
 
     if fmt in ['hdf5', 'hdf', 'h5']:
-        data = read_data(input_path, key=inkey)
+        data = read_data(input_path, key=inkey, mode=mode)
     elif fmt == 'csv':
         data = read_data(input_path)
 
