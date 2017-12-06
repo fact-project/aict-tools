@@ -115,7 +115,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
             log.info('Writing {} telescope-array events to: {}'.format(n, filename))
             selected_data.to_csv(filename, index=False)
 
-        data = data.iloc[list(set(data.index.values) - set(selected_data.index))]
+        data = data.loc[list(set(data.index.values) - set(selected_data.index.values))]
 
         if event_id_key:
             ids = data[event_id_key].unique()
