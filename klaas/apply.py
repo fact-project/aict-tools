@@ -44,6 +44,22 @@ def build_query(selection_config):
     query = '(' + ') & ('.join(queries) + ')'
     return query
 
+def build_run_list_query(run_list_path):
+    queries = []
+
+    run_list = pd.read_csv(run_list_path)
+
+    for (index, row) in run_list.iterrows():
+        queries.append(
+            "(night == {} & run_id == {})".format(
+                row['night'],
+                row['run_id']
+                )
+            )
+    query = " | ".join(queries)
+
+    return query
+
 
 def predict(df, model, features):
     df[features] = convert_to_float32(df[features])
@@ -123,6 +139,38 @@ def create_mask_h5py(input_path, selection_config, key='events', start=None, end
 
     return mask
 
+def create_run_list_mask_h5py(input_path, run_list_path, key='events', start=None, end=None, mode="r"):
+
+    with h5py.File(input_path) as infile:
+
+        n_events = h5py_get_n_rows(input_path, key=key, mode=mode)
+        start = start or 0
+        end = min(n_events, end) if end else n_events
+
+        run_list = pd.read_csv(run_list_path)
+
+        n_selected = end - start
+        mask = np.ones(n_selected, dtype=bool)
+
+        masks = []
+        for (index, row) in run_list.iterrows():
+            masks.append(
+                np.logical_and(
+                    OPERATORS['=='](infile[key]['night'][start:end], row['night']),
+                    OPERATORS['=='](infile[key]['run_id'][start:end], row['run_id'])
+                    )
+                )
+
+        run_list_mask = np.logical_or.reduce(masks)
+
+        before = mask.sum()
+        mask = np.logical_and(mask, run_list_mask)
+        after = mask.sum()
+
+        log.debug('Run list cuts removed {} events'.format( before - after ))
+
+    return mask
+
 
 def apply_cuts_h5py_chunked(
         input_path,
@@ -150,6 +198,59 @@ def apply_cuts_h5py_chunked(
 
             mask = create_mask_h5py(
                 input_path, selection_config, key=key, start=start, end=end
+            )
+
+            for name, dataset in infile[key].items():
+                if chunk == 0:
+                    if dataset.ndim == 1:
+                        group.create_dataset(name, data=dataset[start:end][mask], maxshape=(None, ))
+                    elif dataset.ndim == 2:
+                        group.create_dataset(
+                            name, data=dataset[start:end, :][mask, :], maxshape=(None, 2)
+                        )
+                    else:
+                        log.warning('Skipping not 1d or 2d column {}'.format(name))
+
+                else:
+
+                    n_old = group[name].shape[0]
+                    n_new = mask.sum()
+                    group[name].resize(n_old + n_new, axis=0)
+
+                    if dataset.ndim == 1:
+                        group[name][n_old:n_old + n_new] = dataset[start:end][mask]
+                    elif dataset.ndim == 2:
+                        group[name][n_old:n_old + n_new, :] = dataset[start:end][mask, :]
+                    else:
+                        log.warning('Skipping not 1d or 2d column {}'.format(name))
+
+
+ def apply_run_list_h5py_chunked(
+        input_path,
+        output_path,
+        run_list_path,
+        key='events',
+        chunksize=100000,
+        progress=True,
+        ):
+    '''
+    Apply a runlist defined in a csv file to input_path and write result to
+    outputpath. Apply cuts to chunksize events at a time.
+    '''
+
+    n_events = h5py_get_n_rows(input_path, key=key, mode="r")
+    n_chunks = int(np.ceil(n_events / chunksize))
+    log.debug('Using {} chunks of size {}'.format(n_chunks, chunksize))
+
+    with h5py.File(input_path, 'r') as infile, h5py.File(output_path, 'a') as outfile:
+        group = outfile.create_group(key)
+
+        for chunk in tqdm(range(n_chunks), disable=not progress):
+            start = chunk * chunksize
+            end = min(n_events, (chunk + 1) * chunksize)
+
+            mask = create_run_list_mask_h5py(
+                input_path, run_list_path, key=key, start=start, end=end
             )
 
             for name, dataset in infile[key].items():
