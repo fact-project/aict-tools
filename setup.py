@@ -44,6 +44,7 @@ setup(
             'klaas_plot_separator_performance = klaas.scripts.plot_separator_performance:main',
             'klaas_plot_regressor_performance = klaas.scripts.plot_regressor_performance:main',
             'klaas_apply_cuts = klaas.scripts.apply_cuts:main',
+            'klaas_apply_run_list = klaas.scripts.apply_run_list:main',
             'klaas_convert_pandas2h5py = klaas.scripts.convert_pandas2h5py:main',
         ],
     }
