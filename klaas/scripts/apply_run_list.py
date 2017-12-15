@@ -25,8 +25,8 @@ from ..apply import create_run_list_mask_h5py, apply_run_list_h5py_chunked, buil
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 def main(run_list_path, input_path, output_path, hdf_style, chunksize, key, mode, verbose):
     '''
-     Apply a given list of runs from a list in RUN_LIST_PATH to the data in INPUT_PATH and
-     write the result to OUTPUT_PATH.
+     Apply a given list of runs from a list (CSV) in RUN_LIST_PATH to the data
+     in INPUT_PATH an write the result to OUTPUT_PATH.
     '''
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
