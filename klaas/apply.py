@@ -225,7 +225,7 @@ def apply_cuts_h5py_chunked(
                         log.warning('Skipping not 1d or 2d column {}'.format(name))
 
 
- def apply_run_list_h5py_chunked(
+def apply_run_list_h5py_chunked(
         input_path,
         output_path,
         run_list_path,
