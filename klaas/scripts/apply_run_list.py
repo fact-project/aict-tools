@@ -30,24 +30,24 @@ def main(run_list_path, input_path, output_path, hdf_style, chunksize, key, mode
     '''
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
-    
-    if hdf_style == 'pandas':    
+
+    if hdf_style == 'pandas':
         print("pandas!")
         query = build_run_list_query(run_list_path)
-        
+
         log.info('Using query: ' + query)
-        
+
         runs = read_data(input_path, key='runs', mode=mode)
         runs = runs.query(query)
         runs.to_hdf(output_path, key='runs')
-    
+
         if chunksize is None:
             print("No chunks")
             df = read_data(input_path, key=key, mode=mode)
-            
+
             n_events = len(df)
             df = df.query(query)
-            
+
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, len(df)))
             df.to_hdf(output_path, key=key)
             runs.to_hdf(output_path, key='runs')
@@ -56,19 +56,19 @@ def main(run_list_path, input_path, output_path, hdf_style, chunksize, key, mode
                 it = pd.read_hdf(input_path, key=key, chunksize=chunksize)
                 for df in tqdm(it):
                     store.append(key, df.query(query))
-    
+
     else:
         print("h5py!")
         if chunksize is None:
             print("No chunks")
             apply_runlist_to_data_set(input_path, output_path, key, run_list_path)
             apply_runlist_to_data_set(input_path, output_path, "runs", run_list_path)
-            
+
         else:
             apply_run_list_h5py_chunked(
                 input_path, output_path, run_list_path, chunksize=chunksize, key=key
             )
-            
+
             apply_run_list_h5py_chunked(
                 input_path, output_path, run_list_path, chunksize=chunksize, key="runs"
             )
@@ -93,7 +93,7 @@ def apply_runlist_to_data_set(input_path, output_path, key, run_list_path):
                 )
             else:
                 log.warning('Skipping not 1d or 2d column {}'.format(name))
-                
+
         for name, dataset in infile["runs"].items():
 
             if dataset.ndim == 1:
@@ -104,4 +104,3 @@ def apply_runlist_to_data_set(input_path, output_path, key, run_list_path):
                 )
             else:
                 log.warning('Skipping not 1d or 2d column {}'.format(name))
-                
