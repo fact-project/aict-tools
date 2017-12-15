@@ -1,12 +1,11 @@
 import click
-import yaml
 import pandas as pd
 from tqdm import tqdm
 import h5py
 import logging
 
 from fact.io import read_data, h5py_get_n_rows
-from ..apply import create_run_list_mask_h5py, apply_run_list_h5py_chunked, build_query
+from ..apply import create_run_list_mask_h5py, apply_run_list_h5py_chunked, build_run_list_query
 
 
 
