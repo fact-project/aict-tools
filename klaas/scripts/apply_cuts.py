@@ -48,7 +48,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
         log.info('Using query: ' + query)
 
         if chunksize is None:
-            df = read_data(input_path, key=key)
+            df = read_data(input_path, key=key, mode='r')
             n_events = len(df)
             df = df.query(query)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, len(df)))
@@ -62,12 +62,12 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
     else:
         if chunksize is None:
 
-            n_events = h5py_get_n_rows(input_path, key=key)
+            n_events = h5py_get_n_rows(input_path, key=key, mode='r')
 
             mask = create_mask_h5py(input_path, selection, key=key)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, mask.sum()))
 
-            with h5py.File(input_path) as infile, h5py.File(output_path, 'w') as outfile:
+            with h5py.File(input_path, mode='r') as infile, h5py.File(output_path, 'w') as outfile:
                 group = outfile.create_group(key)
 
                 for name, dataset in infile[key].items():
@@ -85,8 +85,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
                 input_path, output_path, selection, chunksize=chunksize, key=key
             )
 
-        with h5py.File(input_path) as infile, h5py.File(output_path, 'r+') as outfile:
-
+        with h5py.File(input_path, mode='r') as infile, h5py.File(output_path, 'r+') as outfile:
             if 'runs' in infile.keys():
                 log.info('Copying runs group to outputfile')
                 infile.copy('/runs', outfile['/'])
