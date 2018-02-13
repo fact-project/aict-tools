@@ -19,9 +19,8 @@ from ..apply import create_mask_h5py, apply_cuts_h5py_chunked, build_query
 )
 @click.option('-N', '--chunksize', type=int, help='Chunksize to use')
 @click.option('-k', '--key', help='Name of the hdf5 group', default='table')
-@click.option('-m', '--mode', help='Excess mode of the input file', default='r')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, input_path, output_path, hdf_style, chunksize, key, mode, verbose):
+def main(configuration_path, input_path, output_path, hdf_style, chunksize, key, verbose):
     '''
     Apply cuts given in CONFIGURATION_PATH to the data in INPUT_PATH and
     write the result to OUTPUT_PATH.
@@ -49,13 +48,13 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
         log.info('Using query: ' + query)
 
         if chunksize is None:
-            df = read_data(input_path, key=key, mode=mode)
+            df = read_data(input_path, key=key)
             n_events = len(df)
             df = df.query(query)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, len(df)))
             df.to_hdf(output_path, key=key)
         else:
-            with pd.HDFStore(output_path, mode=mode) as store:
+            with pd.HDFStore(output_path, mode='w') as store:
                 it = pd.read_hdf(input_path, key=key, chunksize=chunksize)
                 for df in tqdm(it):
                     store.append(key, df.query(query))
@@ -63,7 +62,7 @@ def main(configuration_path, input_path, output_path, hdf_style, chunksize, key,
     else:
         if chunksize is None:
 
-            n_events = h5py_get_n_rows(input_path, key=key, mode=mode)
+            n_events = h5py_get_n_rows(input_path, key=key)
 
             mask = create_mask_h5py(input_path, selection, key=key)
             log.info('Before cuts: {}, after cuts: {}'.format(n_events, mask.sum()))
