@@ -12,6 +12,7 @@ from fact.coordinates.utils import horizontal_to_camera
 from ..io import pickle_model
 from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
+from ..features import find_used_source_features
 
 import logging
 
@@ -84,6 +85,11 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     generation_config = config.get('feature_generation')
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
+
+    if len(find_used_source_features(training_variables, generation_config)) > 0:
+        raise click.ClickException(
+            'Using source dependent features in the model is not supported'
+        )
 
     log.info('Loading data')
     df = read_data(

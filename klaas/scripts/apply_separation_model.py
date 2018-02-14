@@ -8,7 +8,7 @@ from tqdm import tqdm
 from fact.io import read_h5py_chunked
 
 from ..features import find_used_source_features
-from ..apply import predict, predict_off_positions
+from ..apply import predict
 from ..feature_generation import feature_generation
 from ..io import append_to_h5py
 
@@ -35,11 +35,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
     The program adds the following columns to the inputfile:
         <class_name>_prediction: the output of model.predict_proba for the
         class name given in the config file.
-
-    If source dependent features are part of the training variables the
-    columns
-        <class_name>_prediction_off_(1...n)
-    will also be added.
 
     If the class name is not given in the config file, the default value of "gamma"
     will be used.
@@ -73,33 +68,19 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
     log.info('Done')
 
     generation_config = config.get('feature_generation')
-    used_source_features = find_used_source_features(
-        training_variables
-    )
-    if generation_config:
-        used_source_features = used_source_features.union(
-            find_used_source_features(generation_config['needed_keys'])
+    if len(find_used_source_features(training_variables, generation_config)) > 0:
+        raise click.ClickException(
+            'Using source dependent features in the model is not supported'
         )
 
-    if len(used_source_features) > 0:
-        log.info(
-            'Source dependent features used in model, '
-            'redoing classification for off regions'
-        )
-
-    needed_features = [
-        var + '_off_{}'.format(region)
-        for region in range(1, 6)
-        for var in used_source_features
-    ]
-
+    needed_features = training_variables.copy()
     if generation_config:
         needed_features.extend(generation_config['needed_keys'])
 
     df_generator = read_h5py_chunked(
         data_path,
         key=key,
-        columns=training_variables + needed_features,
+        columns=needed_features,
         chunksize=chunksize,
     )
 
@@ -120,20 +101,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
 
         with h5py.File(data_path, 'r+') as f:
             append_to_h5py(f, signal_prediction, key, prediction_column_name)
-
-        if len(used_source_features) > 0:
-            background_predictions = predict_off_positions(
-                df_data,
-                model=model,
-                features=training_variables,
-                used_source_features=used_source_features,
-                feature_generation_config=generation_config,
-            )
-
-            with h5py.File(data_path) as f:
-                for region in range(1, 6):
-                    name = '{}_off_{}'.format(prediction_column_name, region)
-                    append_to_h5py(f, background_predictions[name], key, name)
 
 
 if __name__ == '__main__':

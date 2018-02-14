@@ -7,10 +7,16 @@ source_dependent_features = {
 }
 
 
-def find_used_source_features(used_features):
+def find_used_source_features(used_features, generation_config=None):
     used_source_feautures = set(filter(
         lambda v: v in source_dependent_features,
         used_features
     ))
+
+    if generation_config:
+        used_source_feautures = used_source_feautures.union(set(filter(
+            lambda v: v in source_dependent_features,
+            generation_config['needed_keys']
+        )))
 
     return used_source_feautures
