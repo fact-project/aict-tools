@@ -101,6 +101,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         key=key,
         columns=training_variables + needed_features,
         chunksize=chunksize,
+        mode='r+'
     )
 
     if generation_config:
