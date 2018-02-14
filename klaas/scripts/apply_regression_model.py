@@ -71,6 +71,7 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
         key=key,
         columns=columns_to_read,
         chunksize=chunksize,
+        mode='r+'
     )
 
     if generation_config:
