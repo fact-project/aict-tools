@@ -77,7 +77,7 @@ Training requires simulated diffuse gamma-ray events.
 * `klaas_train_disp_regressor`
 * `klaas_apply_disp_regressor`
 
-An example configuration can be found in [examples/config_disp.yaml](examples/config_disp.yaml).
+An example configuration can be found in [examples/config_source.yaml](examples/config_source.yaml).
 
 **Note: By applying the disp regressor, `Theta` wil be deleted from the feature set.** 
 Theta has to be calculated from the source prediction e.g. by using `fact_calculate_theta` from pyfact.
