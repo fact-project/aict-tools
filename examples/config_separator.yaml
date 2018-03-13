@@ -50,7 +50,5 @@ feature_generation:
   needed_keys:
     - width
     - length
-    - theta
   features:
     area: width * length * @pi
-    theta_squared: theta**2

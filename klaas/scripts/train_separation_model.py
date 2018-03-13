@@ -12,6 +12,7 @@ from fact.io import read_data, write_data, check_extension
 from ..io import pickle_model
 from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
+from ..features import find_used_source_features
 
 
 logging.basicConfig()
@@ -104,6 +105,11 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     columns_to_read = [] + training_variables
 
+    if len(find_used_source_features(training_variables, generation_config)) > 0:
+        raise click.ClickException(
+            'Using source dependent features in the model is not supported'
+        )
+
     # Also read columns needed for feature generation
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
@@ -111,7 +117,6 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     if telescope_type_column:
         if telescope_type_column not in columns_to_read:
             columns_to_read.append(telescope_type_column)
-
 
     log.info('Loading signal data')
     df_signal = read_and_sample_data(signal_path, key, columns_to_read, n_signal)
