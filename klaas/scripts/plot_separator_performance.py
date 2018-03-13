@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.externals import joblib
 import yaml
-import pandas as pd
+import fact.io
 
 from ..plotting import (
     plot_roc,
@@ -27,7 +27,7 @@ def main(configuration_path, performance_path, model_path, output, key):
     log = logging.getLogger()
 
     log.info('Loading perfomance data')
-    df = pd.read_hdf(performance_path, key)
+    df = fact.io.read_data(performance_path, key=key)
 
     log.info('Loading model')
     model = joblib.load(model_path)
@@ -35,6 +35,7 @@ def main(configuration_path, performance_path, model_path, output, key):
     with open(configuration_path) as f:
         config = yaml.load(f)
 
+    log.info('Creating performance plots. ')
     figures = []
 
     # Plot rocs

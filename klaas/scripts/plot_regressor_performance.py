@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.externals import joblib
 import yaml
-import pandas as pd
+import fact.io
 
 from ..plotting import (
     plot_regressor_confusion,
@@ -18,14 +18,14 @@ from ..plotting import (
 @click.argument('performance_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
 @click.option('-o', '--output', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for pandas hdf5', default='data')
+@click.option('-k', '--key', help='HDF5 key for hdf5', default='data')
 def main(configuration_path, performance_path, model_path, output, key):
     ''' Create some performance evaluation plots for the separator '''
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
 
     log.info('Loading perfomance data')
-    df = pd.read_hdf(performance_path, key)
+    df = fact.io.read_data(performance_path, key=key)
 
     log.info('Loading model')
     model = joblib.load(model_path)
