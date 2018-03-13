@@ -58,10 +58,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
                 )
             del f[key][prediction_column_name]
 
-        for region in range(1, 6):
-            dataset = '{}_off_{}'.format(prediction_column_name, region)
-            if dataset in f[key].keys():
-                del f[key][dataset]
 
     log.info('Loading model')
     model = joblib.load(model_path)
