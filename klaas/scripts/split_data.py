@@ -34,7 +34,7 @@ def split_indices(idx, n_total, fractions):
 @click.option(
     '-i',
     '--inkey',
-    help='HDF5 key for pandas or h5py hdf5 of the input file',
+    help='HDF5 key for h5py hdf5 of the input file',
     default='events', show_default=True,
 )
 @click.option(

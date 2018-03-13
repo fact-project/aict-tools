@@ -17,7 +17,7 @@ from ..io import append_to_h5py
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5', default='events')
+@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 @click.option(
     '-N', '--chunksize', type=int,
