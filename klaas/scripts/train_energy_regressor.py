@@ -52,7 +52,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     n_cross_validations = config['n_cross_validations']
     training_variables = config['training_variables']
-    target_name = config.get('target_name', 'corsika_evt_header_total_energy')
+    target_name = config.get('target_name', 'corsika_event_header_total_energy')
 
     log_target = config.get('log_target', False)
 
