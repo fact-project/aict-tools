@@ -34,7 +34,7 @@ def split_indices(idx, n_total, fractions):
 @click.option(
     '-i',
     '--inkey',
-    help='HDF5 key for pandas or h5py hdf5 of the input file',
+    help='HDF5 key for h5py hdf5 of the input file',
     default='events', show_default=True,
 )
 @click.option(
@@ -56,15 +56,12 @@ def split_indices(idx, n_total, fractions):
     '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
     show_default=True, help='The output format',
 )
-@click.option(
-    '--use-pandas', is_flag=True, help='Write pandas hdf5 output files',
-)
 @click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
 @click.option('-v', '--verbose', help='Verbose log output', type=bool)
-def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, use_pandas, seed, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, fmt, seed, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
-    Outputs pandas hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
+    Outputs hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
 
     Example call: klaas_split_data input.hdf5 output_base -n test -f 0.5 -n train -f 0.5
     '''
@@ -107,7 +104,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
         if fmt in ['hdf5', 'hdf', 'h5']:
             path = output_basename + '_' + part_name + '.hdf5'
             log.info('Writing {} telescope-array events to: {}'.format(n, path))
-            write_data(selected_data, path, key=key, use_h5py=not use_pandas)
+            write_data(selected_data, path, key=key, use_h5py=True)
 
         elif fmt == 'csv':
             filename = output_basename + '_' + part_name + '.csv'

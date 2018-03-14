@@ -17,7 +17,7 @@ from ..io import append_to_h5py
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for pandas or h5py hdf5', default='events')
+@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 @click.option(
     '-N', '--chunksize', type=int,
@@ -58,10 +58,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
                 )
             del f[key][prediction_column_name]
 
-        for region in range(1, 6):
-            dataset = '{}_off_{}'.format(prediction_column_name, region)
-            if dataset in f[key].keys():
-                del f[key][dataset]
 
     log.info('Loading model')
     model = joblib.load(model_path)
