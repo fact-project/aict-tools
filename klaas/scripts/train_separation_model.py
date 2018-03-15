@@ -187,7 +187,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
     log.info('writing predictions from cross validation')
-    write_data(predictions_df, predictions_path)
+    write_data(predictions_df, predictions_path, mode='w')
 
     log.info('Training model on complete dataset')
     classifier.fit(X, y)
