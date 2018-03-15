@@ -171,7 +171,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
 
     log.info('writing predictions from cross validation')
-    write_data(predictions_df, predictions_path)
+    write_data(predictions_df, predictions_path, mode='w')
 
     scores_disp = np.array(scores_disp)
     scores_sign = np.array(scores_sign)

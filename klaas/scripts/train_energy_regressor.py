@@ -130,7 +130,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
 
     log.info('writing predictions from cross validation')
-    write_data(predictions_df, predictions_path)
+    write_data(predictions_df, predictions_path, mode='w')
 
     scores = np.array(scores)
     log.info('Cross validated R^2 scores: {}'.format(scores))

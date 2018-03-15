@@ -104,7 +104,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, event_id_key, 
         if fmt in ['hdf5', 'hdf', 'h5']:
             path = output_basename + '_' + part_name + '.hdf5'
             log.info('Writing {} telescope-array events to: {}'.format(n, path))
-            write_data(selected_data, path, key=key, use_h5py=True)
+            write_data(selected_data, path, key=key, use_h5py=True, mode='w')
 
         elif fmt == 'csv':
             filename = output_basename + '_' + part_name + '.csv'
