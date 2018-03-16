@@ -3,11 +3,54 @@ from sklearn.externals import joblib
 from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
 import numpy as np
+from .feature_generation import feature_generation
+from fact.io import read_data
+import pandas as pd
 
 __all__ = ['pickle_model']
 
 
 log = logging.getLogger(__name__)
+
+
+def read_and_sample_data(path, klaas_config, n_sample=None):
+    '''
+    Read given columns from data and perform a random sample if n_sample is supplied.
+    Returns a single pandas data frame
+    '''
+    if klaas_config.has_multiple_telescopes:
+        df_features = read_data(
+            file_path=path,
+            key=klaas_config.telescope_events_key,
+        )
+        df_array_events = read_data(
+            file_path=path,
+            key=klaas_config.array_events_key,
+        )
+        df = pd.merge(left=df_array_events, right=df_features, on=klaas_config.array_event_id_key)
+        df = df[klaas_config.columns_to_read]
+    else:
+        df = read_data(
+            file_path=path,
+            key=klaas_config.telescope_events_key,
+            columns=klaas_config.columns_to_read,
+        )
+
+    if n_sample is not None:
+        if n_sample > len(df):
+            log.error(
+                'number of sampled events {} must be smaller than number events in file {} ({})'
+                .format(n_sample, path, len(df))
+            )
+            raise ValueError
+        log.info('Randomly sample {} events'.format(n_sample))
+        df = df.sample(n_sample)
+
+    # generate features if given in config
+    if klaas_config.feature_generation_config:
+        feature_generation(df, klaas_config.feature_generation_config, inplace=True)
+
+    return df
 
 
 def pickle_model(classifier, feature_names, model_path, label_text='label'):
