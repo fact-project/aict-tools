@@ -12,7 +12,7 @@ from ..apply import create_mask_h5py, apply_cuts_h5py_chunked
 @click.argument('input_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output_path', type=click.Path(exists=False, dir_okay=False))
 @click.option('-N', '--chunksize', type=int, help='Chunksize to use')
-@click.option('-k', '--key', help='Name of the hdf5 group', default='table')
+@click.option('-k', '--key', help='Name of the hdf5 group', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 def main(configuration_path, input_path, output_path, chunksize, key, verbose):
     '''
