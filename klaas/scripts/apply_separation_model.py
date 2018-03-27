@@ -8,7 +8,7 @@ from tqdm import tqdm
 from fact.io import read_h5py_chunked
 
 from ..features import find_used_source_features
-from ..apply import predict
+from ..apply import predict_separator
 from ..feature_generation import feature_generation
 from ..io import append_to_h5py
 
@@ -81,21 +81,10 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
         mode='r+'
     )
 
-    if generation_config:
-        training_variables.extend(sorted(generation_config['features']))
-
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
 
-        if generation_config:
-            feature_generation(
-                df_data,
-                generation_config,
-                inplace=True,
-            )
-
-        signal_prediction = predict(df_data, model, training_variables)
-
+        signal_prediction = predict_separator(df_data, model, config)
         with h5py.File(data_path, 'r+') as f:
             append_to_h5py(f, signal_prediction, key, prediction_column_name)
 

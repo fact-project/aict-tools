@@ -5,6 +5,7 @@ import h5py
 from tqdm import tqdm
 
 from .preprocessing import convert_to_float32, check_valid_rows
+from .feature_generation import feature_generation
 from fact.io import h5py_get_n_rows
 
 log = logging.getLogger(__name__)
@@ -43,15 +44,72 @@ def build_query(selection_config):
     return query
 
 
-def predict(df, model, features):
-    df[features] = convert_to_float32(df[features])
-    valid = check_valid_rows(df[features])
+def predict_energy(df, model, config):
+    training_variables = config['training_variables']
+    generation_config = config.get('feature_generation')
+    print(training_variables)
+    if generation_config:
+        feature_generation(
+            df,
+            generation_config,
+            inplace=True,
+        )
+        training_variables.extend(generation_config['features'])
+    print(training_variables)
 
-    prediction = np.full(len(df), np.nan)
-    probas = model.predict_proba(df.loc[valid, features])
-    prediction[valid.values] = probas[:, 1]
+    df_features = convert_to_float32(df[training_variables])
+    valid = check_valid_rows(df_features)
 
-    return prediction
+    energy_prediction = np.full(len(df_features), np.nan)
+    energy_prediction[valid] = model.predict(df_features.loc[valid].values)
+
+    if config.get('log_target', False) is True:
+        energy_prediction[valid] = np.exp(energy_prediction[valid])
+
+    return energy_prediction
+
+
+def predict_disp(df, abs_model, sign_model, config):
+    training_variables = config['training_variables']
+    generation_config = config.get('feature_generation')
+    if generation_config:
+        feature_generation(
+            df,
+            generation_config,
+            inplace=True,
+        )
+        training_variables.extend(generation_config['features'])
+
+    df_features = convert_to_float32(df[training_variables])
+    valid = check_valid_rows(df_features)
+
+    disp_abs = abs_model.predict(df_features.loc[valid].values)
+    disp_sign = sign_model.predict(df_features.loc[valid].values)
+
+    disp_prediction = np.full(len(df_features), np.nan)
+    disp_prediction[valid] = disp_abs * disp_sign
+
+    return disp_prediction
+
+
+def predict_separator(df, model, config):
+    training_variables = config['training_variables']
+    generation_config = config.get('feature_generation')
+    if generation_config:
+        feature_generation(
+            df,
+            generation_config,
+            inplace=True,
+        )
+        training_variables.extend(generation_config['features'])
+
+    df_features = convert_to_float32(df[training_variables])
+    valid = check_valid_rows(df_features)
+
+    score = np.full(len(df_features), np.nan)
+    score[valid] = model.predict_proba(df_features.loc[valid].values)[:, 1]
+
+    return score
 
 
 def create_mask_h5py(input_path, selection_config, key='events', start=None, end=None, mode="r"):

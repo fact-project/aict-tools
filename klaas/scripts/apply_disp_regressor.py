@@ -10,6 +10,7 @@ from fact.io import read_h5py_chunked
 from ..preprocessing import convert_to_float32, check_valid_rows
 from ..feature_generation import feature_generation
 from ..io import append_to_h5py
+from ..apply import predict_disp
 
 
 @click.command()
@@ -107,29 +108,15 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
 
-        if generation_config:
-            feature_generation(
-                df_data,
-                generation_config,
-                inplace=True,
-            )
+        disp = predict_disp(df_data, disp_model, sign_model, config)
 
-        df_data[training_variables] = convert_to_float32(df_data[training_variables])
-        valid = check_valid_rows(df_data[training_variables])
-
-        disp_prediction = np.full(len(df_data), np.nan)
-        disp = disp_model.predict(df_data.loc[valid, training_variables])
-        sign = sign_model.predict(df_data.loc[valid, training_variables])
-        disp_prediction[valid] = disp * sign
-
-        rec_pos = np.full((len(df_data), 2), np.nan)
-        rec_pos[valid, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
-        rec_pos[valid, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
+        source_x = df_data.cog_x + disp * np.cos(df_data.delta)
+        source_y = df_data.cog_y + disp * np.sin(df_data.delta)
 
         with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, rec_pos[:, 0], key, 'source_x_prediction')
-            append_to_h5py(f, rec_pos[:, 1], key, 'source_y_prediction')
-            append_to_h5py(f, disp_prediction, key, 'disp_prediction')
+            append_to_h5py(f, source_x, key, 'source_x_prediction')
+            append_to_h5py(f, source_y, key, 'source_y_prediction')
+            append_to_h5py(f, disp, key, 'disp_prediction')
 
 
 if __name__ == '__main__':
