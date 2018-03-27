@@ -2,6 +2,7 @@ import tempfile
 import os
 from click.testing import CliRunner
 import shutil
+from traceback import print_exception
 
 
 def test_train_regressor():
@@ -22,6 +23,7 @@ def test_train_regressor():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -45,6 +47,7 @@ def test_apply_regression():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         result = runner.invoke(
@@ -59,6 +62,7 @@ def test_apply_regression():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
 
         assert result.exit_code == 0
 
@@ -82,6 +86,7 @@ def test_train_separator():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -105,6 +110,7 @@ def test_apply_separator():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         result = runner.invoke(
@@ -119,6 +125,7 @@ def test_apply_separator():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -140,6 +147,7 @@ def test_train_disp():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -164,6 +172,7 @@ def test_apply_disp():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         result = runner.invoke(
@@ -179,6 +188,7 @@ def test_apply_disp():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -203,6 +213,7 @@ def test_split_data_executable():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         print(os.listdir(d))
