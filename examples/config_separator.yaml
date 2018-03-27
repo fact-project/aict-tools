@@ -26,21 +26,19 @@ class_name: gamma
 
 # Define the name of the column that contains the name of the telescope in case you're working
 # with mulitple telescopes and telescope types
-#telescope_type_key: telescope:name
-
+# telescope_type_key: telescope:name
 
 training_variables:
   - size
   - length
   - width
   - num_islands
-  - leakage
-  - m3l
-  - m3t
-  - disp
-  - timespread
-  - arrival_time_mean
-  - conc_core
+  - leakage1
+  - leakage2
+  - skewness_long
+  - skewness_trans
+  - concentration_cog
+  - concentration_core
 
 # Generate some features using pd.DataFrame.eval
 # List all keys that have to be read from the input files

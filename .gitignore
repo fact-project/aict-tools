@@ -1,3 +1,4 @@
+.pytest_cache
 output/
 
 # Byte-compiled / optimized / DLL files

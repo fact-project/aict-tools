@@ -14,7 +14,7 @@ def test_train_regressor():
             main,
             [
                 'examples/config_energy.yaml',
-                'examples/signal.hdf',
+                'examples/gamma.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
@@ -32,13 +32,13 @@ def test_apply_regression():
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
         runner = CliRunner()
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         result = runner.invoke(
             train,
             [
                 'examples/config_energy.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
@@ -51,7 +51,7 @@ def test_apply_regression():
             main,
             [
                 'examples/config_energy.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'test.pkl'),
                 '--yes',
             ]
@@ -73,8 +73,8 @@ def test_train_separator():
             main,
             [
                 'examples/config_separator.yaml',
-                'examples/signal.hdf',
-                'examples/background.hdf',
+                'examples/gamma.hdf5',
+                'examples/proton.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
@@ -90,16 +90,15 @@ def test_apply_separator():
     from klaas.scripts.apply_separation_model import main as apply_model
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
-
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         runner = CliRunner()
         result = runner.invoke(
             train,
             [
                 'examples/config_separator.yaml',
-                'examples/signal.hdf',
-                'examples/background.hdf',
+                'examples/gamma.hdf5',
+                'examples/proton.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
@@ -112,7 +111,7 @@ def test_apply_separator():
             apply_model,
             [
                 'examples/config_separator.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'test.pkl'),
                 '--yes',
             ]
@@ -128,14 +127,12 @@ def test_train_disp():
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
-
         runner = CliRunner()
         result = runner.invoke(
             train,
             [
                 'examples/config_source.yaml',
-                'examples/signal.hdf',
+                'examples/gamma_diffuse.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
@@ -152,14 +149,14 @@ def test_apply_disp():
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         runner = CliRunner()
         result = runner.invoke(
             train,
             [
                 'examples/config_source.yaml',
-                'examples/signal.hdf',
+                'examples/gamma_diffuse.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
@@ -173,7 +170,7 @@ def test_apply_disp():
             apply_model,
             [
                 'examples/config_source.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
                 '--yes',
@@ -190,13 +187,13 @@ def test_split_data_executable():
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         runner = CliRunner()
         result = runner.invoke(
             split,
             [
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'signal'),
                 '-ntest',  # no spaces here. maybe a bug in click?
                 '-f0.5',

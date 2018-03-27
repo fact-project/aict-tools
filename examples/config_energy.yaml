@@ -17,7 +17,7 @@ n_signal: 500
 n_cross_validations: 5
 
 # define the name of the regression target
-target_name: corsika_evt_header_total_energy
+target_name: corsika_event_header_total_energy
 
 
 # Define the name of the variable you want estimate by regression. The default is 'energy'.
@@ -30,13 +30,12 @@ training_variables:
   - length
   - width
   - num_islands
-  - leakage
-  - m3l
-  - m3t
-  - disp
-  - timespread
-  - arrival_time_mean
-  - conc_core
+  - leakage1
+  - leakage2
+  - skewness_long
+  - skewness_trans
+  - concentration_cog
+  - concentration_core
 
 # Generate some features using pd.DataFrame.eval
 # List all keys that have to be read from the input files

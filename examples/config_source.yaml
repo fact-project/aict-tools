@@ -19,10 +19,10 @@ sign_classifier: |
 seed: 0
 
 # columns containing coordinates of the source and of the pointing
-source_azimuth_column: az_source_calc
-source_zenith_column: zd_source_calc
-pointing_azimuth_column: az_tracking
-pointing_zenith_column: zd_tracking
+source_azimuth_column: source_position_az
+source_zenith_column: source_position_zd
+pointing_azimuth_column: pointing_position_az
+pointing_zenith_column: pointing_position_zd
 
 
 # randomly sample the data if you dont want to use the whole set
@@ -32,15 +32,14 @@ n_signal : 500
 n_cross_validations : 5
 
 training_variables:
-  - conc_cog
-  - conc_core
+  - concentration_cog
+  - concentration_core
   - delta
-  - disp
-  - leakage
+  - leakage1
   - leakage2
   - length
-  - m3l
-  - m3t
+  - skewness_long
+  - kurtosis_long
   - num_islands
   - size
   - width
