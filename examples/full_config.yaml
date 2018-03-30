@@ -1,0 +1,151 @@
+# seed for the random number generators, to make things reproducible
+seed: 0
+
+# define th number of cross validations to perform
+n_cross_validations: 5
+
+# Define the name of the column that contains the name of the telescope in case you're working
+# with mulitple telescopes and telescope types
+#telescope_type_key: telescope:name
+
+# Quality cuts from Fabian Temme's phd thesis
+selection:
+    num_pixel_in_shower:
+      - '>='  # needs to be in quotes because > and ! are special character in yaml
+      - 10
+    num_islands:
+      - <=
+      - 8
+    width:
+      - <=
+      - 30
+    leakage1:
+      - <
+      - 0.6
+    leakage2:
+      - lt # string representation also possible
+      - 0.85
+    length:
+      - lt
+      - 70
+
+ 
+# config for the energy regression
+energy_regressor:
+  model : |
+    ensemble.RandomForestRegressor(
+      n_estimators=30,
+      max_features='sqrt',
+      n_jobs=-1,
+      max_depth=12,
+    )
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal: 500
+
+  # define the name of the regression target
+  target_name: corsika_event_header_total_energy
+
+
+  # Define the name of the variable you want estimate by regression. The default is 'energy'.
+  # It will be written as <class_name>_prediction into the file when applying the model.
+  class_name: gamma_energy
+
+  training_variables:
+    - size
+    - length
+    - width
+    - num_islands
+    - leakage
+    - skewness_long
+    - skewness_trans
+    - disp
+    - timespread
+    - concentration_cog
+
+  # Generate some features using pd.DataFrame.eval
+  # List all keys that have to be read from the input files
+  # in needed keys. 
+  # features must be a mapping of feature name -> expression
+  feature_generation:
+    needed_keys:
+      - width
+      - length
+    features:
+      area: width * length * @pi
+
+ 
+# config for the g/h separation
+separator:
+  #the classifier to use
+  model : |
+    ensemble.RandomForestClassifier(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=15,
+        criterion='entropy',
+    )
+
+  # randomly sample the data if you dont want to use the whole set
+  n_background: 500
+  n_signal: 500
+
+  # Define the name of the category you want to find. The default is 'gamma'.
+  # It will be written as <class_name>_prediction into the file when applying the model.
+  class_name: gamma
+
+  training_variables:
+    - size
+    - length
+    - width
+    - num_islands
+    - leakage
+    - skewness_long
+    - skewness_trans
+    - disp
+    - timespread
+    - concentration_core
+    - concentration_cog
+
+
+# config for the source regression
+disp_regressor:
+  disp_model: |
+    ensemble.RandomForestRegressor(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  sign_model: |
+    ensemble.RandomForestClassifier(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  # columns containing coordinates of the source and of the pointing
+  source_azimuth_column: source_position_az
+  source_zenith_column: source_position_zd
+  pointing_azimuth_column: pointing_position_az
+  pointing_zenith_column: pointing_position_zd
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal : 500
+
+  training_variables:
+    - concentration_cog
+    - conctration_core
+    - delta
+    - disp
+    - leakage1
+    - leakage2
+    - length
+    - skewness_long
+    - kurtosis_long
+    - num_islands
+    - size
+    - width
