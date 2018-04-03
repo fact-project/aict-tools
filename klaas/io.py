@@ -4,8 +4,9 @@ from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
 import numpy as np
 from .feature_generation import feature_generation
-from fact.io import read_data
+from fact.io import read_data, h5py_get_n_rows
 import pandas as pd
+import h5py
 
 __all__ = ['pickle_model']
 
@@ -13,27 +14,77 @@ __all__ = ['pickle_model']
 log = logging.getLogger(__name__)
 
 
-def read_and_sample_data(path, klaas_config, n_sample=None):
+def check_existing_column(data_path, config, yes):
+    prediction_column_name = config.class_name + '_prediction'
+    with h5py.File(data_path, 'r+') as f:
+        if prediction_column_name in f[config.telescope_events_key].keys():
+            if not yes:
+                click.confirm(
+                    f'Column \"{prediction_column_name}\" exists in file, overwrite?',
+                    abort=True,
+                )
+            del f[config.telescope_events_key][prediction_column_name]
+
+
+def read_telescope_data_chunked(path, klaas_config, chunksize, columns):
+    n_rows = h5py_get_n_rows(path, klaas_config.telescope_events_key)
+    if chunksize:
+        n_chunks = int(np.ceil(n_rows / chunksize))
+    else:
+        n_chunks = 1
+        chunksize = n_rows
+    log.info('Splitting data into {} chunks'.format(n_chunks))
+
+    for chunk in range(n_chunks):
+
+        start = chunk * chunksize
+        end = min(n_rows, (chunk + 1) * chunksize)
+
+        df = read_telescope_data(
+            path,
+            klaas_config=klaas_config,
+            columns=columns,
+            first=start,
+            last=end
+        )
+        df.index = np.arange(start, end)
+
+        yield df, start, end
+
+
+def read_telescope_data(path, klaas_config, n_sample=None, columns=None, first=None, last=None):
     '''
     Read given columns from data and perform a random sample if n_sample is supplied.
     Returns a single pandas data frame
     '''
+    telescope_event_columns = None
+    array_event_columns = None
     if klaas_config.has_multiple_telescopes:
+        if columns:
+            with h5py.File(path, 'r+') as f:
+                array_event_columns = set(f[klaas_config.array_events_key].keys()) & set(columns)
+                telescope_event_columns = set(f[klaas_config.telescope_events_key].keys()) & set(columns)
+
         df_features = read_data(
             file_path=path,
             key=klaas_config.telescope_events_key,
+            columns=telescope_event_columns,
+            first=first,
+            last=last,
         )
         df_array_events = read_data(
             file_path=path,
             key=klaas_config.array_events_key,
+            columns=array_event_columns,
         )
         df = pd.merge(left=df_array_events, right=df_features, on=klaas_config.array_event_id_key)
-        df = df[klaas_config.columns_to_read]
     else:
         df = read_data(
             file_path=path,
             key=klaas_config.telescope_events_key,
             columns=klaas_config.columns_to_read,
+            first=first,
+            last=last,
         )
 
     if n_sample is not None:

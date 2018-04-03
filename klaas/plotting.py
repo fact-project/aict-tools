@@ -48,7 +48,7 @@ def plot_bias_resolution(performace_df, bins=10, ax=None):
 
     if np.isscalar(bins):
         bins = np.logspace(
-            np.log10(df.label.min()),
+            np.log10(df.label.min()), d
             np.log10(df.label.max()),
             bins + 1
         )

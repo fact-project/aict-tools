@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 
 from fact.io import write_data
-from ..io import pickle_model, read_and_sample_data
+from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
 from ..features import has_source_dependent_columns
@@ -22,9 +22,8 @@ log = logging.getLogger()
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, signal_path, predictions_path, model_path, key, verbose):
+def main(configuration_path, signal_path, predictions_path, model_path, verbose):
     '''
     Train an energy regressor simulated gamma.
     Both pmml and pickle format are supported for the output.
@@ -48,7 +47,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
             'Using source dependent features in the model is not supported'
         )
 
-    df = read_and_sample_data(signal_path, config, n_sample=config.training_config.n_signal)
+    df = read_telescope_data(signal_path, config, n_sample=config.training_config.n_signal)
 
     log.info('Total number of events: {}'.format(len(df)))
 
@@ -56,10 +55,10 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
     if config.feature_generation_config:
         feature_generation(df, config.feature_generation_config, inplace=True)
 
-    df_train = convert_to_float32(df[config.training_variables])
+    df_train = convert_to_float32(df[config.training_config.training_variables])
     df_train.dropna(how='any', inplace=True)
 
-    log.info('Events after nan-dropping: {} '.format(len(df_train)))
+    log.debug('Events after nan-dropping: {} '.format(len(df_train)))
 
     target = df[config.target_name].loc[df_train.index]
     target.name = 'true_energy'

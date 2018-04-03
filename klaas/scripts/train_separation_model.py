@@ -8,7 +8,7 @@ import logging
 from fact.io import check_extension, write_data
 
 from ..configuration import KlaasConfig
-from ..io import pickle_model, read_and_sample_data
+from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 
 from ..features import has_source_dependent_columns
@@ -24,9 +24,8 @@ log = logging.getLogger()
 @click.argument('background_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, signal_path, background_path, predictions_path, model_path, key, verbose):
+def main(configuration_path, signal_path, background_path, predictions_path, model_path, verbose):
     '''
     Train a classifier on signal and background monte carlo data and write the model
     to MODEL_PATH in pmml or pickle format.
@@ -58,23 +57,23 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         )
 
     log.info('Loading signal data')
-    df_signal = read_and_sample_data(signal_path, klaas_config, tc.n_signal)
+    df_signal = read_telescope_data(signal_path, klaas_config, tc.n_signal)
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
 
     log.info('Loading background data')
-    df_background = read_and_sample_data(background_path, klaas_config, tc.n_background)
+    df_background = read_telescope_data(background_path, klaas_config, tc.n_background)
     df_background['label_text'] = 'background'
     df_background['label'] = 0
 
     df_full = pd.concat([df_background, df_signal], ignore_index=True)
 
 
-    df_training = convert_to_float32(df_full[klaas_config.training_variables])
-    log.info('Total training events: {}'.format(len(df_training)))
+    df_training = convert_to_float32(df_full[tc.training_variables])
+    log.debug('Total training events: {}'.format(len(df_training)))
 
     df_training.dropna(how='any', inplace=True)
-    log.info('Training events after dropping nans: {}'.format(len(df_training)))
+    log.debug('Training events after dropping nans: {}'.format(len(df_training)))
 
     label = df_full.loc[df_training.index, 'label']
 
@@ -83,7 +82,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log.info('Training classifier with {} background and {} signal events'.format(
         n_protons, n_gammas
     ))
-    log.info(klaas_config.training_variables)
+    log.debug(tc.training_variables)
 
     # save prediction_path for each cv iteration
     cv_predictions = []
