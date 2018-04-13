@@ -7,7 +7,7 @@ from .feature_generation import feature_generation
 from fact.io import read_data, h5py_get_n_rows
 import pandas as pd
 import h5py
-
+import click
 __all__ = ['pickle_model']
 
 
@@ -17,13 +17,20 @@ log = logging.getLogger(__name__)
 def check_existing_column(data_path, config, yes):
     prediction_column_name = config.class_name + '_prediction'
     with h5py.File(data_path, 'r+') as f:
-        if prediction_column_name in f[config.telescope_events_key].keys():
+        columns = f[config.telescope_events_key].keys()
+        if prediction_column_name in columns:
             if not yes:
                 click.confirm(
-                    f'Column \"{prediction_column_name}\" exists in file, overwrite?',
-                    abort=True,
+                    f'Column \"{prediction_column_name}\" exists in file, overwrite?', abort=True,
                 )
+
             del f[config.telescope_events_key][prediction_column_name]
+            if prediction_column_name + '_std' in columns:
+                del f[config.telescope_events_key][prediction_column_name + '_std']
+            if prediction_column_name + '_mean' in columns:
+                del f[config.telescope_events_key][prediction_column_name + '_mean']
+            if prediction_column_name + '_avg' in columns:
+                del f[config.telescope_events_key][prediction_column_name + '_avg']
 
 
 def read_telescope_data_chunked(path, klaas_config, chunksize, columns):
