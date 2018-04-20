@@ -72,19 +72,22 @@ def read_telescope_data(path, klaas_config, n_sample=None, columns=None, first=N
                 array_event_columns = set(f[klaas_config.array_events_key].keys()) & set(columns)
                 telescope_event_columns = set(f[klaas_config.telescope_events_key].keys()) & set(columns)
 
-        df_features = read_data(
+        telescope_events = read_data(
             file_path=path,
             key=klaas_config.telescope_events_key,
             columns=telescope_event_columns,
             first=first,
             last=last,
         )
-        df_array_events = read_data(
+        array_events = read_data(
             file_path=path,
             key=klaas_config.array_events_key,
             columns=array_event_columns,
         )
-        df = pd.merge(left=df_array_events, right=df_features, on=klaas_config.array_event_id_key)
+
+        keys = [klaas_config.run_id_key, klaas_config.array_event_id_key]
+        df = pd.merge(left=array_events, right=telescope_events, left_on=keys, right_on=keys)
+
     else:
         df = read_data(
             file_path=path,

@@ -3,12 +3,14 @@ from sklearn.externals import joblib
 import logging
 import h5py
 from tqdm import tqdm
+import pandas as pd
 
 from ..apply import predict
 from ..feature_generation import feature_generation
 from ..features import has_source_dependent_columns
 from ..io import append_to_h5py, read_telescope_data_chunked, check_existing_column
 from ..configuration import KlaasConfig
+# from fact.io import read_data
 
 
 @click.command()
@@ -56,17 +58,31 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
 
     log.info('Predicting on data...')
     prediction_column_name = config.class_name + '_prediction'
-    for df_data, start, end in tqdm(df_generator):
 
+    if config.has_multiple_telescopes:
+        chunked_frames = []
+
+    for df_data, start, end in tqdm(df_generator):
         if config.feature_generation_config:
             feature_generation(df_data, config.feature_generation_config, inplace=True)
 
-        signal_prediction = predict(df_data, model, config.training_config.training_variables)
+        prediction = predict(df_data, model, config.training_config.training_variables)
+
+        if config.has_multiple_telescopes:
+            d = df_data[['run_id', 'array_event_id']].copy()
+            d[prediction_column_name] = prediction
+            chunked_frames.append(d)
 
         with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, signal_prediction, config.telescope_events_key, prediction_column_name)
+            append_to_h5py(f, prediction, config.telescope_events_key, prediction_column_name)
 
-
+    if config.has_multiple_telescopes:
+        with h5py.File(data_path, 'r+') as f:
+            d = pd.concat(chunked_frames).groupby(['run_id', 'array_event_id']).agg(['mean', 'std'])
+            mean = d[prediction_column_name]['mean'].values
+            std = d[prediction_column_name]['std'].values
+            append_to_h5py(f, mean, config.array_events_key, prediction_column_name + '_mean')
+            append_to_h5py(f, std, config.array_events_key, prediction_column_name + '_std')
 
 
 if __name__ == '__main__':

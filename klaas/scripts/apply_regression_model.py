@@ -5,7 +5,7 @@ import logging
 import h5py
 from tqdm import tqdm
 
-from fact.io import read_h5py_chunked
+import pandas as pd
 
 from ..preprocessing import convert_to_float32, check_valid_rows
 from ..feature_generation import feature_generation
@@ -38,7 +38,7 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
     config = KlaasConfig(configuration_path)
 
     log_target = config.log_target
-    class_name = config.class_name + '_prediction'
+    prediction_column_name = config.class_name + '_prediction'
     training_variables = config.training_config.training_variables
 
     check_existing_column(data_path, config, yes)
@@ -51,6 +51,9 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
         model.n_jobs = n_jobs
 
     df_generator = read_telescope_data_chunked(data_path, config, chunksize, config.columns_to_read)
+
+    if config.has_multiple_telescopes:
+        chunked_frames = []
 
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
@@ -76,9 +79,22 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
         # also store the standard deviation in the table
         energy_prediction_std[valid.values] = np.std(predictions, axis=0)
 
+        if config.has_multiple_telescopes:
+            d = df_data[['run_id', 'array_event_id']].copy()
+            d[prediction_column_name] = energy_prediction
+            chunked_frames.append(d)
+
         with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, energy_prediction, config.telescope_events_key, class_name)
-            append_to_h5py(f, energy_prediction_std, config.telescope_events_key, class_name + '_std')
+            append_to_h5py(f, energy_prediction, config.telescope_events_key, prediction_column_name)
+            append_to_h5py(f, energy_prediction_std, config.telescope_events_key, prediction_column_name + '_std')
+
+    if config.has_multiple_telescopes:
+        with h5py.File(data_path, 'r+') as f:
+            d = pd.concat(chunked_frames).groupby(['run_id', 'array_event_id']).agg(['mean', 'std'])
+            mean = d[prediction_column_name]['mean'].values
+            std = d[prediction_column_name]['std'].values
+            append_to_h5py(f, mean, config.array_events_key, prediction_column_name + '_mean')
+            append_to_h5py(f, std, config.array_events_key, prediction_column_name + '_std')
 
 
 if __name__ == '__main__':

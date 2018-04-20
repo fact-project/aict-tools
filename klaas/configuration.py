@@ -50,8 +50,11 @@ class KlaasConfig():
             self.telescope_events_key = config.get('telescope_events_key', 'events')
             self.events_key = config.get('array_events_key', 'array_events')
 
+            self.run_id_key = config.get('run_id_key', 'run_id')
+            columns_to_read.append(self.run_id_key)
             self.array_event_id_key = config.get('array_event_id_key', 'array_event_id')
             columns_to_read.append(self.array_event_id_key)
+
         else:
             self.telescope_events_key = config.get('telescope_events_key', 'events')
 
