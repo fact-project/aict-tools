@@ -14,23 +14,29 @@ __all__ = ['pickle_model']
 log = logging.getLogger(__name__)
 
 
-def check_existing_column(data_path, config, yes):
-    prediction_column_name = config.class_name + '_prediction'
+def drop_prediction_column(data_path, group_name, column_name, yes=True):
+    '''
+    Deletes prediction columns in a h5py file if the columns exist.
+    Including 'mean' and 'std' columns.
+    '''
     with h5py.File(data_path, 'r+') as f:
-        columns = f[config.telescope_events_key].keys()
-        if prediction_column_name in columns:
+
+        if group_name not in f.keys():
+            return
+
+        columns = f[group_name].keys()
+        if column_name in columns:
             if not yes:
                 click.confirm(
-                    f'Column \"{prediction_column_name}\" exists in file, overwrite?', abort=True,
+                    f'Column \"{column_name}\" exists in file, overwrite?', abort=True,
                 )
 
-            del f[config.telescope_events_key][prediction_column_name]
-            if prediction_column_name + '_std' in columns:
-                del f[config.telescope_events_key][prediction_column_name + '_std']
-            if prediction_column_name + '_mean' in columns:
-                del f[config.telescope_events_key][prediction_column_name + '_mean']
-            if prediction_column_name + '_avg' in columns:
-                del f[config.telescope_events_key][prediction_column_name + '_avg']
+            del f[group_name][column_name]
+
+        if column_name + '_std' in columns:
+            del f[group_name][column_name + '_std']
+        if column_name + '_mean' in columns:
+            del f[group_name][column_name + '_mean']
 
 
 def read_telescope_data_chunked(path, klaas_config, chunksize, columns):

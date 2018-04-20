@@ -8,9 +8,8 @@ import pandas as pd
 from ..apply import predict
 from ..feature_generation import feature_generation
 from ..features import has_source_dependent_columns
-from ..io import append_to_h5py, read_telescope_data_chunked, check_existing_column
+from ..io import append_to_h5py, read_telescope_data_chunked, drop_prediction_column
 from ..configuration import KlaasConfig
-# from fact.io import read_data
 
 
 @click.command()
@@ -28,7 +27,7 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
     Apply loaded model to data.
 
     CONFIGURATION_PATH: Path to the config yaml file.
-    DATA_PATH: path to the FACT data.
+    DATA_PATH: path to the FACT/CTA data.
     MODEL_PATH: Path to the pickled model.
 
     The program adds the following columns to the inputfile:
@@ -48,16 +47,15 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
             'Using source dependent features in the model is not supported'
         )
 
-    check_existing_column(data_path, config, yes)
+    prediction_column_name = config.class_name + '_prediction'
+    drop_prediction_column(data_path, group_name=config.telescope_events_key, column_name=prediction_column_name, yes=yes)
+    drop_prediction_column(data_path, group_name=config.array_events_key, column_name=prediction_column_name, yes=yes)
 
     log.debug('Loading model')
     model = joblib.load(model_path)
     log.debug('Loaded model')
 
     df_generator = read_telescope_data_chunked(data_path, config, chunksize, config.columns_to_read)
-
-    log.info('Predicting on data...')
-    prediction_column_name = config.class_name + '_prediction'
 
     if config.has_multiple_telescopes:
         chunked_frames = []
@@ -76,11 +74,12 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
         with h5py.File(data_path, 'r+') as f:
             append_to_h5py(f, prediction, config.telescope_events_key, prediction_column_name)
 
+    # combine predictions
     if config.has_multiple_telescopes:
+        d = pd.concat(chunked_frames).groupby(['run_id', 'array_event_id']).agg(['mean', 'std'])
+        mean = d[prediction_column_name]['mean'].values
+        std = d[prediction_column_name]['std'].values
         with h5py.File(data_path, 'r+') as f:
-            d = pd.concat(chunked_frames).groupby(['run_id', 'array_event_id']).agg(['mean', 'std'])
-            mean = d[prediction_column_name]['mean'].values
-            std = d[prediction_column_name]['std'].values
             append_to_h5py(f, mean, config.array_events_key, prediction_column_name + '_mean')
             append_to_h5py(f, std, config.array_events_key, prediction_column_name + '_std')
 
