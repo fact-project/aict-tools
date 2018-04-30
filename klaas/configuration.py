@@ -65,7 +65,7 @@ class KlaasConfig():
 
         self.columns_to_read = columns_to_read
 
-        # trainign configuration
+        # training configuration
         n_background = config.get('n_background', None)
         n_signal = config.get('n_signal', None)
         n_cross_validations = config.get('n_cross_validations', 10)
@@ -84,3 +84,5 @@ class KlaasConfig():
             self.seed,
             training_variables,
         )
+
+        self.calibrate_classifier = config.get('calibrate_classifier', False)

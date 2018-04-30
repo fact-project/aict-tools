@@ -1,6 +1,7 @@
 import pandas as pd
 import click
 from sklearn import model_selection
+from sklearn.calibration import CalibratedClassifierCV
 from tqdm import tqdm
 import numpy as np
 from sklearn import metrics
@@ -119,14 +120,20 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
+
     log.info('Mean AUC ROC : {}'.format(np.array(aucs).mean()))
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
     log.info('Writing predictions from cross validation')
     write_data(predictions_df, predictions_path, mode='w')
 
-    log.info('Training model on complete dataset')
-    classifier.fit(X, y)
+    if klaas_config.calibrate_classifier:
+        log.info('Training calibrated classifier')
+        classifier = CalibratedClassifierCV(classifier, cv=2, method='sigmoid')
+        classifier.fit(X, y)
+    else:
+        log.info('Training model on complete dataset')
+        classifier.fit(X, y)
 
     log.info('Pickling model to {} ...'.format(model_path))
     pickle_model(
