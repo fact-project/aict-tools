@@ -3,6 +3,7 @@ import numpy as np
 from sklearn import metrics
 import pandas as pd
 from matplotlib.colors import LogNorm
+from sklearn.calibration import CalibratedClassifierCV
 
 
 def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None):
@@ -93,24 +94,11 @@ def plot_roc(performace_df, model, ax=None):
     ax.axhline(1, color='lightgray')
 
     roc_aucs = []
-    fprs = []
-    tprs = []
 
-    thresholds = np.linspace(0, 1, model.n_estimators + 2)
-
+    mean_fpr, mean_tpr, _ = metrics.roc_curve(performace_df['label'], performace_df['probabilities'])
     for it, df in performace_df.groupby('cv_fold'):
 
-        fpr = []
-        tpr = []
-        for threshold in thresholds:
-            (tp, fn), (fp, tn) = metrics.confusion_matrix(
-                df['label'], (df['probabilities'] >= threshold).astype(int)
-            )
-            fpr.append(fp / (fp + tn))
-            tpr.append(tp / (tp + fn))
-
-        fprs.append(fpr)
-        tprs.append(tpr)
+        fpr, tpr, _ = metrics.roc_curve(df['label'], df['probabilities'])
 
         roc_aucs.append(metrics.roc_auc_score(df['label'], df['probabilities']))
 
@@ -124,7 +112,7 @@ def plot_roc(performace_df, model, ax=None):
         np.mean(roc_aucs), np.std(roc_aucs)
     ))
 
-    ax.plot(np.mean(fprs, axis=0), np.mean(tprs, axis=0), label='Mean ROC curve')
+    ax.plot(mean_fpr, mean_tpr, label='Mean ROC curve')
     ax.legend()
     ax.set_aspect(1)
 
@@ -138,6 +126,9 @@ def plot_roc(performace_df, model, ax=None):
 def plot_probabilities(performace_df, model, ax=None, classnames=('Proton', 'Gamma')):
 
     ax = ax or plt.gca()
+
+    if isinstance(model, CalibratedClassifierCV):
+        model = model.base_estimator
 
     bin_edges = np.linspace(0, 1, model.n_estimators + 2)
 
@@ -155,6 +146,9 @@ def plot_probabilities(performace_df, model, ax=None, classnames=('Proton', 'Gam
 def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
 
     ax = ax or plt.gca()
+
+    if isinstance(model, CalibratedClassifierCV):
+        model = model.base_estimator
 
     thresholds = np.linspace(0, 1, model.n_estimators + 2)
     precision = []
@@ -188,6 +182,9 @@ def plot_feature_importances(model, feature_names, ax=None):
     ax = ax or plt.gca()
 
     y_pos = np.arange(len(feature_names[:20]))
+
+    if isinstance(model, CalibratedClassifierCV):
+        model = model.base_estimator
 
     if hasattr(model, 'estimators_'):
 
