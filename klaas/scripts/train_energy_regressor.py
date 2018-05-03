@@ -44,25 +44,26 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     with open(configuration_path) as f:
         config = yaml.load(f)
+    model_config = config.get('energy', config)
 
     seed = config.get('seed', 0)
     np.random.seed(seed)
 
-    n_signal = config.get('n_signal')
+    n_signal = model_config.get('n_signal')
 
-    n_cross_validations = config['n_cross_validations']
-    training_variables = config['training_variables']
-    target_name = config.get('target_name', 'corsika_event_header_total_energy')
+    n_cross_validations = model_config.get('n_cross_validations', config.get('n_cross_validations', 5))
+    training_variables = model_config['training_variables']
+    target_name = model_config.get('target_name', 'corsika_event_header_total_energy')
 
-    log_target = config.get('log_target', False)
+    log_target = model_config.get('log_target', False)
 
-    regressor = eval(config['regressor'])
+    regressor = eval(model_config['regressor'])
     regressor.random_state = seed
 
     columns_to_read = training_variables + [target_name]
 
     # Also read columns needed for feature generation
-    generation_config = config.get('feature_generation')
+    generation_config = model_config.get('feature_generation')
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
 
@@ -82,9 +83,8 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
 
     # generate features if given in config
     if generation_config:
-        gen_config = config['feature_generation']
-        training_variables.extend(sorted(gen_config['features']))
-        feature_generation(df, gen_config, inplace=True)
+        training_variables.extend(sorted(generation_config['features']))
+        feature_generation(df, generation_config, inplace=True)
 
     df_train = convert_to_float32(df[training_variables])
     df_train.dropna(how='any', inplace=True)

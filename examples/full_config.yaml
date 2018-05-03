@@ -31,8 +31,8 @@ selection:
 
  
 # config for the energy regression
-energy_regressor:
-  model : |
+energy:
+  regressor: |
     ensemble.RandomForestRegressor(
       n_estimators=30,
       max_features='sqrt',
@@ -56,10 +56,9 @@ energy_regressor:
     - length
     - width
     - num_islands
-    - leakage
+    - leakage1
     - skewness_long
     - skewness_trans
-    - disp
     - timespread
     - concentration_cog
 
@@ -78,7 +77,7 @@ energy_regressor:
 # config for the g/h separation
 separator:
   #the classifier to use
-  model : |
+  classifier: |
     ensemble.RandomForestClassifier(
         n_estimators=30,
         max_features='sqrt',
@@ -100,18 +99,17 @@ separator:
     - length
     - width
     - num_islands
-    - leakage
+    - leakage1
     - skewness_long
     - skewness_trans
-    - disp
     - timespread
     - concentration_core
     - concentration_cog
 
 
 # config for the source regression
-disp_regressor:
-  disp_model: |
+disp:
+  disp_regressor: |
     ensemble.RandomForestRegressor(
         n_estimators=30,
         max_features='sqrt',
@@ -119,7 +117,7 @@ disp_regressor:
         max_depth=20,
     )
 
-  sign_model: |
+  sign_classifier: |
     ensemble.RandomForestClassifier(
         n_estimators=30,
         max_features='sqrt',
@@ -138,9 +136,8 @@ disp_regressor:
 
   training_variables:
     - concentration_cog
-    - conctration_core
+    - concentration_core
     - delta
-    - disp
     - leakage1
     - leakage2
     - length

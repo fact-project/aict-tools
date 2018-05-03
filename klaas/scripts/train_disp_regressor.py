@@ -54,26 +54,27 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     with open(configuration_path) as f:
         config = yaml.load(f)
+    model_config = config.get('disp', config)
 
     seed = config.get('seed', 0)
 
     np.random.seed(seed)
 
-    n_signal = config.get('n_signal')
+    n_signal = model_config.get('n_signal')
 
-    n_cross_validations = config['n_cross_validations']
-    training_variables = config['training_variables']
+    n_cross_validations = model_config.get('n_cross_validations', config.get('n_cross_validations', 5))
+    training_variables = model_config['training_variables']
 
-    disp_regressor = eval(config['disp_regressor'])
-    sign_classifier = eval(config['sign_classifier'])
+    disp_regressor = eval(model_config['disp_regressor'])
+    sign_classifier = eval(model_config['sign_classifier'])
 
     disp_regressor.random_state = seed
     sign_classifier.random_state = seed
 
-    az_source_col = config.get('source_azimuth_column', 'az_source')
-    zd_source_col = config.get('source_zenith_column', 'zd_source')
-    az_pointing_col = config.get('pointing_azimuth_column', 'az_tracking')
-    zd_pointing_col = config.get('pointing_zenith_column', 'zd_tracking')
+    az_source_col = model_config.get('source_azimuth_column', 'az_source')
+    zd_source_col = model_config.get('source_zenith_column', 'zd_source')
+    az_pointing_col = model_config.get('pointing_azimuth_column', 'az_tracking')
+    zd_pointing_col = model_config.get('pointing_zenith_column', 'zd_tracking')
 
     columns_to_read = training_variables + [
         'cog_x', 'cog_y', 'delta',
@@ -82,7 +83,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     ]
 
     # Also read columns needed for feature generation
-    generation_config = config.get('feature_generation')
+    generation_config = model_config.get('feature_generation')
     if generation_config:
         columns_to_read.extend(generation_config.get('needed_keys', []))
 
@@ -117,9 +118,8 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     # generate features if given in config
     if generation_config:
-        gen_config = config['feature_generation']
-        training_variables.extend(sorted(gen_config['features']))
-        feature_generation(df, gen_config, inplace=True)
+        training_variables.extend(sorted(generation_config['features']))
+        feature_generation(df, generation_config, inplace=True)
 
     df_train = convert_to_float32(df[training_variables])
     df_train.dropna(how='any', inplace=True)

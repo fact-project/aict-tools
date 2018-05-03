@@ -48,18 +48,20 @@ def read_config(configuration_path):
     '''
     with open(configuration_path) as f:
         config = yaml.load(f)
+    model_config = config.get('separator', config)
 
-    n_background = config.get('n_background')
-    n_signal = config.get('n_signal')
+    n_background = model_config.get('n_background')
+    n_signal = model_config.get('n_signal')
 
-    n_cross_validations = config.get('n_cross_validations', 10)
-    training_variables = config['training_variables']
+    k = 'n_cross_validations'
+    n_cross_validations = model_config.get(k, config.get(k, 5))
+    training_variables = model_config['training_variables']
 
-    classifier = eval(config['classifier'])
+    classifier = eval(model_config['classifier'])
 
-    generation_config = config.get('feature_generation')
+    generation_config = model_config.get('feature_generation')
 
-    telescope_type_column = config.get('telescope_type_key', None)
+    telescope_type_column = model_config.get('telescope_type_key', None)
 
     seed = config.get('seed', 0)
 
