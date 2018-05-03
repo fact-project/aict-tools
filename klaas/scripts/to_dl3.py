@@ -213,7 +213,6 @@ def main(
         for i, theta_off in enumerate(theta_offs, start=1):
             df['theta_deg_off_{}'.format(i)] = theta_off
 
-        print(df.head())
         if source:
             to_h5py(df[dl3_columns_obs], output, key='events', mode='a')
         else:
