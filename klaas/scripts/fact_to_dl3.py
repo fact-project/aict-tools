@@ -292,6 +292,10 @@ def main(
         else:
             to_h5py(df[dl3_columns_sim], output, key='events', mode='a')
 
+    if source:
+        log.info('Copying "runs" group')
+        to_h5py(runs, output, key='runs', mode='a')
+
 
 if __name__ == '__main__':
     main()
