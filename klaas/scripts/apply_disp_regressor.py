@@ -40,8 +40,6 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    training_variables = config['training_variables']
-
     columns_to_delete = [
         'source_x_prediction',
         'source_y_prediction',
@@ -85,6 +83,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         disp_model.n_jobs = n_jobs
         sign_model.n_jobs = n_jobs
 
+    training_variables = config['training_variables'].copy()
     columns_to_read = training_variables.copy()
     generation_config = config.get('feature_generation')
     if generation_config:
