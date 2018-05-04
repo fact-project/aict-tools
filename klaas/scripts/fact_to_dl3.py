@@ -5,15 +5,94 @@ import yaml
 import logging
 from tqdm import tqdm
 import pandas as pd
-import h5py
+from functools import partial
 
 from astropy.time import Time
 from astropy.coordinates import AltAz, SkyCoord
+import astropy.units as u
+
 from fact.io import read_h5py, read_h5py_chunked, to_h5py
 from fact.instrument.constants import LOCATION
 from fact.analysis.source import calc_theta_camera, calc_theta_offs_camera
 from fact.coordinates import camera_to_equatorial
+
 from ..apply import predict_energy, predict_disp, predict_separator
+from ..parallel import parallelize_array_computation
+
+
+def to_altaz(obstime, source):
+    altaz = AltAz(location=LOCATION, obstime=obstime)
+    return source.transform_to(altaz)
+
+
+def concat_results_altaz(results):
+    obstime = np.concatenate([s.obstime for s in results])
+    return SkyCoord(
+        alt=np.concatenate([s.alt.deg for s in results]) * u.deg,
+        az=np.concatenate([s.az.deg for s in results]) * u.deg,
+        frame=AltAz(location=LOCATION, obstime=obstime)
+    )
+
+
+def calc_source_features_sim(
+    source_x,
+    source_y,
+    source_zd,
+    source_az,
+    pointing_position_zd,
+    pointing_position_az,
+):
+    result = {}
+    result['theta_deg'] = calc_theta_camera(
+        source_x,
+        source_y,
+        source_zd=source_zd,
+        source_az=source_az,
+        zd_pointing=pointing_position_zd,
+        az_pointing=pointing_position_az,
+    )
+    theta_offs = calc_theta_offs_camera(
+        source_x,
+        source_y,
+        source_zd=source_zd,
+        source_az=source_az,
+        zd_pointing=pointing_position_zd,
+        az_pointing=pointing_position_az,
+        n_off=5,
+    )
+    for i, theta_off in enumerate(theta_offs, start=1):
+        result['theta_deg_off_{}'.format(i)] = theta_off
+    return result
+
+
+def calc_source_features_obs(
+    source_x,
+    source_y,
+    source_zd,
+    source_az,
+    pointing_position_zd,
+    pointing_position_az,
+    obstime,
+):
+
+    result = calc_source_features_sim(
+        source_x,
+        source_y,
+        source_zd,
+        source_az,
+        pointing_position_zd,
+        pointing_position_az,
+    )
+
+    result['ra_prediction'], result['dec_prediction'] = camera_to_equatorial(
+        source_x,
+        source_y,
+        pointing_position_zd,
+        pointing_position_az,
+        obstime,
+    )
+    return result
+
 
 dl3_columns = [
     'run_id',
@@ -61,7 +140,7 @@ needed_columns = [
 @click.argument('sign_model_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output', type=click.Path(exists=False, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
-@click.option('-n', '--n-jobs', type=int, help='Number of cores to use')
+@click.option('-n', '--n-jobs', default=-1, type=int, help='Number of cores to use')
 @click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 @click.option(
@@ -87,10 +166,15 @@ def main(
     and energy_prediction_std
 
     CONFIGURATION_PATH: Path to the config yaml file
+
     DATA_PATH: path to the FACT data in a h5py hdf5 file, e.g. erna_gather_fits output
+
     SEPARATOR_MODEL_PATH: Path to the pickled separation model.
+
     ENERGY_MODEL_PATH: Path to the pickled energy regression model.
+
     DISP_MODEL_PATH: Path to the pickled disp model.
+
     SIGN_MODEL_PATH: Path to the pickled sign model.
     '''
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
@@ -144,7 +228,6 @@ def main(
 
     log.info('Predicting on data...')
     for df, start, end in tqdm(df_generator):
-
         df['gamma_prediction'] = predict_separator(
             df, separator_model, config['separator']
         )
@@ -162,56 +245,38 @@ def main(
         df['source_y_prediction'] = source_y
 
         if source:
-            log.info('Using source {}'.format(source))
-            obstime = Time(pd.to_datetime(df['timestamp']).dt.to_pydatetime())
-            altaz = AltAz(location=LOCATION, obstime=obstime)
-            source_altaz = source.transform_to(altaz)
-            df['theta_deg'] = calc_theta_camera(
-                source_x,
-                source_y,
-                source_zd=source_altaz.zen.deg,
-                source_az=source_altaz.az.deg,
-                zd_pointing=df['pointing_position_zd'],
-                az_pointing=df['pointing_position_az'],
-            )
-            theta_offs = calc_theta_offs_camera(
-                source_x,
-                source_y,
-                source_zd=source_altaz.zen.deg,
-                source_az=source_altaz.az.deg,
-                zd_pointing=df['pointing_position_zd'],
-                az_pointing=df['pointing_position_az'],
-                n_off=5,
-            )
-            df['ra_prediction'], df['dec_prediction'] = camera_to_equatorial(
-                source_x,
-                source_y,
-                df['pointing_position_zd'],
-                df['pointing_position_az'],
+            obstime = Time(pd.to_datetime(df['timestamp'].values).to_pydatetime())
+            source_altaz = concat_results_altaz(parallelize_array_computation(
+                partial(to_altaz, source=source),
                 obstime,
+                n_jobs=n_jobs,
+            ))
+
+            result = parallelize_array_computation(
+                calc_source_features_obs,
+                source_x,
+                source_y,
+                source_altaz.zen.deg,
+                source_altaz.az.deg,
+                df['pointing_position_zd'].values,
+                df['pointing_position_az'].values,
+                obstime,
+                n_jobs=n_jobs,
             )
         else:
-            log.info('Using source from "source_position_{az,zd}"')
-            df['theta_deg'] = calc_theta_camera(
+            result = parallelize_array_computation(
+                calc_source_features_sim,
                 source_x,
                 source_y,
-                source_zd=df['source_position_zd'],
-                source_az=df['source_position_az'],
-                zd_pointing=df['pointing_position_zd'],
-                az_pointing=df['pointing_position_az'],
-            )
-            theta_offs = calc_theta_offs_camera(
-                source_x,
-                source_y,
-                source_zd=df['source_position_zd'],
-                source_az=df['source_position_az'],
-                zd_pointing=df['pointing_position_zd'],
-                az_pointing=df['pointing_position_az'],
-                n_off=5,
+                df['source_position_zd'].values,
+                df['source_position_az'].values,
+                df['pointing_position_zd'].values,
+                df['pointing_position_az'].values,
+                n_jobs=n_jobs,
             )
 
-        for i, theta_off in enumerate(theta_offs, start=1):
-            df['theta_deg_off_{}'.format(i)] = theta_off
+        for k in result[0].keys():
+            df[k] = np.concatenate([r[k] for r in result])
 
         if source:
             to_h5py(df[dl3_columns_obs], output, key='events', mode='a')
