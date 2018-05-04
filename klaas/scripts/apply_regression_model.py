@@ -1,4 +1,3 @@
-import numpy as np
 import click
 from sklearn.externals import joblib
 import yaml
@@ -8,8 +7,6 @@ from tqdm import tqdm
 
 from fact.io import read_h5py_chunked
 
-from ..preprocessing import convert_to_float32, check_valid_rows
-from ..feature_generation import feature_generation
 from ..io import append_to_h5py
 from ..apply import predict_energy
 

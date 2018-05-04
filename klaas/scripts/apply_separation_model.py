@@ -9,7 +9,6 @@ from fact.io import read_h5py_chunked
 
 from ..features import find_used_source_features
 from ..apply import predict_separator
-from ..feature_generation import feature_generation
 from ..io import append_to_h5py
 
 
