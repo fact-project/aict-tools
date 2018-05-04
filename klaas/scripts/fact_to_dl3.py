@@ -6,6 +6,7 @@ import logging
 from tqdm import tqdm
 import pandas as pd
 from functools import partial
+import os
 
 from astropy.time import Time
 from astropy.coordinates import AltAz, SkyCoord
@@ -182,6 +183,14 @@ def main(
 
     with open(configuration_path) as f:
         config = yaml.load(f)
+
+    if os.path.isfile(output):
+        if not yes:
+            click.confirm(
+                'Outputfile {} exists. Overwrite?'.format(output),
+                abort=True,
+            )
+        open(output, 'w').close()
 
     log.info('Loading model')
     separator_model = joblib.load(separator_model_path)
