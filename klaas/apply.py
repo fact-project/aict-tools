@@ -47,7 +47,6 @@ def build_query(selection_config):
 def predict_energy(df, model, config):
     training_variables = config['training_variables']
     generation_config = config.get('feature_generation')
-    print(training_variables)
     if generation_config:
         feature_generation(
             df,
@@ -55,7 +54,6 @@ def predict_energy(df, model, config):
             inplace=True,
         )
         training_variables.extend(generation_config['features'])
-    print(training_variables)
 
     df_features = convert_to_float32(df[training_variables])
     valid = check_valid_rows(df_features)
