@@ -45,6 +45,7 @@ setup(
             'klaas_plot_regressor_performance = klaas.scripts.plot_regressor_performance:main',
             'klaas_apply_cuts = klaas.scripts.apply_cuts:main',
             'klaas_convert_pandas2h5py = klaas.scripts.convert_pandas2h5py:main',
+            'klaas_fact_to_dl3 = klaas.scripts.convert_pandas2h5py:main',
         ],
     }
 )

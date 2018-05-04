@@ -196,7 +196,7 @@ def test_to_dl3():
     from klaas.scripts.train_disp_regressor import main as train_disp
     from klaas.scripts.train_energy_regressor import main as train_energy
     from klaas.scripts.train_separation_model import main as train_separator
-    from klaas.scripts.to_dl3 import main as to_dl3
+    from klaas.scripts.fact_to_dl3 import main as to_dl3
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
