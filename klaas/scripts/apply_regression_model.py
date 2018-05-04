@@ -89,7 +89,7 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
             append_to_h5py(f, energy_prediction_std, config.telescope_events_key, prediction_column_name + '_std')
 
     if config.has_multiple_telescopes:
-        d = pd.concat(chunked_frames).groupby(['run_id', 'array_event_id']).agg(['mean', 'std'])
+        d = pd.concat(chunked_frames).groupby(['run_id', 'array_event_id'], sort=False).agg(['mean', 'std'])
         mean = d[prediction_column_name]['mean'].values
         std = d[prediction_column_name]['std'].values
         with h5py.File(data_path, 'r+') as f:
