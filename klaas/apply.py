@@ -45,7 +45,7 @@ def build_query(selection_config):
 
 
 def predict_energy(df, model, config):
-    training_variables = config['training_variables']
+    training_variables = config['training_variables'].copy()
     generation_config = config.get('feature_generation')
     if generation_config:
         feature_generation(
@@ -68,7 +68,7 @@ def predict_energy(df, model, config):
 
 
 def predict_disp(df, abs_model, sign_model, config):
-    training_variables = config['training_variables']
+    training_variables = config['training_variables'].copy()
     generation_config = config.get('feature_generation')
     if generation_config:
         feature_generation(
@@ -91,7 +91,7 @@ def predict_disp(df, abs_model, sign_model, config):
 
 
 def predict_separator(df, model, config):
-    training_variables = config['training_variables']
+    training_variables = config['training_variables'].copy()
     generation_config = config.get('feature_generation')
     if generation_config:
         feature_generation(
