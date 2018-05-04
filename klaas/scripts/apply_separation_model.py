@@ -44,8 +44,6 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    training_variables = config['training_variables']
-
     prediction_column_name = config.get('class_name', 'gamma') + '_prediction'
 
     with h5py.File(data_path, 'r+') as f:
@@ -57,11 +55,11 @@ def main(configuration_path, data_path, model_path, key, chunksize, yes, verbose
                 )
             del f[key][prediction_column_name]
 
-
     log.info('Loading model')
     model = joblib.load(model_path)
     log.info('Done')
 
+    training_variables = config['training_variables'].copy()
     generation_config = config.get('feature_generation')
     if len(find_used_source_features(training_variables, generation_config)) > 0:
         raise click.ClickException(
