@@ -48,7 +48,8 @@ def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes,
                     abort=True,
                 )
             del f[key][class_name]
-            del f[key]['{}_std'.format(class_name)]
+            if class_name + '_std' in f[key].keys():
+                del f[key][class_name + '_std']
 
     log.info('Loading model')
     model = joblib.load(model_path)
