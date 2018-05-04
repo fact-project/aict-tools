@@ -53,7 +53,7 @@ def predict_energy(df, model, config):
             generation_config,
             inplace=True,
         )
-        training_variables.extend(generation_config['features'])
+        training_variables.extend(sorted(generation_config['features']))
 
     df_features = convert_to_float32(df[training_variables])
     valid = check_valid_rows(df_features)
@@ -76,7 +76,7 @@ def predict_disp(df, abs_model, sign_model, config):
             generation_config,
             inplace=True,
         )
-        training_variables.extend(generation_config['features'])
+        training_variables.extend(sorted(generation_config['features']))
 
     df_features = convert_to_float32(df[training_variables])
     valid = check_valid_rows(df_features)
@@ -99,7 +99,7 @@ def predict_separator(df, model, config):
             generation_config,
             inplace=True,
         )
-        training_variables.extend(generation_config['features'])
+        training_variables.extend(sorted(generation_config['features']))
 
     df_features = convert_to_float32(df[training_variables])
     valid = check_valid_rows(df_features)
