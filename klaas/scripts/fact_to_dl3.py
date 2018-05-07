@@ -12,13 +12,16 @@ from astropy.time import Time
 from astropy.coordinates import AltAz, SkyCoord
 import astropy.units as u
 
-from fact.io import read_h5py, read_h5py_chunked, to_h5py
+from fact.io import read_h5py, to_h5py
 from fact.instrument.constants import LOCATION
 from fact.analysis.source import calc_theta_camera, calc_theta_offs_camera
 from fact.coordinates import camera_to_equatorial
 
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
+from ..io import read_telescope_data_chunked
+from ..configuration import KlaasConfig
+from ..feature_generation import feature_generation
 
 
 def to_altaz(obstime, source):
@@ -181,8 +184,7 @@ def main(
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    with open(configuration_path) as f:
-        config = yaml.load(f)
+    config = KlaasConfig.from_yaml(configuration_path)
 
     if os.path.isfile(output):
         if not yes:
@@ -207,12 +209,8 @@ def main(
 
     columns = set(needed_columns)
     for model in ('separator', 'energy', 'disp'):
-        columns.update(config[model]['training_variables'])
-
-        generation_config = config[model].get('feature_generation')
-        if generation_config:
-            columns.update(generation_config['needed_keys'])
-
+        model_config = getattr(config, model)
+        columns.update(model_config.columns_to_read_apply)
     try:
         runs = read_h5py(data_path, key='runs')
         sources = runs['source'].unique()
@@ -227,25 +225,28 @@ def main(
         columns.update(['source_position_az', 'source_position_zd'])
         columns.update(corsika_columns)
 
-    df_generator = read_h5py_chunked(
+    df_generator = read_telescope_data_chunked(
         data_path,
-        key=key,
-        columns=columns,
+        config,
         chunksize=chunksize,
-        mode='r+'
+        columns=columns,
     )
 
     log.info('Predicting on data...')
     for df, start, end in tqdm(df_generator):
+        df_sep = feature_generation(df, config.separator.feature_generation)
         df['gamma_prediction'] = predict_separator(
-            df, separator_model, config['separator']
-        )
-        df['gamma_energy_prediction'] = predict_energy(
-            df, energy_model, config['energy']
+            df_sep[config.separator.features], separator_model,
         )
 
+        df_energy = feature_generation(df, config.energy.feature_generation)
+        df['gamma_energy_prediction'] = predict_energy(
+            df_energy[config.energy.features], energy_model,
+        )
+
+        df_disp = feature_generation(df, config.disp.feature_generation)
         disp = predict_disp(
-            df, disp_model, sign_model, config['disp']
+            df_disp[config.disp.features], disp_model, sign_model
         )
 
         source_x = df.cog_x + disp * np.cos(df.delta)

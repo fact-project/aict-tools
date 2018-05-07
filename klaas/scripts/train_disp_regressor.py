@@ -4,15 +4,13 @@ from sklearn import model_selection
 from sklearn import metrics
 from tqdm import tqdm
 import numpy as np
-import yaml
-from sklearn import ensemble
 
-from fact.io import write_data, read_data
+from fact.io import write_data
 from fact.coordinates.utils import horizontal_to_camera
-from ..io import pickle_model
+from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
-from ..features import find_used_source_features
+from ..configuration import KlaasConfig
 
 import logging
 
@@ -52,57 +50,31 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    with open(configuration_path) as f:
-        config = yaml.load(f)
-    model_config = config.get('disp', config)
+    config = KlaasConfig.from_yaml(configuration_path)
+    model_config = config.disp
 
-    seed = config.get('seed', 0)
+    np.random.seed(config.seed)
 
-    np.random.seed(seed)
+    disp_regressor = model_config.disp_regressor
+    sign_classifier = model_config.sign_classifier
 
-    n_signal = model_config.get('n_signal')
-
-    n_cross_validations = model_config.get('n_cross_validations', config.get('n_cross_validations', 5))
-    training_variables = model_config['training_variables']
-
-    disp_regressor = eval(model_config['disp_regressor'])
-    sign_classifier = eval(model_config['sign_classifier'])
-
-    disp_regressor.random_state = seed
-    sign_classifier.random_state = seed
-
-    az_source_col = model_config.get('source_azimuth_column', 'az_source')
-    zd_source_col = model_config.get('source_zenith_column', 'zd_source')
-    az_pointing_col = model_config.get('pointing_azimuth_column', 'az_tracking')
-    zd_pointing_col = model_config.get('pointing_zenith_column', 'zd_tracking')
-
-    columns_to_read = training_variables + [
-        'cog_x', 'cog_y', 'delta',
-        az_source_col, zd_source_col,
-        az_pointing_col, zd_pointing_col
-    ]
-
-    # Also read columns needed for feature generation
-    generation_config = model_config.get('feature_generation')
-    if generation_config:
-        columns_to_read.extend(generation_config.get('needed_keys', []))
-
-    if len(find_used_source_features(training_variables, generation_config)) > 0:
-        raise click.ClickException(
-            'Using source dependent features in the model is not supported'
-        )
+    disp_regressor.random_state = config.seed
+    sign_classifier.random_state = config.seed
 
     log.info('Loading data')
-    df = read_data(
-        file_path=signal_path,
-        key=key,
-        columns=columns_to_read,
+    df = read_telescope_data(
+        signal_path, config,
+        model_config.columns_to_read_train,
+        feature_generation_config=model_config.feature_generation,
+        n_sample=model_config.n_signal
     )
     log.info('Total number of events: {}'.format(len(df)))
 
     source_x, source_y = horizontal_to_camera(
-        az=df[az_source_col], zd=df[zd_source_col],
-        az_pointing=df[az_pointing_col], zd_pointing=df[zd_pointing_col],
+        az=df[model_config.source_az_column],
+        zd=df[model_config.source_zd_column],
+        az_pointing=df[model_config.pointing_az_column],
+        zd_pointing=df[model_config.pointing_zd_column],
     )
 
     df['true_disp'] = euclidean_distance(
@@ -117,31 +89,32 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     df['true_sign'] = np.sign(np.abs(df.delta - true_delta) - np.pi / 2)
 
     # generate features if given in config
-    if generation_config:
-        training_variables.extend(sorted(generation_config['features']))
-        feature_generation(df, generation_config, inplace=True)
+    if model_config.feature_generation:
+        feature_generation(df, model_config.feature_generation, inplace=True)
 
-    df_train = convert_to_float32(df[training_variables])
+    df_train = convert_to_float32(df[config.disp.features])
     df_train.dropna(how='any', inplace=True)
 
-    if n_signal:
-        log.info('Sampling {} random events'.format(n_signal))
-        df_train = df_train.sample(n_signal, random_state=seed)
+    if model_config.n_signal:
+        log.info('Sampling {} random events'.format(model_config.n_signal))
+        df_train = df_train.sample(model_config.n_signal, random_state=config.seed)
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
     target_disp = df['true_disp'].loc[df_train.index]
     target_sign = df['true_sign'].loc[df_train.index]
 
-    log.info('Starting {} fold cross validation... '.format(n_cross_validations))
+    log.info('Starting {} fold cross validation... '.format(
+        model_config.n_cross_validations
+    ))
     scores_disp = []
     scores_sign = []
     cv_predictions = []
 
     kfold = model_selection.KFold(
-        n_splits=n_cross_validations,
+        n_splits=model_config.n_cross_validations,
         shuffle=True,
-        random_state=seed,
+        random_state=config.seed,
     )
 
     for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):

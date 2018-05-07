@@ -44,35 +44,21 @@ def build_query(selection_config):
     return query
 
 
-def predict_energy(df, model, config):
-    if config.feature_generation_config:
-        feature_generation(
-            df,
-            config.feature_generation_config,
-            inplace=True,
-        )
-
-    df_features = convert_to_float32(df[config.training_config.training_variables])
+def predict_energy(df, model, log_target=False):
+    df_features = convert_to_float32(df)
     valid = check_valid_rows(df_features)
 
     energy_prediction = np.full(len(df_features), np.nan)
     energy_prediction[valid] = model.predict(df_features.loc[valid].values)
 
-    if config.log_target:
+    if log_target:
         energy_prediction[valid] = np.exp(energy_prediction[valid])
 
     return energy_prediction
 
 
-def predict_disp(df, abs_model, sign_model, config):
-    if config.feature_generation_config:
-        feature_generation(
-            df,
-            config.feature_generation_config,
-            inplace=True,
-        )
-
-    df_features = convert_to_float32(df[config.training_config.training_variables])
+def predict_disp(df, abs_model, sign_model):
+    df_features = convert_to_float32(df)
     valid = check_valid_rows(df_features)
 
     disp_abs = abs_model.predict(df_features.loc[valid].values)
@@ -84,15 +70,8 @@ def predict_disp(df, abs_model, sign_model, config):
     return disp_prediction
 
 
-def predict_separator(df, model, config):
-    if config.feature_generation_config:
-        feature_generation(
-            df,
-            config.feature_generation_config,
-            inplace=True,
-        )
-
-    df_features = convert_to_float32(df[config.training_config.training_variables])
+def predict_separator(df, model):
+    df_features = convert_to_float32(df)
     valid = check_valid_rows(df_features)
 
     score = np.full(len(df_features), np.nan)

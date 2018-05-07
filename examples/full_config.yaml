@@ -44,7 +44,7 @@ energy:
   n_signal: 500
 
   # define the name of the regression target
-  target_name: corsika_event_header_total_energy
+  target_column: corsika_event_header_total_energy
 
 
   # Define the name of the variable you want estimate by regression. The default is 'energy'.

@@ -1,5 +1,8 @@
-#the classifier to use
+# seed for the random number generators, to make things reproducible
+seed: 0
+
 energy:
+  #the classifier to use
   regressor : |
     ensemble.RandomForestRegressor(
       n_estimators=30,
@@ -8,9 +11,6 @@ energy:
       max_depth=12,
     )
 
-  # seed for the random number generators, to make things reproducible
-  seed: 0
-
   # randomly sample the data if you dont want to use the whole set
   n_signal: 500
 
@@ -18,7 +18,7 @@ energy:
   n_cross_validations: 5
 
   # define the name of the regression target
-  target_name: corsika_event_header_total_energy
+  target_column: corsika_event_header_total_energy
 
 
   # Define the name of the variable you want estimate by regression. The default is 'energy'.

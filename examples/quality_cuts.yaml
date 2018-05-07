@@ -1,3 +1,6 @@
+# random seed
+seed: 0
+
 # Quality cuts from Fabian Temme's phd thesis
 selection:
     numPixelInShower:

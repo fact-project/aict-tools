@@ -40,39 +40,35 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    config = KlaasConfig(configuration_path)
-
-    if has_source_dependent_columns(config.columns_to_read):
-        raise click.ClickException(
-            'Using source dependent features in the model is not supported'
-        )
+    config = KlaasConfig.from_yaml(configuration_path)
+    model_config = config.separator
 
     prediction_column_name = config.class_name + '_prediction'
     drop_prediction_column(
         data_path, group_name=config.telescope_events_key,
         column_name=prediction_column_name, yes=yes
     )
-    drop_prediction_column(
-        data_path, group_name=config.array_events_key,
-        column_name=prediction_column_name, yes=yes
-    )
+    if config.has_multiple_telescopes:
+        drop_prediction_column(
+            data_path, group_name=config.array_events_key,
+            column_name=prediction_column_name, yes=yes
+        )
 
     log.debug('Loading model')
     model = joblib.load(model_path)
     log.debug('Loaded model')
 
     df_generator = read_telescope_data_chunked(
-        data_path, config, chunksize, config.columns_to_read
+        data_path, config, chunksize, model_config.columns_to_read_apply,
+        feature_generation_config=model_config.feature_generation
     )
 
     if config.has_multiple_telescopes:
         chunked_frames = []
 
     for df_data, start, end in tqdm(df_generator):
-        if config.feature_generation_config:
-            feature_generation(df_data, config.feature_generation_config, inplace=True)
 
-        prediction = predict_separator(df_data, model, config)
+        prediction = predict_separator(df_data[model_config.features], model)
 
         if config.has_multiple_telescopes:
             d = df_data[['run_id', 'array_event_id']].copy()

@@ -1,4 +1,8 @@
 #Configuration file for model training and application.
+
+# seed for the random number generators, to make things reproducible
+seed: 0
+
 separator:
   #the classifier to use
   classifier : |
@@ -9,9 +13,6 @@ separator:
         max_depth=15,
         criterion='entropy',
     )
-
-  # seed for the random number generators, to make things reproducible
-  seed: 0
 
   # randomly sample the data if you dont want to use the whole set
   n_background: 500

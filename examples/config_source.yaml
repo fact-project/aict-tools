@@ -1,3 +1,9 @@
+# seed for the random number generators, to make things reproducible
+seed: 0
+
+# define th number of cross validations to perform
+n_cross_validations : 5
+
 disp:
   disp_regressor : |
     ensemble.RandomForestRegressor(
@@ -15,10 +21,6 @@ disp:
         max_depth=20,
     )
 
-
-  # seed for the random number generators, to make things reproducible
-  seed: 0
-
   # columns containing coordinates of the source and of the pointing
   source_azimuth_column: source_position_az
   source_zenith_column: source_position_zd
@@ -28,9 +30,6 @@ disp:
 
   # randomly sample the data if you dont want to use the whole set
   n_signal : 500
-
-  # define th number of cross validations to perform
-  n_cross_validations : 5
 
   features:
     - concentration_cog

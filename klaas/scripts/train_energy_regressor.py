@@ -8,8 +8,6 @@ import numpy as np
 from fact.io import write_data
 from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
-from ..feature_generation import feature_generation
-from ..features import has_source_dependent_columns
 from ..configuration import KlaasConfig
 import logging
 
@@ -40,34 +38,30 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
     '''
     logging.getLogger().setLevel(logging.DEBUG if verbose else logging.INFO)
 
-    config = KlaasConfig(configuration_path)
+    config = KlaasConfig.from_yaml(configuration_path)
+    model_config = config.energy
 
-    if has_source_dependent_columns(config.columns_to_read):
-        raise click.ClickException(
-            'Using source dependent features in the model is not supported'
-        )
-
-    df = read_telescope_data(signal_path, config, n_sample=config.training_config.n_signal)
+    df = read_telescope_data(
+        signal_path, config, model_config.columns_to_read_train,
+        feature_generation_config=model_config.feature_generation,
+        n_sample=model_config.n_signal
+    )
 
     log.info('Total number of events: {}'.format(len(df)))
 
-    # generate features if given in config
-    if config.feature_generation_config:
-        feature_generation(df, config.feature_generation_config, inplace=True)
-
-    df_train = convert_to_float32(df[config.training_config.training_variables])
+    df_train = convert_to_float32(df[model_config.features])
     df_train.dropna(how='any', inplace=True)
 
     log.debug('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target = df[config.target_name].loc[df_train.index]
+    target = df[model_config.target_column].loc[df_train.index]
     target.name = 'true_energy'
 
-    if config.log_target is True:
+    if model_config.log_target is True:
         target = np.log(target)
 
-    n_cross_validations = config.training_config.n_cross_validations
-    regressor = config.training_config.model
+    n_cross_validations = model_config.n_cross_validations
+    regressor = model_config.model
     log.info('Starting {} fold cross validation... '.format(n_cross_validations))
     scores = []
     cv_predictions = []
@@ -82,7 +76,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
         regressor.fit(cv_x_train, cv_y_train)
         cv_y_prediction = regressor.predict(cv_x_test)
 
-        if config.log_target is True:
+        if model_config.log_target is True:
             cv_y_test = np.exp(cv_y_test)
             cv_y_prediction = np.exp(cv_y_prediction)
 

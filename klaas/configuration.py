@@ -9,7 +9,6 @@ FeatureGenerationConfig = namedtuple(
 
 
 class KlaasConfig:
-
     __slots__ = (
         'seed',
         'telescope_events_key',
@@ -17,11 +16,11 @@ class KlaasConfig:
         'array_event_id_column',
         'runs_key',
         'is_array',
-        'class_name',
         'disp',
         'energy',
         'separator',
         'has_multiple_telescopes',
+        'class_name',
     )
 
     @classmethod
@@ -62,11 +61,12 @@ class DispConfig:
     __slots__ = [
         'disp_regressor',
         'sign_classifier',
-        'n_cross_validation',
+        'n_cross_validations',
         'n_signal',
         'features',
         'feature_generation',
-        'columns_to_read',
+        'columns_to_read_apply',
+        'columns_to_read_train',
         'source_az_column',
         'source_zd_column',
         'pointing_az_column',
@@ -80,7 +80,10 @@ class DispConfig:
         model_config = config['disp']
         self.disp_regressor = eval(model_config['disp_regressor'])
         self.sign_classifier = eval(model_config['sign_classifier'])
+
         self.n_signal = model_config.get('n_signal', 100000)
+        k = 'n_cross_validations'
+        setattr(self, k, model_config.get(k, config.get(k, 5)))
 
         self.features = model_config['features'].copy()
 
@@ -101,10 +104,6 @@ class DispConfig:
         self.delta_column = model_config.get('delta_column', 'delta')
 
         cols = {
-            self.source_az_column,
-            self.source_zd_column,
-            self.pointing_az_column,
-            self.pointing_zd_column,
             self.cog_x_column,
             self.cog_y_column,
             self.delta_column,
@@ -113,17 +112,27 @@ class DispConfig:
         cols.update(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-        self.columns_to_read = list(cols)
+        self.columns_to_read_apply = list(cols)
+        cols.update({
+            self.pointing_az_column,
+            self.pointing_zd_column,
+            self.source_az_column,
+            self.source_zd_column,
+        })
+        self.columns_to_read_train = list(cols)
 
 
 class EnergyConfig:
     __slots__ = [
         'model',
-        'n_cross_validation',
+        'n_cross_validations',
         'n_signal',
         'features',
         'feature_generation',
-        'columns_to_read',
+        'columns_to_read_train',
+        'columns_to_read_apply',
+        'target_column',
+        'log_target',
     ]
 
     def __init__(self, config):
@@ -132,6 +141,13 @@ class EnergyConfig:
         self.features = model_config['features'].copy()
 
         self.n_signal = model_config.get('n_signal', 100000)
+        k = 'n_cross_validations'
+        setattr(self, k, model_config.get(k, config.get(k, 5)))
+
+        self.target_column = model_config.get(
+            'target_column', 'corsika_event_header_total_energy'
+        )
+        self.log_target = model_config.get('log_target', False)
 
         if model_config.get('feature_generation'):
             gen_config = model_config['feature_generation']
@@ -143,18 +159,22 @@ class EnergyConfig:
         cols = set(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-        self.columns_to_read = list(cols)
+        self.columns_to_read_apply = list(cols)
+        cols.add(self.target_column)
+        self.columns_to_read_train = list(cols)
 
 
 class SeparatorConfig:
     __slots__ = [
         'model',
-        'n_cross_validation',
+        'n_cross_validations',
         'n_signal',
         'n_background',
         'features',
         'feature_generation',
-        'columns_to_read',
+        'columns_to_read_train',
+        'columns_to_read_apply',
+        'calibrate_classifier',
     ]
 
     def __init__(self, config):
@@ -164,6 +184,9 @@ class SeparatorConfig:
 
         self.n_signal = model_config.get('n_signal', 100000)
         self.n_background = model_config.get('n_background', 100000)
+        k = 'n_cross_validations'
+        setattr(self, k, model_config.get(k, config.get(k, 5)))
+        self.calibrate_classifier = model_config.get('calibrate_classifier', False)
 
         if model_config.get('feature_generation'):
             gen_config = model_config['feature_generation']
@@ -175,4 +198,5 @@ class SeparatorConfig:
         cols = set(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-        self.columns_to_read = list(cols)
+        self.columns_to_read_train = list(cols)
+        self.columns_to_read_apply = list(cols)
