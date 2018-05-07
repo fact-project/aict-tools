@@ -40,7 +40,7 @@ training_variables:
 
 # Generate some features using pd.DataFrame.eval
 # List all keys that have to be read from the input files
-# in needed keys. 
+# in needed keys.
 # features must be a mapping of feature name -> expression
 feature_generation:
   needed_keys:

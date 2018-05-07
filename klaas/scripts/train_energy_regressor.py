@@ -4,16 +4,17 @@ from sklearn import model_selection
 from sklearn import metrics
 from tqdm import tqdm
 import numpy as np
-import yaml
-from sklearn import ensemble
 
-from fact.io import write_data, read_data
-from ..io import pickle_model
+from fact.io import write_data
+from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 from ..feature_generation import feature_generation
-from ..features import find_used_source_features
-
+from ..features import has_source_dependent_columns
+from ..configuration import KlaasConfig
 import logging
+
+logging.basicConfig()
+log = logging.getLogger()
 
 
 @click.command()
@@ -21,9 +22,8 @@ import logging
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, signal_path, predictions_path, model_path, key, verbose):
+def main(configuration_path, signal_path, predictions_path, model_path, verbose):
     '''
     Train an energy regressor simulated gamma.
     Both pmml and pickle format are supported for the output.
@@ -38,74 +38,41 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
         Allowed extensions are .pkl and .pmml.
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
+    logging.getLogger().setLevel(logging.DEBUG if verbose else logging.INFO)
 
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
+    config = KlaasConfig(configuration_path)
 
-    with open(configuration_path) as f:
-        config = yaml.load(f)
-
-    seed = config.get('seed', 0)
-    np.random.seed(seed)
-
-    n_signal = config.get('n_signal')
-
-    n_cross_validations = config['n_cross_validations']
-    training_variables = config['training_variables']
-    target_name = config.get('target_name', 'corsika_event_header_total_energy')
-
-    log_target = config.get('log_target', False)
-
-    regressor = eval(config['regressor'])
-    regressor.random_state = seed
-
-    columns_to_read = training_variables + [target_name]
-
-    # Also read columns needed for feature generation
-    generation_config = config.get('feature_generation')
-    if generation_config:
-        columns_to_read.extend(generation_config.get('needed_keys', []))
-
-    if len(find_used_source_features(training_variables, generation_config)) > 0:
+    if has_source_dependent_columns(config.columns_to_read):
         raise click.ClickException(
             'Using source dependent features in the model is not supported'
         )
 
-    log.info('Loading data')
-    df = read_data(
-        file_path=signal_path,
-        key=key,
-        columns=columns_to_read,
-    )
+    df = read_telescope_data(signal_path, config, n_sample=config.training_config.n_signal)
 
     log.info('Total number of events: {}'.format(len(df)))
 
     # generate features if given in config
-    if generation_config:
-        gen_config = config['feature_generation']
-        training_variables.extend(sorted(gen_config['features']))
-        feature_generation(df, gen_config, inplace=True)
+    if config.feature_generation_config:
+        feature_generation(df, config.feature_generation_config, inplace=True)
 
-    df_train = convert_to_float32(df[training_variables])
+    df_train = convert_to_float32(df[config.training_config.training_variables])
     df_train.dropna(how='any', inplace=True)
 
-    if n_signal:
-        log.info('Sampling {} random events'.format(n_signal))
-        df_train = df_train.sample(n_signal, random_state=seed)
+    log.debug('Events after nan-dropping: {} '.format(len(df_train)))
 
-    log.info('Events after nan-dropping: {} '.format(len(df_train)))
-
-    target = df[target_name].loc[df_train.index]
+    target = df[config.target_name].loc[df_train.index]
     target.name = 'true_energy'
 
-    if log_target is True:
+    if config.log_target is True:
         target = np.log(target)
 
+    n_cross_validations = config.training_config.n_cross_validations
+    regressor = config.training_config.model
     log.info('Starting {} fold cross validation... '.format(n_cross_validations))
     scores = []
     cv_predictions = []
 
-    kfold = model_selection.KFold(n_splits=n_cross_validations, shuffle=True, random_state=seed)
+    kfold = model_selection.KFold(n_splits=n_cross_validations, shuffle=True, random_state=config.seed)
 
     for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):
 
@@ -115,7 +82,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, key, ver
         regressor.fit(cv_x_train, cv_y_train)
         cv_y_prediction = regressor.predict(cv_x_test)
 
-        if log_target is True:
+        if config.log_target is True:
             cv_y_test = np.exp(cv_y_test)
             cv_y_prediction = np.exp(cv_y_prediction)
 
