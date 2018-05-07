@@ -6,8 +6,6 @@ from tqdm import tqdm
 import pandas as pd
 
 from ..apply import predict_separator
-from ..feature_generation import feature_generation
-from ..features import has_source_dependent_columns
 from ..io import append_to_h5py, read_telescope_data_chunked, drop_prediction_column
 from ..configuration import KlaasConfig
 

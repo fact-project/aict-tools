@@ -1,0 +1,54 @@
+#Configuration file for model training and application.
+
+# seed for the random number generators, to make things reproducible
+seed: 0
+
+separator:
+  #the classifier to use
+  classifier : |
+    ensemble.RandomForestClassifier(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=15,
+        criterion='entropy',
+    )
+
+  # randomly sample the data if you dont want to use the whole set
+  n_background: 500
+  n_signal: 500
+
+  # define the number of cross validations to perform
+  n_cross_validations : 5
+
+  # Define the name of the category you want to find. The default is 'gamma'.
+  # It will be written as <class_name>_prediction into the file when applying the model.
+  class_name: gamma
+
+  # Define the name of the column that contains the name of the telescope in case you're working
+  # with mulitple telescopes and telescope types
+  # telescope_type_key: telescope:name
+
+  features:
+    - theta
+    - size
+    - length
+    - width
+    - num_islands
+    - leakage1
+    - leakage2
+    - skewness_long
+    - skewness_trans
+    - concentration_cog
+    - concentration_core
+
+  # Generate some features using pd.DataFrame.eval
+  # List all columns that have to be read from the input files
+  # in `needed_columns`.
+  # features must be a mapping of feature name -> expression
+  feature_generation:
+    needed_columns:
+      - width
+      - length
+    features:
+      area: width * length * @pi

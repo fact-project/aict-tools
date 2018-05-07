@@ -1,6 +1,7 @@
 import yaml
 from sklearn import ensemble
 from collections import namedtuple
+from .features import find_used_source_features
 
 FeatureGenerationConfig = namedtuple(
     'FeatureGenerationConfig',
@@ -87,8 +88,12 @@ class DispConfig:
 
         self.features = model_config['features'].copy()
 
-        if model_config.get('feature_generation'):
-            gen_config = model_config['feature_generation']
+        gen_config = model_config.get('feature_generation')
+        source_features = find_used_source_features(self.features, gen_config)
+        if len(source_features):
+            raise ValueError('Source dependent features used: {}'.format(source_features))
+
+        if gen_config:
             self.features.extend(gen_config['features'].keys())
             self.feature_generation = FeatureGenerationConfig(**gen_config)
         else:
@@ -150,8 +155,11 @@ class EnergyConfig:
         )
         self.log_target = model_config.get('log_target', False)
 
-        if model_config.get('feature_generation'):
-            gen_config = model_config['feature_generation']
+        gen_config = model_config.get('feature_generation')
+        source_features = find_used_source_features(self.features, gen_config)
+        if len(source_features):
+            raise ValueError('Source dependent features used: {}'.format(source_features))
+        if gen_config:
             self.features.extend(gen_config['features'].keys())
             self.feature_generation = FeatureGenerationConfig(**gen_config)
         else:
@@ -190,8 +198,11 @@ class SeparatorConfig:
         setattr(self, k, model_config.get(k, config.get(k, 5)))
         self.calibrate_classifier = model_config.get('calibrate_classifier', False)
 
-        if model_config.get('feature_generation'):
-            gen_config = model_config['feature_generation']
+        gen_config = model_config.get('feature_generation')
+        source_features = find_used_source_features(self.features, gen_config)
+        if len(source_features):
+            raise ValueError('Source dependent features used: {}'.format(source_features))
+        if gen_config:
             self.features.extend(gen_config['features'].keys())
             self.feature_generation = FeatureGenerationConfig(**gen_config)
         else:

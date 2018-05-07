@@ -12,9 +12,6 @@ from ..configuration import KlaasConfig
 from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 
-from ..features import has_source_dependent_columns
-
-
 logging.basicConfig()
 log = logging.getLogger()
 
