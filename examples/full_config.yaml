@@ -51,7 +51,7 @@ energy:
   # It will be written as <class_name>_prediction into the file when applying the model.
   class_name: gamma_energy
 
-  training_variables:
+  features:
     - size
     - length
     - width
@@ -63,11 +63,11 @@ energy:
     - concentration_cog
 
   # Generate some features using pd.DataFrame.eval
-  # List all keys that have to be read from the input files
-  # in needed keys. 
+  # List all columns that have to be read from the input files
+  # in needed_columns. 
   # features must be a mapping of feature name -> expression
   feature_generation:
-    needed_keys:
+    needed_columns:
       - width
       - length
     features:
@@ -94,7 +94,7 @@ separator:
   # It will be written as <class_name>_prediction into the file when applying the model.
   class_name: gamma
 
-  training_variables:
+  features:
     - size
     - length
     - width
@@ -134,7 +134,7 @@ disp:
   # randomly sample the data if you dont want to use the whole set
   n_signal : 500
 
-  training_variables:
+  features:
     - concentration_cog
     - concentration_core
     - delta

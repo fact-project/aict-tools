@@ -1,45 +1,46 @@
-disp_regressor : |
-  ensemble.RandomForestRegressor(
-      n_estimators=30,
-      max_features='sqrt',
-      n_jobs=-1,
-      max_depth=20,
-  )
+disp:
+  disp_regressor : |
+    ensemble.RandomForestRegressor(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
 
-sign_classifier: |
-  ensemble.RandomForestClassifier(
-      n_estimators=30,
-      max_features='sqrt',
-      n_jobs=-1,
-      max_depth=20,
-  )
-
-
-# seed for the random number generators, to make things reproducible
-seed: 0
-
-# columns containing coordinates of the source and of the pointing
-source_azimuth_column: source_position_az
-source_zenith_column: source_position_zd
-pointing_azimuth_column: pointing_position_az
-pointing_zenith_column: pointing_position_zd
+  sign_classifier: |
+    ensemble.RandomForestClassifier(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
 
 
-# randomly sample the data if you dont want to use the whole set
-n_signal : 500
+  # seed for the random number generators, to make things reproducible
+  seed: 0
 
-# define th number of cross validations to perform
-n_cross_validations : 5
+  # columns containing coordinates of the source and of the pointing
+  source_azimuth_column: source_position_az
+  source_zenith_column: source_position_zd
+  pointing_azimuth_column: pointing_position_az
+  pointing_zenith_column: pointing_position_zd
 
-training_variables:
-  - concentration_cog
-  - concentration_core
-  - delta
-  - leakage1
-  - leakage2
-  - length
-  - skewness_long
-  - kurtosis_long
-  - num_islands
-  - size
-  - width
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal : 500
+
+  # define th number of cross validations to perform
+  n_cross_validations : 5
+
+  features:
+    - concentration_cog
+    - concentration_core
+    - delta
+    - leakage1
+    - leakage2
+    - length
+    - skewness_long
+    - kurtosis_long
+    - num_islands
+    - size
+    - width
