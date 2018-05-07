@@ -45,40 +45,34 @@ def build_query(selection_config):
 
 
 def predict_energy(df, model, config):
-    training_variables = config['training_variables'].copy()
-    generation_config = config.get('feature_generation')
-    if generation_config:
+    if config.feature_generation_config:
         feature_generation(
             df,
-            generation_config,
+            config.feature_generation_config,
             inplace=True,
         )
-        training_variables.extend(sorted(generation_config['features']))
 
-    df_features = convert_to_float32(df[training_variables])
+    df_features = convert_to_float32(df[config.training_config.training_variables])
     valid = check_valid_rows(df_features)
 
     energy_prediction = np.full(len(df_features), np.nan)
     energy_prediction[valid] = model.predict(df_features.loc[valid].values)
 
-    if config.get('log_target', False) is True:
+    if config.log_target:
         energy_prediction[valid] = np.exp(energy_prediction[valid])
 
     return energy_prediction
 
 
 def predict_disp(df, abs_model, sign_model, config):
-    training_variables = config['training_variables'].copy()
-    generation_config = config.get('feature_generation')
-    if generation_config:
+    if config.feature_generation_config:
         feature_generation(
             df,
-            generation_config,
+            config.feature_generation_config,
             inplace=True,
         )
-        training_variables.extend(sorted(generation_config['features']))
 
-    df_features = convert_to_float32(df[training_variables])
+    df_features = convert_to_float32(df[config.training_config.training_variables])
     valid = check_valid_rows(df_features)
 
     disp_abs = abs_model.predict(df_features.loc[valid].values)
@@ -91,17 +85,14 @@ def predict_disp(df, abs_model, sign_model, config):
 
 
 def predict_separator(df, model, config):
-    training_variables = config['training_variables'].copy()
-    generation_config = config.get('feature_generation')
-    if generation_config:
+    if config.feature_generation_config:
         feature_generation(
             df,
-            generation_config,
+            config.feature_generation_config,
             inplace=True,
         )
-        training_variables.extend(sorted(generation_config['features']))
 
-    df_features = convert_to_float32(df[training_variables])
+    df_features = convert_to_float32(df[config.training_config.training_variables])
     valid = check_valid_rows(df_features)
 
     score = np.full(len(df_features), np.nan)

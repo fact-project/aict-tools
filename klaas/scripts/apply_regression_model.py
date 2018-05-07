@@ -1,21 +1,20 @@
 import click
 from sklearn.externals import joblib
-import yaml
 import logging
 import h5py
 from tqdm import tqdm
 
-from fact.io import read_h5py_chunked
+import pandas as pd
 
-from ..io import append_to_h5py
 from ..apply import predict_energy
+from ..io import append_to_h5py, read_telescope_data_chunked, drop_prediction_column
+from ..configuration import KlaasConfig
 
 
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=True, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-n', '--n-jobs', type=int, help='Number of cores to use')
 @click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
@@ -23,61 +22,71 @@ from ..apply import predict_energy
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once',
 )
-def main(configuration_path, data_path, model_path, key, chunksize, n_jobs, yes, verbose):
+def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verbose):
     '''
     Apply given model to data. Two columns are added to the file, energy_prediction
     and energy_prediction_std
 
     CONFIGURATION_PATH: Path to the config yaml file
-    DATA_PATH: path to the FACT data in a h5py hdf5 file, e.g. erna_gather_fits output
+    DATA_PATH: path to the FACT/CTA data in a h5py hdf5 file, e.g. erna_gather_fits output
     MODEL_PATH: Path to the pickled model
     '''
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
+    config = KlaasConfig(configuration_path)
 
-    with open(configuration_path) as f:
-        config = yaml.load(f)
+    prediction_column_name = config.class_name + '_prediction'
+    drop_prediction_column(
+        data_path, group_name=config.telescope_events_key,
+        column_name=prediction_column_name, yes=yes
+    )
+    drop_prediction_column(
+        data_path, group_name=config.array_events_key,
+        column_name=prediction_column_name, yes=yes
+    )
 
-    class_name = config.get('class_name', 'gamma_energy') + '_prediction'
-
-    with h5py.File(data_path, 'r+') as f:
-        if class_name in f[key].keys():
-            if not yes:
-                click.confirm(
-                    'Dataset "{}" exists in file, overwrite?'.format(class_name),
-                    abort=True,
-                )
-            del f[key][class_name]
-            if class_name + '_std' in f[key].keys():
-                del f[key][class_name + '_std']
-
-    log.info('Loading model')
+    log.debug('Loading model')
     model = joblib.load(model_path)
-    log.info('Done')
+    log.debug('Done')
 
     if n_jobs:
         model.n_jobs = n_jobs
 
-    columns_to_read = config['training_variables'].copy()
-    generation_config = config.get('feature_generation')
-    if generation_config:
-        columns_to_read.extend(generation_config['needed_keys'])
-
-    df_generator = read_h5py_chunked(
-        data_path,
-        key=key,
-        columns=columns_to_read,
-        chunksize=chunksize,
-        mode='r+'
+    df_generator = read_telescope_data_chunked(
+        data_path, config, chunksize, config.columns_to_read
     )
 
-    log.info('Predicting on data...')
+    if config.has_multiple_telescopes:
+        chunked_frames = []
+
     for df_data, start, end in tqdm(df_generator):
 
         energy_prediction = predict_energy(df_data, model, config)
 
+        if config.has_multiple_telescopes:
+            d = df_data[['run_id', 'array_event_id']].copy()
+            d[prediction_column_name] = energy_prediction
+            chunked_frames.append(d)
+
         with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, energy_prediction, key, class_name)
+            append_to_h5py(
+                f, energy_prediction, config.telescope_events_key, prediction_column_name
+            )
+
+    if config.has_multiple_telescopes:
+        d = pd.concat(chunked_frames).groupby(
+            ['run_id', 'array_event_id'], sort=False
+        ).agg(['mean', 'std'])
+
+        mean = d[prediction_column_name]['mean'].values
+        std = d[prediction_column_name]['std'].values
+        with h5py.File(data_path, 'r+') as f:
+            append_to_h5py(
+                f, mean, config.array_events_key, prediction_column_name + '_mean'
+            )
+            append_to_h5py(
+                f, std, config.array_events_key, prediction_column_name + '_std'
+            )
 
 
 if __name__ == '__main__':
