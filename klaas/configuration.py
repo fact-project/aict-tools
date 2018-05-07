@@ -93,6 +93,7 @@ class DispConfig:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
         else:
             self.feature_generation = None
+        self.features.sort()
 
         self.source_az_column = model_config.get('source_az_column', 'source_position_az')
         self.source_zd_column = model_config.get('source_zd_column', 'source_position_zd')
@@ -155,6 +156,7 @@ class EnergyConfig:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
         else:
             self.feature_generation = None
+        self.features.sort()
 
         cols = set(model_config['features'])
         if self.feature_generation:
@@ -194,6 +196,7 @@ class SeparatorConfig:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
         else:
             self.feature_generation = None
+        self.features.sort()
 
         cols = set(model_config['features'])
         if self.feature_generation:
