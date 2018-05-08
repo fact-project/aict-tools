@@ -114,7 +114,9 @@ def read_telescope_data(path, klaas_config, columns, feature_generation_config=N
                 .format(n_sample, path, len(df))
             )
         log.info('Randomly sample {} events'.format(n_sample))
-        df = df.sample(n_sample, random_state=np.random.get_state())
+        state = np.random.RandomState()
+        state.set_state(np.random.get_state())
+        df = df.sample(n_sample, random_state=state)
 
     # generate features if given in config
     if feature_generation_config:
