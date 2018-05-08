@@ -1,4 +1,5 @@
 from multiprocessing import Pool, cpu_count
+import numpy as np
 
 
 def parallelize_array_computation(func, *arrays, n_jobs=-1):
@@ -17,7 +18,7 @@ def parallelize_array_computation(func, *arrays, n_jobs=-1):
     n_elements = n_elements[0]
 
     blocks = []
-    block_size = n_elements // n_jobs
+    block_size = int(np.ceil(n_elements / n_jobs))
     for start in range(0, n_elements, block_size):
         end = start + block_size
         blocks.append([a[start:end] for a in arrays])
