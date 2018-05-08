@@ -12,9 +12,6 @@ from ..configuration import KlaasConfig
 from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 
-from ..features import has_source_dependent_columns
-
-
 logging.basicConfig()
 log = logging.getLogger()
 
@@ -48,29 +45,30 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
-
-    klaas_config = KlaasConfig(configuration_path)
-    tc = klaas_config.training_config
-
-    if has_source_dependent_columns(klaas_config.columns_to_read):
-        raise click.ClickException(
-            'Using source dependent features in the model is not supported'
-        )
+    config = KlaasConfig.from_yaml(configuration_path)
+    model_config = config.separator
 
     log.info('Loading signal data')
-    df_signal = read_telescope_data(signal_path, klaas_config, tc.n_signal)
+    df_signal = read_telescope_data(
+        signal_path, config, model_config.columns_to_read_train,
+        feature_generation_config=model_config.feature_generation,
+        n_sample=model_config.n_signal
+    )
     df_signal['label_text'] = 'signal'
     df_signal['label'] = 1
 
     log.info('Loading background data')
-    df_background = read_telescope_data(background_path, klaas_config, tc.n_background)
+    df_background = read_telescope_data(
+        background_path, config, model_config.columns_to_read_train,
+        feature_generation_config=model_config.feature_generation,
+        n_sample=model_config.n_background
+    )
     df_background['label_text'] = 'background'
     df_background['label'] = 0
 
     df_full = pd.concat([df_background, df_signal], ignore_index=True)
 
-
-    df_training = convert_to_float32(df_full[tc.training_variables])
+    df_training = convert_to_float32(df_full[model_config.features])
     log.debug('Total training events: {}'.format(len(df_training)))
 
     df_training.dropna(how='any', inplace=True)
@@ -83,7 +81,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log.info('Training classifier with {} background and {} signal events'.format(
         n_protons, n_gammas
     ))
-    log.debug(tc.training_variables)
+    log.debug(model_config.features)
 
     # save prediction_path for each cv iteration
     cv_predictions = []
@@ -91,13 +89,13 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     # iterate over test and training sets
     X = df_training.values
     y = label.values
-    n_cross_validations = tc.n_cross_validations
-    classifier = tc.model
+    n_cross_validations = model_config.n_cross_validations
+    classifier = model_config.model
 
     log.info('Starting {} fold cross validation... '.format(n_cross_validations))
 
     stratified_kfold = model_selection.StratifiedKFold(
-        n_splits=n_cross_validations, shuffle=True, random_state=tc.seed
+        n_splits=n_cross_validations, shuffle=True, random_state=config.seed
     )
 
     aucs = []
@@ -127,7 +125,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log.info('Writing predictions from cross validation')
     write_data(predictions_df, predictions_path, mode='w')
 
-    if klaas_config.calibrate_classifier:
+    if model_config.calibrate_classifier:
         log.info('Training calibrated classifier')
         classifier = CalibratedClassifierCV(classifier, cv=2, method='sigmoid')
         classifier.fit(X, y)
