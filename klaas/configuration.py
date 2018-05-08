@@ -2,6 +2,7 @@ import yaml
 from sklearn import ensemble
 from collections import namedtuple
 from .features import find_used_source_features
+import numpy as np
 
 FeatureGenerationConfig = namedtuple(
     'FeatureGenerationConfig',
@@ -45,6 +46,7 @@ class KlaasConfig:
             self.array_event_id_column = None
 
         self.seed = config.get('seed', 0)
+        np.random.seed(self.seed)
         self.class_name = config.get('class_name', 'gamma')
 
         self.disp = self.energy = self.separator = None
