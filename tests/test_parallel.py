@@ -11,7 +11,7 @@ def test_correct_length():
     assert N % n_jobs != 0
 
     data = np.arange(N)
-    results = parallelize_array_computation(np.sqrt, data, n_jobs=4)
+    results = parallelize_array_computation(np.sqrt, data, n_jobs=n_jobs)
 
     assert len(results) == n_jobs
     assert len(np.concatenate(results)) == N
