@@ -1,6 +1,6 @@
 
 
-# aict-tools [![Build Status](https://travis-ci.org/fact-project/classifier-tools.svg?branch=master)](https://travis-ci.org/fact-project/classifier-tools)
+# aict-tools [![Build Status](https://travis-ci.org/fact-project/aict-tools.svg?branch=master)](https://travis-ci.org/fact-project/aict-tools)
 
 
 Executables to perform machine learning tasks on FACT and CTA eventlist data.
@@ -15,7 +15,7 @@ All you ever wanted to do  with your IACT data in one package. This project is m
 
 # Installation
 
-Then you can install the classifier-tools by:
+Then you can install the aict-tools by:
 ```
 pip install https://github.com/fact-project/aict-tools/archive/v0.10.0.tar.gz
 ```
