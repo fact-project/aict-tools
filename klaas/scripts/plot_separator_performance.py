@@ -3,7 +3,7 @@ import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.externals import joblib
-import yaml
+from ..configuration import KlaasConfig
 import fact.io
 
 from ..plotting import (
@@ -32,8 +32,7 @@ def main(configuration_path, performance_path, model_path, output, key):
     log.info('Loading model')
     model = joblib.load(model_path)
 
-    with open(configuration_path) as f:
-        config = yaml.load(f)
+    model_config = KlaasConfig.from_yaml(configuration_path).separator
 
     log.info('Creating performance plots. ')
     figures = []
@@ -60,11 +59,11 @@ def main(configuration_path, performance_path, model_path, output, key):
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
 
-    training_variables = config['training_variables']
-    if 'feature_generation' in config:
-        training_variables.extend(sorted(config['feature_generation']['features']))
+    features = model_config.features
+    if model_config.feature_generation:
+        features.extend(sorted(model_config.feature_generation.features))
 
-    plot_feature_importances(model, training_variables, ax=ax)
+    plot_feature_importances(model, features, ax=ax)
 
     if output is None:
         plt.show()
