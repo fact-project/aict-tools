@@ -17,6 +17,7 @@ class KlaasConfig:
         'array_events_key',
         'array_event_id_column',
         'runs_key',
+        'run_id_column',
         'is_array',
         'disp',
         'energy',
@@ -35,13 +36,17 @@ class KlaasConfig:
         self.runs_key = config.get('runs_key', 'runs')
 
         if self.has_multiple_telescopes:
-            self.telescope_events_key = config.get('telescope_events_column', 'events')
-            self.arrays_events_key = config.get('array_events_key', 'array_events')
+            self.telescope_events_key = config.get('telescope_events_key', 'events')
+            self.array_events_key = config.get('array_events_key', 'array_events')
+
             self.array_event_id_column = config.get(
                 'array_event_id_column', 'array_event_id'
             )
+            self.run_id_column = config.get('run_id_column', 'run_id')
         else:
             self.telescope_events_key = config.get('telescope_events_key', 'events')
+            self.run_id_column = config.get('run_id_column', 'run_id')
+
             self.array_events_key = None
             self.array_event_id_column = None
 
@@ -84,7 +89,7 @@ class DispConfig:
         self.disp_regressor = eval(model_config['disp_regressor'])
         self.sign_classifier = eval(model_config['sign_classifier'])
 
-        self.n_signal = model_config.get('n_signal', 100000)
+        self.n_signal = model_config.get('n_signal', None)
         k = 'n_cross_validations'
         setattr(self, k, model_config.get(k, config.get(k, 5)))
 
@@ -148,7 +153,7 @@ class EnergyConfig:
         self.model = eval(model_config['regressor'])
         self.features = model_config['features'].copy()
 
-        self.n_signal = model_config.get('n_signal', 100000)
+        self.n_signal = model_config.get('n_signal', None)
         k = 'n_cross_validations'
         setattr(self, k, model_config.get(k, config.get(k, 5)))
 
@@ -194,8 +199,8 @@ class SeparatorConfig:
         self.model = eval(model_config['classifier'])
         self.features = model_config['features'].copy()
 
-        self.n_signal = model_config.get('n_signal', 100000)
-        self.n_background = model_config.get('n_background', 100000)
+        self.n_signal = model_config.get('n_signal', None)
+        self.n_background = model_config.get('n_background', None)
         k = 'n_cross_validations'
         setattr(self, k, model_config.get(k, config.get(k, 5)))
         self.calibrate_classifier = model_config.get('calibrate_classifier', False)
