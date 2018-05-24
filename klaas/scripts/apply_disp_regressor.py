@@ -1,15 +1,13 @@
 import click
 import numpy as np
 from sklearn.externals import joblib
-import yaml
 import logging
 import h5py
 from tqdm import tqdm
 
-from fact.io import read_h5py_chunked
-from ..preprocessing import convert_to_float32, check_valid_rows
-from ..feature_generation import feature_generation
-from ..io import append_to_h5py
+from ..io import append_to_h5py, read_telescope_data_chunked
+from ..apply import predict_disp
+from ..configuration import KlaasConfig
 
 
 @click.command()
@@ -38,10 +36,8 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    with open(configuration_path) as f:
-        config = yaml.load(f)
-
-    training_variables = config['training_variables']
+    config = KlaasConfig.from_yaml(configuration_path)
+    model_config = config.disp
 
     columns_to_delete = [
         'source_x_prediction',
@@ -59,7 +55,6 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         ])
 
     n_del_cols = 0
-
     with h5py.File(data_path, 'r+') as f:
         for column in columns_to_delete:
             if column in f[key].keys():
@@ -86,50 +81,25 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         disp_model.n_jobs = n_jobs
         sign_model.n_jobs = n_jobs
 
-    columns_to_read = training_variables.copy()
-    generation_config = config.get('feature_generation')
-    if generation_config:
-        columns_to_read.extend(generation_config['needed_keys'])
-
-    columns_to_read.extend(['cog_x', 'cog_y', 'delta'])
-
-    df_generator = read_h5py_chunked(
-        data_path,
-        key=key,
-        columns=columns_to_read,
-        chunksize=chunksize,
-        mode='r+'
+    df_generator = read_telescope_data_chunked(
+        data_path, config, chunksize, model_config.columns_to_read_apply,
+        feature_generation_config=model_config.feature_generation
     )
-
-    if generation_config:
-        training_variables.extend(sorted(generation_config['features']))
 
     log.info('Predicting on data...')
     for df_data, start, end in tqdm(df_generator):
 
-        if generation_config:
-            feature_generation(
-                df_data,
-                generation_config,
-                inplace=True,
-            )
+        disp = predict_disp(
+            df_data[model_config.features], disp_model, sign_model
+        )
 
-        df_data[training_variables] = convert_to_float32(df_data[training_variables])
-        valid = check_valid_rows(df_data[training_variables])
-
-        disp_prediction = np.full(len(df_data), np.nan)
-        disp = disp_model.predict(df_data.loc[valid, training_variables])
-        sign = sign_model.predict(df_data.loc[valid, training_variables])
-        disp_prediction[valid] = disp * sign
-
-        rec_pos = np.full((len(df_data), 2), np.nan)
-        rec_pos[valid, 0] = df_data.cog_x + disp * np.cos(df_data.delta) * sign
-        rec_pos[valid, 1] = df_data.cog_y + disp * np.sin(df_data.delta) * sign
+        source_x = df_data.cog_x + disp * np.cos(df_data.delta)
+        source_y = df_data.cog_y + disp * np.sin(df_data.delta)
 
         with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, rec_pos[:, 0], key, 'source_x_prediction')
-            append_to_h5py(f, rec_pos[:, 1], key, 'source_y_prediction')
-            append_to_h5py(f, disp_prediction, key, 'disp_prediction')
+            append_to_h5py(f, source_x, key, 'source_x_prediction')
+            append_to_h5py(f, source_y, key, 'source_y_prediction')
+            append_to_h5py(f, disp, key, 'disp_prediction')
 
 
 if __name__ == '__main__':

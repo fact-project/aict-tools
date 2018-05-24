@@ -1,20 +1,23 @@
-# klaas [![Build Status](https://travis-ci.org/fact-project/classifier-tools.svg?branch=master)](https://travis-ci.org/fact-project/classifier-tools)
 
-Executables to perform machine learning tasks on FACT eventlist data.
+
+# aict-tools [![Build Status](https://travis-ci.org/fact-project/aict-tools.svg?branch=master)](https://travis-ci.org/fact-project/aict-tools)
+
+
+Executables to perform machine learning tasks on FACT and CTA eventlist data.
 Possibly also able to handle input of other experiments if in the same file format.
 
-As of version `0.4.0`, all three tasks of gamma-ray astronomy can be solved using scripts from this package:
+All you ever wanted to do  with your IACT data in one package. This project is mainly targeted at using machine-learning for the following tasks:
 
 * Energy Regression
 * Gamma/Hadron Separation
-* Reconstruction of origin
+* Reconstruction of origin (Mono for now)
 
 
 # Installation
 
-Then you can install the classifier-tools by:
+Then you can install the aict-tools by:
 ```
-pip install https://github.com/fact-project/classifier-tools/archive/v0.6.0.tar.gz
+pip install https://github.com/fact-project/aict-tools/archive/v0.10.0.tar.gz
 ```
 
 Alternatively you can clone the repo, `cd` into the folder and do the usual `pip install .` dance.

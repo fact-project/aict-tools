@@ -2,6 +2,7 @@ import tempfile
 import os
 from click.testing import CliRunner
 import shutil
+from traceback import print_exception
 
 
 def test_train_regressor():
@@ -14,7 +15,7 @@ def test_train_regressor():
             main,
             [
                 'examples/config_energy.yaml',
-                'examples/signal.hdf',
+                'examples/gamma.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
@@ -22,6 +23,7 @@ def test_train_regressor():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -32,26 +34,27 @@ def test_apply_regression():
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
         runner = CliRunner()
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         result = runner.invoke(
             train,
             [
                 'examples/config_energy.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         result = runner.invoke(
             main,
             [
                 'examples/config_energy.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'test.pkl'),
                 '--yes',
             ]
@@ -59,6 +62,7 @@ def test_apply_regression():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
 
         assert result.exit_code == 0
 
@@ -73,8 +77,8 @@ def test_train_separator():
             main,
             [
                 'examples/config_separator.yaml',
-                'examples/signal.hdf',
-                'examples/background.hdf',
+                'examples/gamma.hdf5',
+                'examples/proton.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
@@ -82,6 +86,7 @@ def test_train_separator():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -90,29 +95,29 @@ def test_apply_separator():
     from klaas.scripts.apply_separation_model import main as apply_model
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
-
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         runner = CliRunner()
         result = runner.invoke(
             train,
             [
                 'examples/config_separator.yaml',
-                'examples/signal.hdf',
-                'examples/background.hdf',
+                'examples/gamma.hdf5',
+                'examples/proton.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         result = runner.invoke(
             apply_model,
             [
                 'examples/config_separator.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'test.pkl'),
                 '--yes',
             ]
@@ -120,6 +125,7 @@ def test_apply_separator():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -128,14 +134,12 @@ def test_train_disp():
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
-
         runner = CliRunner()
         result = runner.invoke(
             train,
             [
                 'examples/config_source.yaml',
-                'examples/signal.hdf',
+                'examples/gamma_diffuse.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
@@ -143,6 +147,7 @@ def test_train_disp():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -152,14 +157,14 @@ def test_apply_disp():
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         runner = CliRunner()
         result = runner.invoke(
             train,
             [
                 'examples/config_source.yaml',
-                'examples/signal.hdf',
+                'examples/gamma_diffuse.hdf5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
@@ -167,13 +172,14 @@ def test_apply_disp():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         result = runner.invoke(
             apply_model,
             [
                 'examples/config_source.yaml',
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
                 '--yes',
@@ -182,6 +188,100 @@ def test_apply_disp():
 
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+
+def test_to_dl3():
+    from klaas.scripts.train_disp_regressor import main as train_disp
+    from klaas.scripts.train_energy_regressor import main as train_energy
+    from klaas.scripts.train_separation_model import main as train_separator
+    from klaas.scripts.fact_to_dl3 import main as to_dl3
+
+    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+
+        runner = CliRunner()
+
+        result = runner.invoke(
+            train_disp,
+            [
+                'examples/full_config.yaml',
+                'examples/gamma_diffuse.hdf5',
+                os.path.join(d, 'disp_performance.hdf5'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            train_energy,
+            [
+                'examples/full_config.yaml',
+                'examples/gamma.hdf5',
+                os.path.join(d, 'regressor_performance.hdf5'),
+                os.path.join(d, 'regressor.pkl'),
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            train_separator,
+            [
+                'examples/full_config.yaml',
+                'examples/gamma.hdf5',
+                'examples/proton.hdf5',
+                os.path.join(d, 'separator_performance.hdf5'),
+                os.path.join(d, 'separator.pkl'),
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            to_dl3,
+            [
+                'examples/full_config.yaml',
+                'examples/crab.hdf5',
+                os.path.join(d, 'separator.pkl'),
+                os.path.join(d, 'regressor.pkl'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+                os.path.join(d, 'crab_dl3.hdf5'),
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            to_dl3,
+            [
+                'examples/full_config.yaml',
+                'examples/gamma.hdf5',
+                os.path.join(d, 'separator.pkl'),
+                os.path.join(d, 'regressor.pkl'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+                os.path.join(d, 'gamma_dl3.hdf5'),
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
 
@@ -190,13 +290,13 @@ def test_split_data_executable():
 
     with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
 
-        shutil.copy('examples/signal.hdf', os.path.join(d, 'signal.hdf'))
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         runner = CliRunner()
         result = runner.invoke(
             split,
             [
-                os.path.join(d, 'signal.hdf'),
+                os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'signal'),
                 '-ntest',  # no spaces here. maybe a bug in click?
                 '-f0.5',
@@ -206,6 +306,7 @@ def test_split_data_executable():
         )
         if result.exit_code != 0:
             print(result.output)
+            print_exception(*result.exc_info)
         assert result.exit_code == 0
 
         print(os.listdir(d))

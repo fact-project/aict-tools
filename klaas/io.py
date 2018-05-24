@@ -39,7 +39,7 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
             del f[group_name][column_name + '_mean']
 
 
-def read_telescope_data_chunked(path, klaas_config, chunksize, columns):
+def read_telescope_data_chunked(path, klaas_config, chunksize, columns, feature_generation_config=None):
     '''
     Reads data from hdf5 file given as PATH and yields dataframes for each chunk
     '''
@@ -65,10 +65,13 @@ def read_telescope_data_chunked(path, klaas_config, chunksize, columns):
         )
         df.index = np.arange(start, end)
 
+        if feature_generation_config:
+            feature_generation(df, feature_generation_config, inplace=True)
+
         yield df, start, end
 
 
-def read_telescope_data(path, klaas_config, n_sample=None, columns=None, first=None, last=None):
+def read_telescope_data(path, klaas_config, columns, feature_generation_config=None, n_sample=None, first=None, last=None):
     '''
     Read given columns from data and perform a random sample if n_sample is supplied.
     Returns a single pandas data frame
@@ -101,24 +104,26 @@ def read_telescope_data(path, klaas_config, n_sample=None, columns=None, first=N
         df = read_data(
             file_path=path,
             key=klaas_config.telescope_events_key,
-            columns=klaas_config.columns_to_read,
+            columns=columns,
             first=first,
             last=last,
         )
 
     if n_sample is not None:
         if n_sample > len(df):
-            log.error(
-                'number of sampled events {} must be smaller than number events in file {} ({})'
+            raise ValueError(
+                'number of sampled events'
+                ' {} must be smaller than number events in file {} ({})'
                 .format(n_sample, path, len(df))
             )
-            raise ValueError
         log.info('Randomly sample {} events'.format(n_sample))
-        df = df.sample(n_sample)
+        state = np.random.RandomState()
+        state.set_state(np.random.get_state())
+        df = df.sample(n_sample, random_state=state)
 
     # generate features if given in config
-    if klaas_config.feature_generation_config:
-        feature_generation(df, klaas_config.feature_generation_config, inplace=True)
+    if feature_generation_config:
+        feature_generation(df, feature_generation_config, inplace=True)
 
     return df
 

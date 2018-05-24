@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='klaas',
-    version='0.9.0',
+    version='0.10.0',
     description='KLAssification And regression Scripts.  yay',
     url='https://github.com/fact-project/klaas',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
@@ -15,6 +15,7 @@ setup(
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
+        'astropy',
         'click',
         'h5py',
         'joblib',
@@ -45,6 +46,7 @@ setup(
             'klaas_plot_regressor_performance = klaas.scripts.plot_regressor_performance:main',
             'klaas_apply_cuts = klaas.scripts.apply_cuts:main',
             'klaas_convert_pandas2h5py = klaas.scripts.convert_pandas2h5py:main',
+            'klaas_fact_to_dl3 = klaas.scripts.fact_to_dl3:main',
         ],
     }
 )
