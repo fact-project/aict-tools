@@ -79,10 +79,13 @@ def read_telescope_data(path, klaas_config, columns, feature_generation_config=N
     telescope_event_columns = None
     array_event_columns = None
     if klaas_config.has_multiple_telescopes:
+        join_keys = [klaas_config.run_id_column, klaas_config.array_event_id_column]
         if columns:
             with h5py.File(path, 'r+') as f:
                 array_event_columns = set(f[klaas_config.array_events_key].keys()) & set(columns)
                 telescope_event_columns = set(f[klaas_config.telescope_events_key].keys()) & set(columns)
+                array_event_columns |= set(join_keys)
+                telescope_event_columns |= set(join_keys)
 
         telescope_events = read_data(
             file_path=path,
@@ -97,8 +100,7 @@ def read_telescope_data(path, klaas_config, columns, feature_generation_config=N
             columns=array_event_columns,
         )
 
-        keys = [klaas_config.run_id_key, klaas_config.array_event_id_key]
-        df = pd.merge(left=array_events, right=telescope_events, left_on=keys, right_on=keys)
+        df = pd.merge(left=array_events, right=telescope_events, left_on=join_keys, right_on=join_keys)
 
     else:
         df = read_data(
