@@ -40,6 +40,9 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
 
 
 def read_telescope_data_chunked(path, klaas_config, chunksize, columns):
+    '''
+    Reads data from hdf5 file given as PATH and yields dataframes for each chunk
+    '''
     n_rows = h5py_get_n_rows(path, klaas_config.telescope_events_key)
     if chunksize:
         n_chunks = int(np.ceil(n_rows / chunksize))
