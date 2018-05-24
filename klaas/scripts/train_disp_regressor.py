@@ -8,15 +8,11 @@ import numpy as np
 from fact.io import write_data
 from fact.coordinates.utils import horizontal_to_camera
 from ..io import pickle_model, read_telescope_data
-from ..preprocessing import convert_to_float32
+from ..preprocessing import convert_to_float32, calc_true_disp
 from ..feature_generation import feature_generation
 from ..configuration import KlaasConfig
 
 import logging
-
-
-def euclidean_distance(x1, y1, x2, y2):
-    return np.sqrt((x1 - x2)**2 + (y1 - y2)**2)
 
 
 @click.command()
@@ -77,16 +73,11 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         zd_pointing=df[model_config.pointing_zd_column],
     )
 
-    df['true_disp'] = euclidean_distance(
+    df['true_disp'], df['true_sign'] = calc_true_disp(
         source_x, source_y,
-        df.cog_x, df.cog_y
+        df[model_config.cog_x_column], df[model_config.cog_y_column],
+        df[model_config.delta_column],
     )
-
-    true_delta = np.arctan2(
-        df.cog_y - source_y,
-        df.cog_x - source_x,
-    )
-    df['true_sign'] = np.sign(np.abs(df.delta - true_delta) - np.pi / 2)
 
     # generate features if given in config
     if model_config.feature_generation:

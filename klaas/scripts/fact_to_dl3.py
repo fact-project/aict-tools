@@ -1,7 +1,6 @@
 import click
 import numpy as np
 from sklearn.externals import joblib
-import yaml
 import logging
 from tqdm import tqdm
 import pandas as pd
@@ -15,13 +14,14 @@ import astropy.units as u
 from fact.io import read_h5py, to_h5py
 from fact.instrument.constants import LOCATION
 from fact.analysis.source import calc_theta_camera, calc_theta_offs_camera
-from fact.coordinates import camera_to_equatorial
+from fact.coordinates import camera_to_equatorial, horizontal_to_camera
 
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
 from ..io import read_telescope_data_chunked
 from ..configuration import KlaasConfig
 from ..feature_generation import feature_generation
+from ..preprocessing import calc_true_disp
 
 
 def to_altaz(obstime, source):
@@ -38,7 +38,7 @@ def concat_results_altaz(results):
     )
 
 
-def calc_source_features_sim(
+def calc_source_features_common(
     source_x,
     source_y,
     source_zd,
@@ -69,6 +69,42 @@ def calc_source_features_sim(
     return result
 
 
+def calc_source_features_sim(
+    source_x,
+    source_y,
+    source_zd,
+    source_az,
+    pointing_position_zd,
+    pointing_position_az,
+    cog_x,
+    cog_y,
+    delta,
+):
+    result = calc_source_features_common(
+        source_x,
+        source_y,
+        source_zd,
+        source_az,
+        pointing_position_zd,
+        pointing_position_az,
+    )
+    source_x, source_y = horizontal_to_camera(
+        az=source_az,
+        zd=source_zd,
+        az_pointing=pointing_position_az,
+        zd_pointing=pointing_position_zd,
+    )
+
+    true_disp, true_sign = calc_true_disp(
+        source_x, source_y,
+        cog_x, cog_y,
+        delta,
+    )
+    result['true_disp'] = true_disp * true_sign
+
+    return result
+
+
 def calc_source_features_obs(
     source_x,
     source_y,
@@ -79,7 +115,7 @@ def calc_source_features_obs(
     obstime,
 ):
 
-    result = calc_source_features_sim(
+    result = calc_source_features_common(
         source_x,
         source_y,
         source_zd,
@@ -109,8 +145,10 @@ dl3_columns = [
     'theta_deg_off_3',
     'theta_deg_off_4',
     'theta_deg_off_5',
+    'pointing_position_az',
+    'pointing_position_zd',
 ]
-corsika_columns = [
+dl3_columns_sim_read = [
     'corsika_run_header_run_number',
     'corsika_event_header_event_number',
     'ceres_event_event_reuse',
@@ -119,8 +157,10 @@ corsika_columns = [
     'corsika_event_header_x',
     'corsika_event_header_y',
     'corsika_event_header_first_interaction_height',
+    'source_position_az',
+    'source_position_zd',
 ]
-dl3_columns_sim = dl3_columns + corsika_columns
+dl3_columns_sim = dl3_columns_sim_read + dl3_columns + ['true_disp']
 
 dl3_columns_obs = dl3_columns + [
     'night',
@@ -222,8 +262,7 @@ def main(
         columns.update(['timestamp', 'night'])
     except (KeyError, OSError) as e:
         source = None
-        columns.update(['source_position_az', 'source_position_zd'])
-        columns.update(corsika_columns)
+        columns.update(dl3_columns_sim_read)
 
     df_generator = read_telescope_data_chunked(
         data_path,
@@ -274,6 +313,7 @@ def main(
                 n_jobs=n_jobs,
             )
         else:
+
             result = parallelize_array_computation(
                 calc_source_features_sim,
                 source_x,
@@ -282,6 +322,9 @@ def main(
                 df['source_position_az'].values,
                 df['pointing_position_zd'].values,
                 df['pointing_position_az'].values,
+                df['cog_x'].values,
+                df['cog_y'].values,
+                df['delta'].values,
                 n_jobs=n_jobs,
             )
 
