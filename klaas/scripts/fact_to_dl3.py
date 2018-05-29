@@ -139,6 +139,7 @@ dl3_columns = [
     'event_num',
     'gamma_energy_prediction',
     'gamma_prediction',
+    'disp_prediction',
     'theta_deg',
     'theta_deg_off_1',
     'theta_deg_off_2',
@@ -292,6 +293,7 @@ def main(
         source_y = df.cog_y + disp * np.sin(df.delta)
         df['source_x_prediction'] = source_x
         df['source_y_prediction'] = source_y
+        df['disp_prediction'] = disp
 
         if source:
             obstime = Time(pd.to_datetime(df['timestamp'].values).to_pydatetime())
