@@ -1,17 +1,14 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-    name='klaas',
-    version='0.11.1',
-    description='KLAssification And regression Scripts.  yay',
-    url='https://github.com/fact-project/klaas',
+    name='aict_tools',
+    version='0.12.0',
+    description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
+    url='https://github.com/fact-project/aict-tools',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
     author_email='kai.bruegge@tu-dortmund.de',
     license='MIT',
-    packages=[
-        'klaas',
-        'klaas.scripts',
-    ],
+    packages=find_packages(),
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
@@ -35,18 +32,18 @@ setup(
     zip_safe=False,
     entry_points={
         'console_scripts': [
-            'klaas_train_separation_model = klaas.scripts.train_separation_model:main',
-            'klaas_apply_separation_model = klaas.scripts.apply_separation_model:main',
-            'klaas_train_energy_regressor = klaas.scripts.train_energy_regressor:main',
-            'klaas_apply_energy_regressor = klaas.scripts.apply_regression_model:main',
-            'klaas_train_disp_regressor = klaas.scripts.train_disp_regressor:main',
-            'klaas_apply_disp_regressor = klaas.scripts.apply_disp_regressor:main',
-            'klaas_split_data = klaas.scripts.split_data:main',
-            'klaas_plot_separator_performance = klaas.scripts.plot_separator_performance:main',
-            'klaas_plot_regressor_performance = klaas.scripts.plot_regressor_performance:main',
-            'klaas_apply_cuts = klaas.scripts.apply_cuts:main',
-            'klaas_convert_pandas2h5py = klaas.scripts.convert_pandas2h5py:main',
-            'klaas_fact_to_dl3 = klaas.scripts.fact_to_dl3:main',
+            'aict_train_separation_model = aict_tools.scripts.train_separation_model:main',
+            'aict_apply_separation_model = aict_tools.scripts.apply_separation_model:main',
+            'aict_train_energy_regressor = aict_tools.scripts.train_energy_regressor:main',
+            'aict_apply_energy_regressor = aict_tools.scripts.apply_regression_model:main',
+            'aict_train_disp_regressor = aict_tools.scripts.train_disp_regressor:main',
+            'aict_apply_disp_regressor = aict_tools.scripts.apply_disp_regressor:main',
+            'aict_split_data = aict_tools.scripts.split_data:main',
+            'aict_plot_separator_performance = aict_tools.scripts.plot_separator_performance:main',
+            'aict_plot_regressor_performance = aict_tools.scripts.plot_regressor_performance:main',
+            'aict_apply_cuts = aict_tools.scripts.apply_cuts:main',
+            'aict_convert_pandas2h5py = klaas.scripts.convert_pandas2h5py:main',
+            'fact_to_dl3 = aict_tools.scripts.fact_to_dl3:main',
         ],
     }
 )

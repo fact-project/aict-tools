@@ -19,7 +19,7 @@ from fact.coordinates import camera_to_equatorial, horizontal_to_camera
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
 from ..io import read_telescope_data_chunked
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
 
@@ -225,7 +225,7 @@ def main(
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
 
     if os.path.isfile(output):
         if not yes:

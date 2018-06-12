@@ -8,7 +8,7 @@ from sklearn import metrics
 import logging
 from fact.io import check_extension, write_data
 
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 
@@ -45,7 +45,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
     model_config = config.separator
 
     log.info('Loading signal data')

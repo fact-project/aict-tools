@@ -2,18 +2,18 @@ from pytest import raises
 
 def test_disp():
 
-    from klaas.configuration import KlaasConfig
+    from aict_tools.configuration import AICTConfig
 
-    c = KlaasConfig.from_yaml('examples/config_source.yaml')
+    c = AICTConfig.from_yaml('examples/config_source.yaml')
 
     assert 'cog_x' in c.disp.columns_to_read_apply
 
 
 def test_energy():
 
-    from klaas.configuration import KlaasConfig
+    from aict_tools.configuration import AICTConfig
 
-    c = KlaasConfig.from_yaml('examples/config_energy.yaml')
+    c = AICTConfig.from_yaml('examples/config_energy.yaml')
 
     assert c.energy is not None
     assert c.disp is None
@@ -25,9 +25,9 @@ def test_energy():
 
 def test_separator():
 
-    from klaas.configuration import KlaasConfig
+    from aict_tools.configuration import AICTConfig
 
-    c = KlaasConfig.from_yaml('examples/config_separator.yaml')
+    c = AICTConfig.from_yaml('examples/config_separator.yaml')
 
     assert c.energy is None
     assert c.disp is None
@@ -36,9 +36,9 @@ def test_separator():
 
 def test_full():
 
-    from klaas.configuration import KlaasConfig
+    from aict_tools.configuration import AICTConfig
 
-    c = KlaasConfig.from_yaml('examples/full_config.yaml')
+    c = AICTConfig.from_yaml('examples/full_config.yaml')
 
     assert c.energy is not None
     assert c.disp is not None
@@ -47,7 +47,7 @@ def test_full():
 
 def test_source():
 
-    from klaas.configuration import KlaasConfig
+    from aict_tools.configuration import AICTConfig
 
     with raises(ValueError):
-        KlaasConfig.from_yaml('tests/config_source.yaml')
+        AICTConfig.from_yaml('tests/config_source.yaml')

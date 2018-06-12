@@ -7,7 +7,7 @@ import pandas as pd
 
 from ..apply import predict_separator
 from ..io import append_to_h5py, read_telescope_data_chunked, drop_prediction_column
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 
 
 @click.command()
@@ -38,7 +38,7 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
     model_config = config.separator
 
     prediction_column_name = config.class_name + '_prediction'
