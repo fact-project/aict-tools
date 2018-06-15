@@ -3,7 +3,7 @@ from multiprocessing import cpu_count
 
 
 def test_correct_length():
-    from klaas.parallel import parallelize_array_computation
+    from aict_tools.parallel import parallelize_array_computation
 
     n_jobs = cpu_count()
     N = 100 * n_jobs + 1

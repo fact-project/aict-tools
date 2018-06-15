@@ -6,9 +6,9 @@ from traceback import print_exception
 
 
 def test_train_regressor():
-    from klaas.scripts.train_energy_regressor import main
+    from aict_tools.scripts.train_energy_regressor import main
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
         result = runner.invoke(
@@ -28,10 +28,10 @@ def test_train_regressor():
 
 
 def test_apply_regression():
-    from klaas.scripts.train_energy_regressor import main as train
-    from klaas.scripts.apply_regression_model import main
+    from aict_tools.scripts.train_energy_regressor import main as train
+    from aict_tools.scripts.apply_energy_regressor import main
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
         shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
@@ -68,9 +68,9 @@ def test_apply_regression():
 
 
 def test_train_separator():
-    from klaas.scripts.train_separation_model import main
+    from aict_tools.scripts.train_separation_model import main
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
         result = runner.invoke(
@@ -91,10 +91,10 @@ def test_train_separator():
 
 
 def test_apply_separator():
-    from klaas.scripts.train_separation_model import main as train
-    from klaas.scripts.apply_separation_model import main as apply_model
+    from aict_tools.scripts.train_separation_model import main as train
+    from aict_tools.scripts.apply_separation_model import main as apply_model
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
         runner = CliRunner()
@@ -130,9 +130,9 @@ def test_apply_separator():
 
 
 def test_train_disp():
-    from klaas.scripts.train_disp_regressor import main as train
+    from aict_tools.scripts.train_disp_regressor import main as train
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
         runner = CliRunner()
         result = runner.invoke(
@@ -152,10 +152,10 @@ def test_train_disp():
 
 
 def test_apply_disp():
-    from klaas.scripts.train_disp_regressor import main as train
-    from klaas.scripts.apply_disp_regressor import main as apply_model
+    from aict_tools.scripts.train_disp_regressor import main as train
+    from aict_tools.scripts.apply_disp_regressor import main as apply_model
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
         shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 
@@ -193,12 +193,12 @@ def test_apply_disp():
 
 
 def test_to_dl3():
-    from klaas.scripts.train_disp_regressor import main as train_disp
-    from klaas.scripts.train_energy_regressor import main as train_energy
-    from klaas.scripts.train_separation_model import main as train_separator
-    from klaas.scripts.fact_to_dl3 import main as to_dl3
+    from aict_tools.scripts.train_disp_regressor import main as train_disp
+    from aict_tools.scripts.train_energy_regressor import main as train_energy
+    from aict_tools.scripts.train_separation_model import main as train_separator
+    from aict_tools.scripts.fact_to_dl3 import main as to_dl3
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
         runner = CliRunner()
 
@@ -286,9 +286,9 @@ def test_to_dl3():
 
 
 def test_split_data_executable():
-    from klaas.scripts.split_data import main as split
+    from aict_tools.scripts.split_data import main as split
 
-    with tempfile.TemporaryDirectory(prefix='klaas_test_') as d:
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
         shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
 

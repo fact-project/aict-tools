@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from ..io import append_to_h5py, read_telescope_data_chunked
 from ..apply import predict_disp
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 
 
 @click.command()
@@ -36,7 +36,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
     model_config = config.disp
 
     columns_to_delete = [

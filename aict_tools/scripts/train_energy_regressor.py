@@ -8,7 +8,7 @@ import numpy as np
 from fact.io import write_data
 from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 import logging
 
 logging.basicConfig()
@@ -38,7 +38,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
     '''
     logging.getLogger().setLevel(logging.DEBUG if verbose else logging.INFO)
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
     model_config = config.energy
 
     df = read_telescope_data(

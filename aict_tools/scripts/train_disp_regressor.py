@@ -10,7 +10,7 @@ from fact.coordinates.utils import horizontal_to_camera
 from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32, calc_true_disp
 from ..feature_generation import feature_generation
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 
 import logging
 
@@ -46,7 +46,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
     model_config = config.disp
 
     np.random.seed(config.seed)

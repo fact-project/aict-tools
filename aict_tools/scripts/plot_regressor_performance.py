@@ -3,7 +3,7 @@ import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
 from sklearn.externals import joblib
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 import fact.io
 
 from ..plotting import (
@@ -30,7 +30,7 @@ def main(configuration_path, performance_path, model_path, output, key):
     log.info('Loading model')
     model = joblib.load(model_path)
 
-    model_config = KlaasConfig.from_yaml(configuration_path).energy
+    model_config = AICTConfig.from_yaml(configuration_path).energy
     figures = []
 
     # Plot confusion
