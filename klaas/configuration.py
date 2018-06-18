@@ -75,13 +75,17 @@ class DispConfig:
         'feature_generation',
         'columns_to_read_apply',
         'columns_to_read_train',
-        'source_az_column',
-        'source_zd_column',
-        'pointing_az_column',
-        'pointing_zd_column',
+        'source_azimuth_column',
+        'source_zenith_column',
+        'source_altitude_column',
+        'pointing_azimuth_column',
+        'pointing_zenith_column',
+        'pointing_altitude_column',
         'cog_x_column',
         'cog_y_column',
         'delta_column',
+        'focal_length_column',
+        'angular_unit',
     ]
 
     def __init__(self, config):
@@ -107,14 +111,19 @@ class DispConfig:
             self.feature_generation = None
         self.features.sort()
 
-        self.source_az_column = model_config.get('source_az_column', 'source_position_az')
-        self.source_zd_column = model_config.get('source_zd_column', 'source_position_zd')
+        self.source_azimuth_column = model_config.get('source_azimuth_column', 'source_position_az')
+        self.source_altitude_column = model_config.get('source_altitude_column', None)
+        self.source_zenith_column = model_config.get('source_zenith_column', None)
 
-        self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
-        self.pointing_zd_column = model_config.get('pointing_zd_column', 'pointing_position_zd')
+        self.pointing_azimuth_column = model_config.get('pointing_azimuth_column', 'pointing_position_az')
+        self.pointing_altitude_column = model_config.get('pointing_altitude_column', None)
+        self.pointing_zenith_column = model_config.get('pointing_zenith_column', None)
+
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
         self.delta_column = model_config.get('delta_column', 'delta')
+
+        self.focal_length_column = model_config.get('focal_length_column', None)
 
         cols = {
             self.cog_x_column,
@@ -125,13 +134,24 @@ class DispConfig:
         cols.update(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-        self.columns_to_read_apply = list(cols)
+
         cols.update({
-            self.pointing_az_column,
-            self.pointing_zd_column,
-            self.source_az_column,
-            self.source_zd_column,
+            self.pointing_azimuth_column,
+            self.source_azimuth_column,
         })
+
+        if self.pointing_zenith_column:
+            cols.update({self.pointing_zenith_column, })
+        if self.pointing_altitude_column:
+            cols.update({self.pointing_altitude_column, })
+        if self.source_altitude_column:
+            cols.update({self.source_altitude_column, })
+        if self.source_zenith_column:
+            cols.update({self.source_zenith_column, })
+        if self.focal_length_column:
+            cols.update({self.focal_length_column, })
+
+        self.columns_to_read_apply = list(cols)
         self.columns_to_read_train = list(cols)
 
 
