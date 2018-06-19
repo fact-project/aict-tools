@@ -6,16 +6,16 @@ from fact.coordinates.camera_frame import CameraFrame
 @u.quantity_input
 def horizontal_to_camera(alt: u.deg, az: u.deg, alt_pointing: u.deg, az_pointing: u.deg, focal_length: u.m):
     '''
-    Convert sky coordinates from the equatorial frame to FACT camera
+    Convert sky coordinates from the equatorial frame to any CTA camera
     coordinates.
 
     Parameters
     ----------
     alt: Quantity number or array-like
-        altitude
+        Altitude of the point(s) to project into camera coordinates
     az: Quantity number or array-like
-        azimuth
-    zd_pointing: Quantity number or array-like
+        Azimuth of the point(s) to project into camera coordinates
+    alt_pointing: Quantity number or array-like
         Altitude of the telescope pointing direction
     az_pointing: Quantity number or array-like
         Azimuth of the telescope pointing direction
@@ -42,7 +42,7 @@ def horizontal_to_camera(alt: u.deg, az: u.deg, alt_pointing: u.deg, az_pointing
 @u.quantity_input
 def camera_to_horizontal(x: u.m, y: u.m, alt_pointing: u.deg, az_pointing: u.deg, focal_length: u.m):
     '''
-    Convert FACT camera coordinates to sky coordinates in the equatorial (icrs)
+    Convert CTA camera coordinates to sky coordinates in the horizontal (Alt Az) frame.
     frame.
 
     Parameters
@@ -60,9 +60,9 @@ def camera_to_horizontal(x: u.m, y: u.m, alt_pointing: u.deg, az_pointing: u.deg
 
     Returns
     -------
-    zd: number or array-like
-        Zenith distance in degrees
-    az: number or array-like
+    altitude: number or array-like
+        Altitude in degrees
+    azimuth: number or array-like
         Declination in degrees
     '''
     x, y = -y, -x
@@ -74,7 +74,6 @@ def camera_to_horizontal(x: u.m, y: u.m, alt_pointing: u.deg, az_pointing: u.deg
     )
     cam_coordinates = SkyCoord(x=x, y=y, frame=frame,)
 
-    # altaz = cam_coordinates.transform_to(AltAz(location=LOCATION))
     altaz = cam_coordinates.transform_to(AltAz())
 
     return (altaz.alt.deg) * u.deg, (altaz.az.deg) * u.deg
