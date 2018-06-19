@@ -19,7 +19,7 @@ from fact.coordinates import camera_to_equatorial, horizontal_to_camera
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
 from ..io import read_telescope_data_chunked
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
 
@@ -139,6 +139,7 @@ dl3_columns = [
     'event_num',
     'gamma_energy_prediction',
     'gamma_prediction',
+    'disp_prediction',
     'theta_deg',
     'theta_deg_off_1',
     'theta_deg_off_2',
@@ -224,7 +225,7 @@ def main(
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
     log = logging.getLogger()
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
 
     if os.path.isfile(output):
         if not yes:
@@ -292,6 +293,7 @@ def main(
         source_y = df.cog_y + disp * np.sin(df.delta)
         df['source_x_prediction'] = source_x
         df['source_y_prediction'] = source_y
+        df['disp_prediction'] = disp
 
         if source:
             obstime = Time(pd.to_datetime(df['timestamp'].values).to_pydatetime())

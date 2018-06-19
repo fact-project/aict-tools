@@ -1,5 +1,5 @@
 import numpy as np
-from klaas.scripts import split_data
+from aict_tools.scripts import split_data
 import pandas as pd
 
 

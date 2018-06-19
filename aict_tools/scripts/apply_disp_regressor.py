@@ -9,7 +9,7 @@ from ..cta_coordinates import camera_to_horizontal as camera_to_horizontal_cta
 from ..cta_coordinates import horizontal_to_camera as horizontal_to_camera_cta
 from ..io import append_to_h5py, read_telescope_data_chunked
 from ..apply import predict_disp
-from ..configuration import KlaasConfig
+from ..configuration import AICTConfig
 from ..preprocessing import calc_true_disp
 import astropy.units as u
 from sklearn.metrics import accuracy_score, r2_score
@@ -120,7 +120,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
     '''
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
 
-    config = KlaasConfig.from_yaml(configuration_path)
+    config = AICTConfig.from_yaml(configuration_path)
 
     delete_old_prediction_columns(data_path, config, yes)
 

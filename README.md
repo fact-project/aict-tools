@@ -1,5 +1,3 @@
-
-
 # aict-tools [![Build Status](https://travis-ci.org/fact-project/aict-tools.svg?branch=master)](https://travis-ci.org/fact-project/aict-tools)
 
 
@@ -29,12 +27,12 @@ For each task, there are two executables, installed to your `PATH`.
 Each take `yaml` configuration files and `h5py` style hdf5 files as input.
 The models are saved as `pickle` using `joblib` and/or `pmml` using `sklearn2pmml`.
  
-* `klass_train_<...>`   
+* `aict_train_<...>`   
   This script is used to train a model on events with known truth
   values for the target variable, usually monte carlo simulations.
 
-* `klass_apply_<...>` 
-  This script applies a given model, previously trained with `klaas_train_<...>` and applies it to data, either a test data set or data with unknown truth values for the target variable.
+* `aict_apply_<...>` 
+  This script applies a given model, previously trained with `aict_train_<...>` and applies it to data, either a test data set or data with unknown truth values for the target variable.
 
 The apply scripts can iterate through the data files in chunks using
 the `--chunksize=<N>` option, this can be handy for very large files (> 1 million events). 
@@ -46,12 +44,12 @@ and simulated gamma-rays in the event list format.
 
 The two scripts to perform energy regression are called
 
-* `klaas_train_energy_regressor`
-* `klaas_apply_energy_regressor`
+* `aict_train_energy_regressor`
+* `aict_apply_energy_regressor`
 
 An example configuration can be found in [examples/config_energy.yaml](examples/config_energy.yaml).
 
-To apply a model, use `klaas_apply_energy_regressor`.
+To apply a model, use `aict_apply_energy_regressor`.
 
 ## Separation
 
@@ -60,8 +58,8 @@ one data file for the signal class and one data file for the background class.
 
 The two scripts to perform separation are called
 
-* `klaas_train_separation_model`
-* `klaas_apply_separation_model`.
+* `aict_train_separation_model`
+* `aict_apply_separation_model`.
 
 An example configuration can be found in [examples/config_separator.yaml](examples/config_separator.yaml).
 
@@ -77,8 +75,8 @@ classification model is trained to estimate `sgn(disp)`.
 
 Training requires simulated diffuse gamma-ray events.
 
-* `klaas_train_disp_regressor`
-* `klaas_apply_disp_regressor`
+* `aict_train_disp_regressor`
+* `aict_apply_disp_regressor`
 
 An example configuration can be found in [examples/config_source.yaml](examples/config_source.yaml).
 
@@ -93,10 +91,10 @@ Theta has to be calculated from the source prediction e.g. by using `fact_calcul
 For data selection, e.g. to get rid of not well reconstructable events,
 it is customary to apply so called pre- or quality cuts before applying machine learning models.
 
-This can be done with `klaas_apply_cuts` and a `yaml` configuration file of the cuts to apply. See [examples/quality_cuts.yaml](examples/quality_cuts.yaml) for an example configuration file.
+This can be done with `aict_apply_cuts` and a `yaml` configuration file of the cuts to apply. See [examples/quality_cuts.yaml](examples/quality_cuts.yaml) for an example configuration file.
 
 
 ## Split data into training/test sets
 
-Using `klaas_split_data`, a dataset can be randomly split into sets,
+Using `aict_split_data`, a dataset can be randomly split into sets,
 e.g. to split a monte carlo simulation dataset into train and test set.

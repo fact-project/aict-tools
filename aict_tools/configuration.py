@@ -10,7 +10,7 @@ FeatureGenerationConfig = namedtuple(
 )
 
 
-class KlaasConfig:
+class AICTConfig:
     __slots__ = (
         'seed',
         'telescope_events_key',
