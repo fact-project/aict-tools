@@ -11,6 +11,8 @@ from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32, calc_true_disp
 from ..feature_generation import feature_generation
 from ..configuration import KlaasConfig
+from ..cta_coordinates import horizontal_to_camera as horizontal_to_camera_cta
+
 
 import logging
 
@@ -66,18 +68,45 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     )
     log.info('Total number of events: {}'.format(len(df)))
 
-    source_x, source_y = horizontal_to_camera(
-        az=df[model_config.source_az_column],
-        zd=df[model_config.source_zd_column],
-        az_pointing=df[model_config.pointing_az_column],
-        zd_pointing=df[model_config.pointing_zd_column],
-    )
+    delta = df[model_config.delta_column]
+    cog_x, cog_y = df[model_config.cog_x_column], df[model_config.cog_y_column]
+
+    if not config.has_multiple_telescopes:
+        source_x, source_y = horizontal_to_camera(
+            az=df[model_config.source_azimuth_column],
+            zd=df[model_config.source_zenith_column],
+            az_pointing=df[model_config.pointing_azimuth_column],
+            zd_pointing=df[model_config.pointing_zenith_column],
+        )
+
+    else:
+        import astropy.units as u
+        az = df[model_config.source_azimuth_column].values * u.rad
+        alt = df[model_config.source_altitude_column].values * u.rad
+        az_pointing = df[model_config.pointing_azimuth_column].values * u.rad
+        alt_pointing = df[model_config.pointing_altitude_column].values * u.rad
+        focal_length = df[model_config.focal_length_column].values * u.m
+
+        source_x, source_y = horizontal_to_camera_cta(
+            az=az,
+            alt=alt,
+            az_pointing=az_pointing,
+            alt_pointing=alt_pointing,
+            focal_length=focal_length,
+        )
+
+        source_x = source_x.to(u.m).value
+        source_y = source_y.to(u.m).value
+
+        delta = np.where(delta > np.pi/2, delta - np.pi, delta)
+        delta = np.where(delta < -np.pi/2, delta + np.pi, delta)
 
     df['true_disp'], df['true_sign'] = calc_true_disp(
         source_x, source_y,
-        df[model_config.cog_x_column], df[model_config.cog_y_column],
-        df[model_config.delta_column],
+        cog_x, cog_y,
+        delta,
     )
+
 
     # generate features if given in config
     if model_config.feature_generation:
