@@ -35,7 +35,7 @@ setup(
             'aict_train_separation_model = aict_tools.scripts.train_separation_model:main',
             'aict_apply_separation_model = aict_tools.scripts.apply_separation_model:main',
             'aict_train_energy_regressor = aict_tools.scripts.train_energy_regressor:main',
-            'aict_apply_energy_regressor = aict_tools.scripts.apply_regression_model:main',
+            'aict_apply_energy_regressor = aict_tools.scripts.apply_energy_regressor:main',
             'aict_train_disp_regressor = aict_tools.scripts.train_disp_regressor:main',
             'aict_apply_disp_regressor = aict_tools.scripts.apply_disp_regressor:main',
             'aict_split_data = aict_tools.scripts.split_data:main',
