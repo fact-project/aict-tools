@@ -99,7 +99,8 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     )
 
     aucs = []
-    for fold, (train, test) in enumerate(tqdm(stratified_kfold.split(X, y), total=n_cross_validations)):
+    cv_it = stratified_kfold.split(X, y)
+    for fold, (train, test) in enumerate(tqdm(cv_it, total=n_cross_validations)):
         # select data
         xtrain, xtest = X[train], X[test]
         ytrain, ytest = y[train], y[test]
@@ -118,12 +119,16 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
-
     log.info('Mean AUC ROC : {}'.format(np.array(aucs).mean()))
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
     log.info('Writing predictions from cross validation')
     write_data(predictions_df, predictions_path, mode='w')
+
+    # set random seed again to make sure different settings
+    # for n_cross_validations don't change the final model
+    np.random.seed(config.seed)
+    classifier.random_state = config.seed
 
     if model_config.calibrate_classifier:
         log.info('Training calibrated classifier')

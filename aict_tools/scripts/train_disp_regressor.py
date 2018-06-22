@@ -150,6 +150,12 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     ))
 
     log.info('Building new model on complete data set...')
+    # set random seed again to make sure different settings
+    # for n_cross_validations don't change the final model
+    np.random.seed(config.seed)
+    disp_regressor.random_state = config.seed
+    sign_classifier.random_state = config.seed
+
     disp_regressor.fit(df_train.values, target_disp.values)
     sign_classifier.fit(df_train.values, target_sign.values)
 

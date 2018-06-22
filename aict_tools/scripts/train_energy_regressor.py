@@ -100,6 +100,11 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
     ))
 
     log.info('Building new model on complete data set...')
+    # set random seed again to make sure different settings
+    # for n_cross_validations don't change the final model
+    np.random.seed(config.seed)
+    regressor.random_state = config.seed
+
     regressor.fit(df_train.values, target.values)
 
     log.info('Pickling model to {} ...'.format(model_path))
