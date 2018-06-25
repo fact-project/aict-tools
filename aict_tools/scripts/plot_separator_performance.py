@@ -60,8 +60,6 @@ def main(configuration_path, performance_path, model_path, output, key):
     ax = figures[-1].add_subplot(1, 1, 1)
 
     features = model_config.features
-    if model_config.feature_generation:
-        features.extend(sorted(model_config.feature_generation.features))
 
     plot_feature_importances(model, features, ax=ax)
 
