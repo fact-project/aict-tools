@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='aict_tools',
-    version='0.12.1',
+    version='0.12.2',
     description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
     url='https://github.com/fact-project/aict-tools',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
