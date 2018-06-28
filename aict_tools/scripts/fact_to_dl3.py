@@ -281,7 +281,9 @@ def main(
 
         df_energy = feature_generation(df, config.energy.feature_generation)
         df['gamma_energy_prediction'] = predict_energy(
-            df_energy[config.energy.features], energy_model,
+            df_energy[config.energy.features],
+            energy_model,
+            log_target=config.energy.log_target,
         )
 
         df_disp = feature_generation(df, config.disp.feature_generation)
