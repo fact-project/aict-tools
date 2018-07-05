@@ -15,7 +15,7 @@ All you ever wanted to do  with your IACT data in one package. This project is m
 
 Then you can install the aict-tools by:
 ```
-pip install https://github.com/fact-project/aict-tools/archive/v0.10.0.tar.gz
+pip install https://github.com/fact-project/aict-tools/archive/v0.12.4.tar.gz
 ```
 
 Alternatively you can clone the repo, `cd` into the folder and do the usual `pip install .` dance.
