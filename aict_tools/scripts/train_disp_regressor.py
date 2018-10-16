@@ -86,10 +86,6 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     df_train = convert_to_float32(df[config.disp.features])
     df_train.dropna(how='any', inplace=True)
 
-    if model_config.n_signal:
-        log.info('Sampling {} random events'.format(model_config.n_signal))
-        df_train = df_train.sample(model_config.n_signal, random_state=config.seed)
-
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
     target_disp = df['true_disp'].loc[df_train.index]
