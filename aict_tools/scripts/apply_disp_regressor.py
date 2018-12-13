@@ -8,6 +8,7 @@ from tqdm import tqdm
 from ..io import append_to_h5py, read_telescope_data_chunked
 from ..apply import predict_disp
 from ..configuration import AICTConfig
+from ..preprocessing import horizontal_to_camera, camera_to_horizontal
 
 
 @click.command()

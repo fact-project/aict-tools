@@ -46,7 +46,6 @@ def main(configuration_path, performance_path, model_path, output, key):
     # Plot hists of probas
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-
     plot_probabilities(df, model, ax=ax)
 
     # Plot hists of probas

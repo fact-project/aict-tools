@@ -48,3 +48,60 @@ def calc_true_disp(source_x, source_y, cog_x, cog_y, delta):
     true_sign = np.sign(np.abs(delta - true_delta) - np.pi / 2)
 
     return true_disp, true_sign
+
+
+from astropy import units as u
+from astropy.coordinates import SkyCoord
+from ctapipe.coordinates import CameraFrame, HorizonFrame
+
+def horizontal_to_camera(az, zd, az_pointing, zd_pointing):
+    pointing = SkyCoord(
+                alt=(90.-zd_pointing.values)*u.deg,
+                az=az_pointing.values*u.deg,
+                frame='altaz'
+            )
+
+    hf = HorizonFrame(
+             array_direction=pointing,
+             pointing_direction=pointing
+             )
+
+    focal_length = 2.283
+    cf = CameraFrame(
+            focal_length=focal_length,
+            array_direction=pointing,
+            pointing_direction=pointing
+            )
+
+    xy_coord = SkyCoord(az=az.values*u.deg, alt=(90.0-zd.values)*u.deg, frame=hf)
+    xy_coord = xy_coord.transform_to(cf)
+
+    return xy_coord.x.to(u.mm).value, xy_coord.y.to(u.mm).value
+
+
+def camera_to_horizontal(x, y, az_pointing, zd_pointing):
+    pointing = SkyCoord(
+                alt=(90.-zd_pointing.values)*u.deg,
+                az=az_pointing.values*u.deg,
+                frame='altaz'
+            )
+
+    hf = HorizonFrame(
+             array_direction=pointing,
+             pointing_direction=pointing
+             )
+
+    focal_length = 2.283
+    cf = CameraFrame(
+            focal_length=focal_length,
+            array_direction=pointing,
+            pointing_direction=pointing
+            )
+
+    #altaz_coord = SkyCoord(x=x.values*u.mm, y=y.values*u.mm, frame=cf)
+    altaz_coord = SkyCoord(x=x*u.mm.to(u.m), y=y*u.mm.to(u.m), frame=cf)
+    altaz_coord = altaz_coord.transform_to(hf)
+
+    return altaz_coord.alt.to(u.rad).value, altaz_coord.az.to(u.rad).value
+
+

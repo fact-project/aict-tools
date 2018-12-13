@@ -9,6 +9,8 @@ import fact.io
 from ..plotting import (
     plot_regressor_confusion,
     plot_bias_resolution,
+    plot_bias,
+    plot_resolution,
     plot_feature_importances,
 )
 
@@ -36,27 +38,28 @@ def main(configuration_path, performance_path, model_path, output, key):
     # Plot confusion
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    ax.set_title('Reconstructed vs. True Energy (log color scale)')
-    plot_regressor_confusion(df, ax=ax)
+    ax = plot_regressor_confusion(df, ax=ax)
+    ax.set_xlabel(r'$\log_{10}(E_{\mathrm{true}} \,\, / \,\, \mathrm{TeV})$')
+    ax.set_ylabel(r'$\log_{10}(E_{\mathrm{rec}} \,\, / \,\, \mathrm{TeV})$')
 
-    # Plot confusion
+    # Plot bias
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    ax.set_title('Reconstructed vs. True Energy (linear color scale)')
-    plot_regressor_confusion(df, log_z=False, ax=ax)
+    ax = plot_bias(df, bins=15, ax=ax)
+    ax.set_xlabel(r'$E_{\mathrm{true}} \,\, / \,\, \mathrm{TeV}$')
+    ax.set_ylabel('Bias')
 
-    # Plot bias/resolution
+    # Plot resolution
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    ax.set_title('Bias and Resolution')
-    plot_bias_resolution(df, bins=15, ax=ax)
+    ax = plot_resolution(df, bins=15, ax=ax)
+    ax.set_xlabel(r'$E_{\mathrm{true}} \,\, / \,\, \mathrm{TeV}$')
+    ax.set_ylabel('Resolution')
 
     # Plot feature importances
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-
     features = model_config.features
-
     plot_feature_importances(model, features, ax=ax)
 
     if output is None:

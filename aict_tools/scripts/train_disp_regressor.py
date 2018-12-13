@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 
 from fact.io import write_data
-from fact.coordinates.utils import horizontal_to_camera
+from ..preprocessing import horizontal_to_camera
 from ..io import pickle_model, read_telescope_data
 from ..preprocessing import convert_to_float32, calc_true_disp
 from ..feature_generation import feature_generation
@@ -57,10 +57,14 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     disp_regressor.random_state = config.seed
     sign_classifier.random_state = config.seed
 
+    columns = model_config.columns_to_read_train
+    columns.append(config.energy.target_column)
+
     log.info('Loading data')
     df = read_telescope_data(
         signal_path, config,
-        model_config.columns_to_read_train,
+        #model_config.columns_to_read_train,
+        columns,
         feature_generation_config=model_config.feature_generation,
         n_sample=model_config.n_signal
     )
@@ -83,8 +87,10 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     if model_config.feature_generation:
         feature_generation(df, model_config.feature_generation, inplace=True)
 
-    df_train = convert_to_float32(df[config.disp.features])
+    df_train = convert_to_float32(df)
     df_train.dropna(how='any', inplace=True)
+    mc_energies = df_train[config.energy.target_column]
+    df_train = df_train[config.disp.features]
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
@@ -116,6 +122,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
         sign_classifier.fit(cv_x_train, cv_sign_train)
         cv_sign_prediction = sign_classifier.predict(cv_x_test)
+        cv_sign_proba = sign_classifier.predict_proba(cv_x_test)[:, 1]
 
         scores_disp.append(metrics.r2_score(cv_disp_test, cv_disp_prediction))
         scores_sign.append(metrics.accuracy_score(cv_sign_test, cv_sign_prediction))
@@ -125,6 +132,8 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             'disp_prediction': cv_disp_prediction,
             'sign': cv_sign_test,
             'sign_prediction': cv_sign_prediction,
+            'sign_probabilities': cv_sign_proba,
+            'mc_energy': mc_energies[test],
             'cv_fold': fold
         }))
 
