@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='aict_tools',
-    version='0.12.5',
+    version='0.13.0',
     description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
     url='https://github.com/fact-project/aict-tools',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
@@ -24,7 +24,7 @@ setup(
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
-        'scikit-learn==0.19.1',
+        'scikit-learn==0.20.2',
         'sklearn2pmml',
         'tables',           # needs to be installed by pip for some reason
         'tqdm',
