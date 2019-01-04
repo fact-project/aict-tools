@@ -1,4 +1,4 @@
-from os import path
+import os
 from sklearn.externals import joblib
 from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
@@ -39,36 +39,55 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
             del f[group_name][column_name + '_mean']
 
 
-def read_telescope_data_chunked(path, klaas_config, chunksize, columns, feature_generation_config=None):
+class read_telescope_data_chunked:
     '''
     Reads data from hdf5 file given as PATH and yields dataframes for each chunk
     '''
-    n_rows = h5py_get_n_rows(path, klaas_config.telescope_events_key)
-    if chunksize:
-        n_chunks = int(np.ceil(n_rows / chunksize))
-    else:
-        n_chunks = 1
-        chunksize = n_rows
-    log.info('Splitting data into {} chunks'.format(n_chunks))
 
-    for chunk in range(n_chunks):
+    def __init__(self, path, klaas_config, chunksize, columns, feature_generation_config=None):
+        self.klaas_config = klaas_config
+        self.columns = columns
+        self.feature_generation_config = feature_generation_config
+        self.n_rows = h5py_get_n_rows(path, klaas_config.telescope_events_key)
+        self.path = path
+        if chunksize:
+            self.chunksize = chunksize
+            self.n_chunks = int(np.ceil(self.n_rows / chunksize))
+        else:
+            self.n_chunks = 1
+            self.chunksize = self.n_rows
+        log.info('Splitting data into {} chunks'.format(self.n_chunks))
 
-        start = chunk * chunksize
-        end = min(n_rows, (chunk + 1) * chunksize)
+        self.current_chunk = 0
+
+    def __len__(self):
+        return self.n_chunks
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_chunk == self.n_chunks:
+            raise StopIteration
+
+        chunk = self.current_chunk
+        start = chunk * self.chunksize
+        end = min(self.n_rows, (chunk + 1) * self.chunksize)
+        self.current_chunk += 1
 
         df = read_telescope_data(
-            path,
-            klaas_config=klaas_config,
-            columns=columns,
+            self.path,
+            klaas_config=self.klaas_config,
+            columns=self.columns,
             first=start,
             last=end
         )
         df.index = np.arange(start, end)
 
-        if feature_generation_config:
-            feature_generation(df, feature_generation_config, inplace=True)
+        if self.feature_generation_config:
+            feature_generation(df, self.feature_generation_config, inplace=True)
 
-        yield df, start, end
+        return df, start, end
 
 
 def read_telescope_data(path, klaas_config, columns, feature_generation_config=None, n_sample=None, first=None, last=None):
@@ -131,7 +150,7 @@ def read_telescope_data(path, klaas_config, columns, feature_generation_config=N
 
 
 def pickle_model(classifier, feature_names, model_path, label_text='label'):
-    p, extension = path.splitext(model_path)
+    p, extension = os.path.splitext(model_path)
     classifier.feature_names = feature_names
 
     if (extension == '.pmml'):

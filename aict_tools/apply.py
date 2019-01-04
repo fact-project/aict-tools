@@ -125,7 +125,7 @@ def apply_cuts_h5py_chunked(
     with h5py.File(input_path, 'r') as infile, h5py.File(output_path, 'w') as outfile:
         group = outfile.create_group(key)
 
-        for chunk in tqdm(range(n_chunks), disable=not progress):
+        for chunk in tqdm(range(n_chunks), disable=not progress, total=n_chunks):
             start = chunk * chunksize
             end = min(n_events, (chunk + 1) * chunksize)
 

@@ -60,15 +60,15 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
     if model_config.log_target is True:
         target = np.log(target)
 
-    n_cross_validations = model_config.n_cross_validations
+    n_cv = model_config.n_cross_validations
     regressor = model_config.model
-    log.info('Starting {} fold cross validation... '.format(n_cross_validations))
+    log.info('Starting {} fold cross validation... '.format(n_cv))
     scores = []
     cv_predictions = []
 
-    kfold = model_selection.KFold(n_splits=n_cross_validations, shuffle=True, random_state=config.seed)
+    kfold = model_selection.KFold(n_splits=n_cv, shuffle=True, random_state=config.seed)
 
-    for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):
+    for fold, (train, test) in enumerate(tqdm(kfold.split(df_train.values), total=n_cv)):
 
         cv_x_train, cv_x_test = df_train.values[train], df_train.values[test]
         cv_y_train, cv_y_test = target.values[train], target.values[test]
@@ -109,10 +109,10 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
 
     log.info('Pickling model to {} ...'.format(model_path))
     pickle_model(
-            regressor,
-            feature_names=list(df_train.columns),
-            model_path=model_path,
-            label_text='estimated_energy',
+        regressor,
+        feature_names=list(df_train.columns),
+        model_path=model_path,
+        label_text='estimated_energy',
     )
 
 

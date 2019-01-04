@@ -104,7 +104,8 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         random_state=config.seed,
     )
 
-    for fold, (train, test) in tqdm(enumerate(kfold.split(df_train.values))):
+    total = model_config.n_cross_validations
+    for fold, (train, test) in enumerate(tqdm(kfold.split(df_train.values), total=total)):
 
         cv_x_train, cv_x_test = df_train.values[train], df_train.values[test]
 
