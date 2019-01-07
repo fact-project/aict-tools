@@ -61,7 +61,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, telescope, fmt
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
 
-    Example call: klaas_split_data input.hdf5 output_base -n test -f 0.5 -n train -f 0.5
+    Example call: aict_split_data input.hdf5 output_base -n test -f 0.5 -n train -f 0.5
     '''
 
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
