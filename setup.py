@@ -26,7 +26,6 @@ setup(
         'pyyaml',             # in anaconda
         'scikit-learn~=0.20.0',  # See PEP 440, compatible releases
         'sklearn2pmml',
-        'tables',           # needs to be installed by pip for some reason
         'tqdm',
     ],
     zip_safe=False,
