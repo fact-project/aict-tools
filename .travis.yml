@@ -27,3 +27,9 @@ deploy:
     branch: master
     tags: true
     condition: $TRAVIS_PYTHON_VERSION = '3.7'
+
+
+addons:
+  apt:
+    packages:
+      - hdf5 
