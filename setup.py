@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='aict_tools',
-    version='0.12.5',
+    version='0.13.0',
     description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
     url='https://github.com/fact-project/aict-tools',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
@@ -12,19 +12,19 @@ setup(
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
-        'astropy',
-        'click',
-        'h5py',
-        'joblib',
+        'astropy',  # in anaconda
+        'click',  # in anaconda
+        'h5py',  # in anaconda
+        'joblib',  # in anaconda
         'matplotlib>=2.0',  # in anaconda
-        'numexpr',
+        'numexpr',  # in anaconda
         'numpy',            # in anaconda
         'pandas',           # in anaconda
         'pyfact>=0.16.0',
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
-        'scikit-learn==0.19.1',
+        'scikit-learn~=0.20.0',  # See PEP 440, compatible releases
         'sklearn2pmml',
         'tables',           # needs to be installed by pip for some reason
         'tqdm',
