@@ -32,4 +32,4 @@ deploy:
 addons:
   apt:
     packages:
-      - hdf5 
+      - libhdf5-serial-dev
