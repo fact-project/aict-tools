@@ -41,7 +41,7 @@ setup(
             'aict_plot_separator_performance = aict_tools.scripts.plot_separator_performance:main',
             'aict_plot_regressor_performance = aict_tools.scripts.plot_regressor_performance:main',
             'aict_apply_cuts = aict_tools.scripts.apply_cuts:main',
-            'aict_convert_pandas2h5py = klaas.scripts.convert_pandas2h5py:main',
+            'aict_convert_pandas2h5py = aict_tools.scripts.convert_pandas2h5py:main',
             'fact_to_dl3 = aict_tools.scripts.fact_to_dl3:main',
         ],
     }
