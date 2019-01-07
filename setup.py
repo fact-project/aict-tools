@@ -12,19 +12,19 @@ setup(
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
-        'astropy',
-        'click',
-        'h5py',
-        'joblib',
+        'astropy',  # in anaconda
+        'click',  # in anaconda
+        'h5py',  # in anaconda
+        'joblib',  # in anaconda
         'matplotlib>=2.0',  # in anaconda
-        'numexpr',
+        'numexpr',  # in anaconda
         'numpy',            # in anaconda
         'pandas',           # in anaconda
         'pyfact>=0.16.0',
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'pyyaml',             # in anaconda
-        'scikit-learn==0.20.2',
+        'scikit-learn~=0.20.0',  # See PEP 440, compatible releases
         'sklearn2pmml',
         'tables',           # needs to be installed by pip for some reason
         'tqdm',
