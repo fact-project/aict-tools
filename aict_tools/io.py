@@ -39,12 +39,29 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
             del f[group_name][column_name + '_mean']
 
 
-class read_telescope_data_chunked:
+def read_telescope_data_chunked(path, klaas_config, chunksize, columns, feature_generation_config=None):
     '''
     Reads data from hdf5 file given as PATH and yields dataframes for each chunk
     '''
+    return TelescopeDataIterator(
+        path,
+        klaas_config,
+        chunksize,
+        columns,
+        feature_generation_config=feature_generation_config,
+    )
 
-    def __init__(self, path, klaas_config, chunksize, columns, feature_generation_config=None):
+
+class TelescopeDataIterator:
+
+    def __init__(
+        self,
+        path,
+        klaas_config,
+        chunksize,
+        columns,
+        feature_generation_config=None,
+    ):
         self.klaas_config = klaas_config
         self.columns = columns
         self.feature_generation_config = feature_generation_config
