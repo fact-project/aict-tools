@@ -1,9 +1,16 @@
 from setuptools import setup, find_packages
+from os import path
+
+d = path.abspath(path.dirname(__file__))
+with open(path.join(d, 'README.md'), encoding='utf-8') as f:
+    long_description = f.read()
 
 setup(
     name='aict_tools',
-    version='0.13.0',
+    version='0.13.1',
     description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url='https://github.com/fact-project/aict-tools',
     author='Kai Brügge, Maximilian Nöthe, Jens Buss',
     author_email='kai.bruegge@tu-dortmund.de',
@@ -44,5 +51,20 @@ setup(
             'aict_convert_pandas2h5py = aict_tools.scripts.convert_pandas2h5py:main',
             'fact_to_dl3 = aict_tools.scripts.fact_to_dl3:main',
         ],
-    }
+    },
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Intended Audience :: Science/Research',
+        'License :: OSI Approved :: MIT License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3 :: Only',
+        'Topic :: Scientific/Engineering :: Astronomy',
+        'Topic :: Scientific/Engineering :: Physics',
+        'Topic :: Scientific/Engineering :: Artificial Intelligence',
+        'Topic :: Scientific/Engineering :: Information Analysis',
+    ],
 )
