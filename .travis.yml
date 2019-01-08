@@ -1,15 +1,35 @@
 language: python
-python:
-  - "3.6"
+
+matrix:
+  include:
+    - python: '3.6'
+    - python: '3.7'
+      dist: xenial
+
 before_install:
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
 
 install:
   - pip install .
 
 script:
   - python setup.py test
+
+deploy:
+  provider: pypi
+  skip_cleanup: true
+  distributions: sdist
+  user: fact-deploybot
+  password:
+    secure: PQwYVK0/8W0jmb1EUUL0qzA3rsXJSbEhixo0L+tlryCIHPisJoDBcVyzYzmRwXPRTZ5X6vUKYZ3MTQE5zCjbJ8oe88mASZ/auXoMnm2FCMsr79qNy6v1WPoV+HXid6eragdoepsSf+gTlOSl8AivAnK02wsM9iHwJqbVCqCObtUd6MUpTqtp0tZtirIErj3KS1uC6wfh/z0h9u0JIsvfENCxDwZVKskq6BVfDeYqeJuQemugO7C9ucWHZdcovTRw46XStsSNYMoOuT8ORh14/N4N5CqnjH8RZQazkjAvM73L+JJkk74/tjzMjcXZMhFPIIyWNpVgtQzg9+DA80DORBNpCL7UlxhJnIPNt3/ii19F1KERccCxuy5BCGBFS6kom5uE6dr6zPsBOHno+38TSUu6B/agMv0drxmxCAQjzZO015LK3RSqPXvwKlfokH9CdMx2Z+6qRwNl0IJvwio78bDIRlqxQ6pDoLmyd6hL3FSNuuCDY4s1H+kMWpOwVVJOPXttSWxi4fw9uAvadF8f611rygHGWe4dxbfDFnoDAsTfS4Z3C1oWJ30LINYo1SKZRAJ7CgzIJEqW2/xGoIlovmXz8J6eYP1MhlG8ldIaM+D3IXBYrxpr5ocJZMj8lXlpbQCgkipcvx+WExWPhgQ3TH8QlSv4sowUQLXJ1SMW5Yg=
+  on:
+    branch: master
+    tags: true
+    condition: $TRAVIS_PYTHON_VERSION = '3.7'
+
+
+addons:
+  apt:
+    packages:
+      - libhdf5-serial-dev
