@@ -1,4 +1,4 @@
-from os import path
+import os
 from sklearn.externals import joblib
 from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
@@ -43,32 +43,68 @@ def read_telescope_data_chunked(path, aict_config, chunksize, columns, feature_g
     '''
     Reads data from hdf5 file given as PATH and yields dataframes for each chunk
     '''
-    n_rows = h5py_get_n_rows(path, aict_config.telescope_events_key)
-    if chunksize:
-        n_chunks = int(np.ceil(n_rows / chunksize))
-    else:
-        n_chunks = 1
-        chunksize = n_rows
-    log.info('Splitting data into {} chunks'.format(n_chunks))
+    return TelescopeDataIterator(
+        path,
+        aict_config,
+        chunksize,
+        columns,
+        feature_generation_config=feature_generation_config,
+    )
 
-    for chunk in range(n_chunks):
 
-        start = chunk * chunksize
-        end = min(n_rows, (chunk + 1) * chunksize)
+class TelescopeDataIterator:
+
+    def __init__(
+        self,
+        path,
+        aict_config,
+        chunksize,
+        columns,
+        feature_generation_config=None,
+    ):
+        self.aict_config = aict_config
+        self.columns = columns
+        self.feature_generation_config = feature_generation_config
+        self.n_rows = h5py_get_n_rows(path, aict_config.telescope_events_key)
+        self.path = path
+        if chunksize:
+            self.chunksize = chunksize
+            self.n_chunks = int(np.ceil(self.n_rows / chunksize))
+        else:
+            self.n_chunks = 1
+            self.chunksize = self.n_rows
+        log.info('Splitting data into {} chunks'.format(self.n_chunks))
+
+        self.current_chunk = 0
+
+    def __len__(self):
+        return self.n_chunks
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_chunk == self.n_chunks:
+            raise StopIteration
+
+        chunk = self.current_chunk
+        start = chunk * self.chunksize
+        end = min(self.n_rows, (chunk + 1) * self.chunksize)
+        self.current_chunk += 1
 
         df = read_telescope_data(
-            path,
-            aict_config=aict_config,
-            columns=columns,
+            self.path,
+            aict_config=self.aict_config,
+            columns=self.columns,
             first=start,
             last=end
         )
         df.index = np.arange(start, end)
 
-        if feature_generation_config:
-            feature_generation(df, feature_generation_config, inplace=True)
+        if self.feature_generation_config:
+            feature_generation(df, self.feature_generation_config, inplace=True)
 
-        yield df, start, end
+        return df, start, end
 
 
 def read_telescope_data(path, aict_config, columns, feature_generation_config=None, n_sample=None, first=None, last=None):
@@ -131,7 +167,7 @@ def read_telescope_data(path, aict_config, columns, feature_generation_config=No
 
 
 def pickle_model(classifier, feature_names, model_path, label_text='label'):
-    p, extension = path.splitext(model_path)
+    p, extension = os.path.splitext(model_path)
     classifier.feature_names = feature_names
 
     if (extension == '.pmml'):
