@@ -25,7 +25,7 @@ def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs
         try:
             df = pd.read_hdf(file_path, key=key, columns=columns, start=first, stop=last, **kwargs)
         except (TypeError, ValueError):
-            df = read_h5py(file_path, key=key, columns=columns, **kwargs)
+            df = read_h5py(file_path, key=key, columns=columns, first=first, last=last, **kwargs)
         return df
     else:
         raise NotImplementedError(f'AICT tools cannot handle data with extension {extension} yet.')
