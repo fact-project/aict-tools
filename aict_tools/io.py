@@ -107,6 +107,20 @@ class TelescopeDataIterator:
         return df, start, end
 
 
+def get_column_names_in_file(path, keys):
+    column_names = []
+    try:
+        with pd.HDFStore(path, 'r') as storer:
+            for key in keys:
+                names = storer.select(key, stop=0).columns.values
+                column_names.append(names)
+    except TypeError:
+        with h5py.File(path, 'r') as f:
+            for key in keys:
+                column_names.append(f[key].keys())
+
+    return column_names
+
 def read_telescope_data(path, aict_config, columns, feature_generation_config=None, n_sample=None, first=None, last=None):
     '''
     Read given columns from data and perform a random sample if n_sample is supplied.
@@ -117,11 +131,13 @@ def read_telescope_data(path, aict_config, columns, feature_generation_config=No
     if aict_config.has_multiple_telescopes:
         join_keys = [aict_config.run_id_column, aict_config.array_event_id_column]
         if columns:
-            with h5py.File(path, 'r') as f:
-                array_event_columns = set(f[aict_config.array_events_key].keys()) & set(columns)
-                telescope_event_columns = set(f[aict_config.telescope_events_key].keys()) & set(columns)
-                array_event_columns |= set(join_keys)
-                telescope_event_columns |= set(join_keys)
+            keys = [aict_config.array_events_key, aict_config.telescope_events_key]
+            array_event_columns, telescope_event_columns = get_column_names_in_file(path, keys=keys)
+            
+            array_event_columns = set(array_event_columns) & set(columns)
+            telescope_event_columns = set(telescope_event_columns) & set(columns)
+            array_event_columns |= set(join_keys)
+            telescope_event_columns |= set(join_keys)
 
         telescope_events = read_data(
             file_path=path,
@@ -135,9 +151,7 @@ def read_telescope_data(path, aict_config, columns, feature_generation_config=No
             key=aict_config.array_events_key,
             columns=array_event_columns,
         )
-
         df = pd.merge(left=array_events, right=telescope_events, left_on=join_keys, right_on=join_keys)
-
     else:
         df = read_data(
             file_path=path,
