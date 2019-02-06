@@ -4,7 +4,7 @@ from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
 import numpy as np
 from .feature_generation import feature_generation
-from fact.io import read_data, h5py_get_n_rows
+from fact.io import read_h5py, h5py_get_n_rows
 import pandas as pd
 import h5py
 import click
@@ -12,6 +12,23 @@ __all__ = ['pickle_model']
 
 
 log = logging.getLogger(__name__)
+
+def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs):
+    '''
+    This is similar to the read_data function in fact.io
+    pandas hdf5:   pd.HDFStore
+    h5py hdf5:     fact.io.read_h5py
+    '''
+    _, extension = os.path.splitext(file_path)
+
+    if extension in ['.hdf', '.hdf5', '.h5']:
+        try:
+            df = pd.read_hdf(file_path, key=key, columns=columns, start=first, stop=last, **kwargs)
+        except (TypeError, ValueError):
+            df = read_h5py(file_path, key=key, columns=columns, **kwargs)
+        return df
+    else:
+        raise NotImplementedError(f'AICT tools cannot handle data with extension {extension} yet.')
 
 
 def drop_prediction_column(data_path, group_name, column_name, yes=True):
