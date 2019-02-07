@@ -1,3 +1,5 @@
+import os
+
 import click
 import numpy as np
 import logging
@@ -78,6 +80,8 @@ def main(input_path, output_basename, fraction, name, inkey, key, telescope, fmt
 
 def split_multi_telescope_data(input_path, output_basename, fraction, name):
 
+    _, file_extension = os.path.splitext(input_path)
+
     array_events = read_data(input_path, key='array_events')
     telescope_events = read_data(input_path, key='telescope_events')
     runs = read_data(input_path, key='runs')
@@ -97,7 +101,7 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name):
         selected_array_events = array_events[array_events.run_id.isin(selected_run_ids)]
         selected_telescope_events = telescope_events[telescope_events.run_id.isin(selected_run_ids)]
 
-        path = output_basename + '_' + part_name + '.hdf5'
+        path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} runs events to: {}'.format(n, path))
         write_data(selected_runs, path, key='runs', use_h5py=True, mode='w')
         write_data(selected_array_events, path, key='array_events', use_h5py=True, mode='a')
@@ -108,6 +112,8 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name):
 
 
 def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fraction, name):
+
+    _, file_extension = os.path.splitext(input_path)
 
     if fmt in ['hdf5', 'hdf', 'h5']:
         data = read_data(input_path, key=inkey)
@@ -131,7 +137,7 @@ def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fr
         selected_data = data.loc[selected_ids]
 
         if fmt in ['hdf5', 'hdf', 'h5']:
-            path = output_basename + '_' + part_name + '.hdf5'
+            path = output_basename + '_' + part_name + file_extension
             log.info('Writing {} telescope-array events to: {}'.format(n, path))
             write_data(selected_data, path, key=key, use_h5py=True, mode='w')
 
