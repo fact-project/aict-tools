@@ -139,19 +139,30 @@ class TelescopeDataIterator:
         return df, start, end
 
 
-def get_column_names_in_file(path, keys):
-    column_names = []
+def get_column_names_in_file(path, table_name):
     try:
         with pd.HDFStore(path, 'r') as storer:
-            for key in keys:
-                names = storer.select(key, stop=0).columns.values
-                column_names.append(names)
+            names = storer.select(table_name, stop=0).columns.values
     except TypeError:
         with h5py.File(path, 'r') as f:
-            for key in keys:
-                column_names.append(f[key].keys())
+            names = list(f[table_name].keys())
+    return names
 
-    return column_names
+
+def remove_column_from_file(path, table_name, column_to_remove):
+    '''
+    Removes a column from a hdf5 file. In case of 'tables' format needs to copy the entire table.
+    '''
+    try:
+        with pd.HDFStore(path, 'r+') as store:
+            df = store.select(table_name)
+            df.drop(columns=[column_to_remove], inplace=True) 
+            store.remove(table_name)
+            store.put(table_name, df, format='t')
+    except TypeError:
+        with h5py.File(path, 'r+') as f:
+            del f[table_name][column_to_remove]
+
 
 def read_telescope_data(path, aict_config, columns, feature_generation_config=None, n_sample=None, first=None, last=None):
     '''
@@ -163,8 +174,10 @@ def read_telescope_data(path, aict_config, columns, feature_generation_config=No
     if aict_config.has_multiple_telescopes:
         join_keys = [aict_config.run_id_column, aict_config.array_event_id_column]
         if columns:
-            keys = [aict_config.array_events_key, aict_config.telescope_events_key]
-            array_event_columns, telescope_event_columns = get_column_names_in_file(path, keys=keys)
+            t = aict_config.array_events_key
+            array_event_columns = get_column_names_in_file(path, table_name=t)
+            t = aict_config.telescope_events_key
+            telescope_event_columns = get_column_names_in_file(path, table_name=t)
             
             array_event_columns = set(array_event_columns) & set(columns)
             telescope_event_columns = set(telescope_event_columns) & set(columns)
@@ -267,7 +280,7 @@ class HDFColumnAppender():
 
     def add_data(self, data, new_column_name, start, stop):
         '''
-        Appends a columnd containing new data to existing table.
+        Appends a column containing new data to existing table.
 
         Parameters
         ----------
