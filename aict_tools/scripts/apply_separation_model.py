@@ -1,7 +1,6 @@
 import click
 from sklearn.externals import joblib
 import logging
-import h5py
 from tqdm import tqdm
 import pandas as pd
 
