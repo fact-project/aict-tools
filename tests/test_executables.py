@@ -5,6 +5,28 @@ import shutil
 from traceback import print_exception
 
 
+def test_train_regressor_cta():
+    from aict_tools.scripts.train_energy_regressor import main
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        runner = CliRunner()
+
+        result = runner.invoke(
+            main,
+            [
+                'examples/cta_config.yaml',
+                'examples/cta_tables_file.hdf5',
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'test.pkl'),
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+
 def test_train_regressor():
     from aict_tools.scripts.train_energy_regressor import main
 

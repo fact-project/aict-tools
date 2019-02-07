@@ -4,14 +4,29 @@ from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
 import numpy as np
 from .feature_generation import feature_generation
-from fact.io import read_h5py, h5py_get_n_rows
+from fact.io import read_h5py
 import pandas as pd
 import h5py
 import click
+import tables
 __all__ = ['pickle_model']
 
 
 log = logging.getLogger(__name__)
+
+
+def get_number_of_rows_in_table(path, key):
+    try:
+        with h5py.File(path, 'r') as f:
+            group = f.get(key)
+            nrows = group[next(iter(group.keys()))].shape[0]
+    
+    except AttributeError:
+        with pd.HDFStore(path, 'r') as storer:
+            nrows = storer.get_storer(key).nrows
+
+    return nrows
+
 
 def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs):
     '''
@@ -82,7 +97,7 @@ class TelescopeDataIterator:
         self.aict_config = aict_config
         self.columns = columns
         self.feature_generation_config = feature_generation_config
-        self.n_rows = h5py_get_n_rows(path, aict_config.telescope_events_key)
+        self.n_rows = get_number_of_rows_in_table(path, aict_config.telescope_events_key)
         self.path = path
         if chunksize:
             self.chunksize = chunksize
@@ -215,24 +230,99 @@ def pickle_model(classifier, feature_names, model_path, label_text='label'):
         joblib.dump(classifier, model_path, compress=4)
 
 
-def append_to_h5py(f, array, group, key):
+class HDFColumnAppender():
     '''
-    Write numpy array to h5py hdf5 file
+    This is a ContextManager which can append columns to an existing hdf5 table 
+    in a chunkwise manner.
+    For hdf5 files in *tables format* this will temprarily occupy twice the disk space.
+    
+    Parameters
+    ----------
+    path: str
+        path to the hdf5 file
+    table_name: str
+        name of the table columns should be appended to
     '''
-    group = f.require_group(group)  # create if not exists
+    def __init__(self, path, table_name):
+        self.path = path
+        self.table_name = table_name
+        try:
+            with pd.HDFStore(path, mode='r') as r:
+                _ = r[table_name]
+            self.is_tables_format = True
+        except TypeError:
+            self.is_tables_format = False
 
-    max_shape = list(array.shape)
-    max_shape[0] = None
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        if self.is_tables_format:
+            with tables.open_file(self.path, 'r+') as t:
+                try:
+                    t.remove_node(f'/{self.table_name}', recursive='force')
+                    t.rename_node(f'/{self.table_name}_copy', newname=self.table_name)
+                except tables.exceptions.NoSuchNodeError:
+                    pass
 
-    if key not in group.keys():
-        group.create_dataset(
-            key,
-            data=array,
-            maxshape=tuple(max_shape),
-        )
-    else:
-        n_existing = group[key].shape[0]
-        n_new = array.shape[0]
+    def add_data(self, data, new_column_name, start, stop):
+        '''
+        Appends a columnd containing new data to existing table.
 
-        group[key].resize(n_existing + n_new, axis=0)
-        group[key][n_existing:n_existing + n_new] = array
+        Parameters
+        ----------
+        data: array-like
+            the data to append
+        new_column_name: str
+            name of the new column to append
+        start: int or None
+            first row to replace in the file
+        stop: int or None
+            last event to replace in the file
+        '''
+        if self.is_tables_format:
+            with pd.HDFStore(self.path, 'r+') as store:
+                df = store.select(self.table_name, start=start, stop=stop)
+                df[new_column_name] = data
+                # store.remove(self.table_name, start=0, stop=stop-start)
+                store.put(self.table_name + '_copy', df, format='t', append=True)
+        else:
+            _append_column_to_h5py(self.path, data, self.table_name, new_column_name)
+
+
+
+def append_column_to_hdf5(path, array, table_name, new_column_name):
+    '''
+    Add array as a column to the hdf5 file. This needs to load the 
+    entire table into memory if the hdf5 file is in 'tables' format.
+    '''
+    try:
+        with pd.HDFStore(path, 'r+') as store:
+            df = store.select(table_name)
+            df[new_column_name] = array
+            store.remove(table_name)
+            store.put(table_name, df, format='t')
+            
+    except TypeError:
+        _append_column_to_h5py(path, array, table_name, new_column_name)
+
+
+def _append_column_to_h5py(path, array, table_name, new_column_name):
+    with h5py.File(path, 'r+') as f:
+        table_name = f.require_group(table_name)  # create if not exists
+
+        max_shape = list(array.shape)
+        max_shape[0] = None
+
+        if new_column_name not in table_name.keys():
+            table_name.create_dataset(
+                new_column_name,
+                data=array,
+                maxshape=tuple(max_shape),
+            )
+        else:
+            n_existing = table_name[new_column_name].shape[0]
+            n_new = array.shape[0]
+
+            table_name[new_column_name].resize(n_existing + n_new, axis=0)
+            table_name[new_column_name][n_existing:n_existing + n_new] = array
