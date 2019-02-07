@@ -5,7 +5,7 @@ import logging
 import h5py
 from tqdm import tqdm
 
-from ..io import append_to_h5py, read_telescope_data_chunked
+from ..io import HDFColumnAppender, read_telescope_data_chunked
 from ..apply import predict_disp
 from ..configuration import AICTConfig
 
@@ -87,20 +87,21 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     )
 
     log.info('Predicting on data...')
-    for df_data, start, end in tqdm(df_generator):
+    with HDFColumnAppender(data_path, config.telescope_events_key) as appender:
+        for df_data, start, stop in tqdm(df_generator):
 
-        disp = predict_disp(
-            df_data[model_config.features], disp_model, sign_model
-        )
+            disp = predict_disp(
+                df_data[model_config.features], disp_model, sign_model
+            )
 
-        source_x = df_data.cog_x + disp * np.cos(df_data.delta)
-        source_y = df_data.cog_y + disp * np.sin(df_data.delta)
+            source_x = df_data.cog_x + disp * np.cos(df_data.delta)
+            source_y = df_data.cog_y + disp * np.sin(df_data.delta)
 
-        with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, source_x, key, 'source_x_prediction')
-            append_to_h5py(f, source_y, key, 'source_y_prediction')
-            append_to_h5py(f, disp, key, 'disp_prediction')
+            appender.add_data(source_x, 'source_x_prediction', start, stop)
+            appender.add_data(source_y, 'source_y_prediction', start, stop)
+            appender.add_data(disp, 'disp_prediction', start, stop)
 
 
 if __name__ == '__main__':
+    # pylint: disable=no-value-for-parameter
     main()
