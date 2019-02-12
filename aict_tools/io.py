@@ -71,7 +71,7 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
             del f[group_name][column_name + '_mean']
 
 
-def read_telescope_data_chunked(path, aict_config, chunksize, columns, feature_generation_config=None):
+def read_telescope_data_chunked(path, aict_config, chunksize, columns=None, feature_generation_config=None):
     '''
     Reads data from hdf5 file given as PATH and yields dataframes for each chunk
     '''
@@ -97,7 +97,10 @@ class TelescopeDataIterator:
         self.aict_config = aict_config
         self.columns = columns
         self.feature_generation_config = feature_generation_config
-        self.n_rows = get_number_of_rows_in_table(path, aict_config.telescope_events_key)
+        if aict_config.has_multiple_telescopes:
+            self.n_rows = get_number_of_rows_in_table(path, aict_config.array_events_key)
+        else:
+            self.n_rows = get_number_of_rows_in_table(path, aict_config.telescope_events_key)
         self.path = path
         if chunksize:
             self.chunksize = chunksize
@@ -107,7 +110,8 @@ class TelescopeDataIterator:
             self.chunksize = self.n_rows
         log.info('Splitting data into {} chunks'.format(self.n_chunks))
 
-        self.current_chunk = 0
+        self._current_chunk = 0
+        self._index_start = 0 
 
     def __len__(self):
         return self.n_chunks
@@ -116,13 +120,13 @@ class TelescopeDataIterator:
         return self
 
     def __next__(self):
-        if self.current_chunk == self.n_chunks:
+        if self._current_chunk == self.n_chunks:
             raise StopIteration
 
-        chunk = self.current_chunk
+        chunk = self._current_chunk
         start = chunk * self.chunksize
         end = min(self.n_rows, (chunk + 1) * self.chunksize)
-        self.current_chunk += 1
+        self._current_chunk += 1
 
         df = read_telescope_data(
             self.path,
@@ -131,7 +135,9 @@ class TelescopeDataIterator:
             first=start,
             last=end
         )
-        df.index = np.arange(start, end)
+
+        df.index = np.arange(self._index_start, self._index_start + len(df))
+        self._index_start += len(df)
 
         if self.feature_generation_config:
             feature_generation(df, self.feature_generation_config, inplace=True)
@@ -163,8 +169,14 @@ def remove_column_from_file(path, table_name, column_to_remove):
         with h5py.File(path, 'r+') as f:
             del f[table_name][column_to_remove]
 
+def is_sorted(values, stable=False):
+    i = 1 if stable else 0
+    return (np.diff(values) >= i).all()
 
-def read_telescope_data(path, aict_config, columns, feature_generation_config=None, n_sample=None, first=None, last=None):
+def has_holes(values):
+    return (np.diff(values) > 1).any()
+
+def read_telescope_data(path, aict_config, columns=None, feature_generation_config=None, n_sample=None, first=None, last=None):
     '''
     Read given columns from data and perform a random sample if n_sample is supplied.
     Returns a single pandas data frame
@@ -184,19 +196,44 @@ def read_telescope_data(path, aict_config, columns, feature_generation_config=No
             array_event_columns |= set(join_keys)
             telescope_event_columns |= set(join_keys)
 
+
+        tel_event_index = read_data(
+            file_path=path,
+            key=aict_config.telescope_events_key,
+            # columns=telescope_event_columns,
+            columns=['run_id', 'array_event_id', 'width'],
+        ).reset_index(drop=True)
+
+        array_event_index = read_data(
+            file_path=path,
+            key=aict_config.array_events_key,
+            columns=['run_id', 'array_event_id', 'num_triggered_telescopes'],
+        ).reset_index(drop=True).iloc[first:last]
+
+        tel_event_index['index_in_file'] = tel_event_index.index
+        r = pd.merge(array_event_index, tel_event_index, left_on=join_keys, right_on=join_keys)
+
+        assert is_sorted(r.index_in_file) 
+        assert not has_holes(r.index_in_file) 
+
         telescope_events = read_data(
             file_path=path,
             key=aict_config.telescope_events_key,
             columns=telescope_event_columns,
-            first=first,
-            last=last,
+            first=r.index_in_file.iloc[0],
+            last=r.index_in_file.iloc[-1] + 1,
         )
+
         array_events = read_data(
             file_path=path,
             key=aict_config.array_events_key,
             columns=array_event_columns,
         )
+        
         df = pd.merge(left=array_events, right=telescope_events, left_on=join_keys, right_on=join_keys)
+        assert len(df) == len(telescope_events)
+        assert len(df) == len(r)
+
     else:
         df = read_data(
             file_path=path,

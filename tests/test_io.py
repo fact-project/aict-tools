@@ -44,6 +44,73 @@ def cta_config():
     return AICTConfig.from_yaml('examples/cta_config.yaml')
 
 
+def test_read_default_columns(hdf5_file):
+    from aict_tools.io import read_data, get_column_names_in_file
+    from pandas.util.testing import assert_frame_equal
+    
+    path, table_name, config = hdf5_file
+
+    df = read_data(path, table_name)
+
+    cols = get_column_names_in_file(path, table_name)
+    df_all_columns = read_data(path, table_name, columns=cols)
+    assert_frame_equal(df, df_all_columns)
+
+def test_read_default_columns_chunked(hdf5_file):
+    from aict_tools.io import read_telescope_data, read_telescope_data_chunked, get_column_names_in_file
+    import pandas as pd
+    from pandas.util.testing import assert_frame_equal
+    
+    path, table_name, config = hdf5_file
+
+    generator = read_telescope_data_chunked(path, config, 100)
+    df_chunked = pd.concat([df for df, _, _ in generator]).reset_index(drop=True)
+
+    df = read_telescope_data(path, config).reset_index(drop=True)
+
+    assert_frame_equal(df, df_chunked)
+
+
+
+def test_read_chunks(hdf5_file):
+    from aict_tools.io import read_telescope_data_chunked, read_telescope_data
+    import pandas as pd
+    from pandas.util.testing import assert_frame_equal
+
+    path, table_name, config = hdf5_file
+    cols =  ['width', 'length', ]
+    
+    chunk_size = 125
+    generator = read_telescope_data_chunked(path, config, chunk_size, cols)
+
+    dfs = []
+    for df, _, _ in generator:
+        dfs.append(df)
+        assert not df.empty
+
+    df_chunked = pd.concat(dfs).reset_index(drop=True)
+    df = read_telescope_data(path, config, columns=cols).reset_index(drop=True)
+    assert_frame_equal(df, df_chunked)
+
+
+@pytest.mark.parametrize(
+    'chunk_size',
+    (125, 500, 50000),
+)
+def test_read_chunks_cta(tables_file, cta_config, chunk_size):
+    from aict_tools.io import read_telescope_data, read_telescope_data_chunked
+    import pandas as pd
+    from pandas.util.testing import assert_frame_equal
+
+    columns = ['width', 'num_triggered_telescopes', 'telescope_id']
+    
+    generator = read_telescope_data_chunked(tables_file, cta_config, chunk_size, columns=columns)
+    df1 = pd.concat([df for df, _, _ in generator]).reset_index(drop=True)
+    
+    df2 = read_telescope_data(tables_file, cta_config, columns=columns)
+    assert_frame_equal(df1, df2)
+  
+
 def test_remove_column(hdf5_file):
     from aict_tools.io import get_column_names_in_file
     from aict_tools.io import remove_column_from_file
@@ -168,22 +235,4 @@ def test_read_telescope_data_feature_gen(h5py_file, fact_config):
     assert 'area' in df.columns
 
 
-def test_read_chunks(hdf5_file):
-    from aict_tools.io import read_telescope_data_chunked
-    from aict_tools.io import read_data
-
-    path, table_name, config = hdf5_file
-
-    chunk_size = 125
-    generator = read_telescope_data_chunked(path, config, chunk_size, ['width', 'length'])
-
-    stops = []
-    for df, _, stop in generator:
-        stops.append(stop)
-        assert not df.empty
-
-    df = read_data(path, table_name)
-    assert stops[-1] == len(df)
-    # first chunk shuld have the given chunksize
-    assert stops[1] - stops[0] == chunk_size
 
