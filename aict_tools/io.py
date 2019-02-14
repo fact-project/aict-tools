@@ -4,7 +4,7 @@ from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
 import numpy as np
 from .feature_generation import feature_generation
-from fact.io import read_h5py
+from fact.io import read_h5py, write_data
 import pandas as pd
 import h5py
 import click
@@ -13,6 +13,14 @@ __all__ = ['pickle_model']
 
 
 log = logging.getLogger(__name__)
+
+# write_data(selected_array_events, path, key='array_events', use_h5py=use_h5py, mode='a')
+def write_hdf(data, path, table_name, mode='w', use_h5py='h5py'):
+    if use_h5py:
+        write_data(data, path, key=table_name, use_h5py=True, mode=mode)
+    else:
+        with pd.HDFStore(path, mode) as storer:
+            storer.put(table_name, data, format='t', append=(mode in ['a', 'r+']))
 
 
 def get_number_of_rows_in_table(path, key):
@@ -137,12 +145,15 @@ class TelescopeDataIterator:
         )
 
         df.index = np.arange(self._index_start, self._index_start + len(df))
+
+        index_start = self._index_start
         self._index_start += len(df)
+        index_stop = self._index_start
 
         if self.feature_generation_config:
             feature_generation(df, self.feature_generation_config, inplace=True)
 
-        return df, start, end
+        return df, index_start, index_stop
 
 
 def get_column_names_in_file(path, table_name):

@@ -4,7 +4,8 @@ import click
 import numpy as np
 import logging
 
-from fact.io import read_data, write_data
+from ..io import read_data, write_hdf
+
 import warnings
 from math import ceil
 
@@ -52,13 +53,10 @@ def split_indices(idx, n_total, fractions):
     '--telescope', '-t', type=click.Choice(['fact', 'cta']), default='fact',
     show_default=True, help='Which telescope created the data',
 )
-@click.option(
-    '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
-    show_default=True, help='The output format',
-)
 @click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
 @click.option('-v', '--verbose', is_flag=True, help='Verbose log output',)
-def main(input_path, output_basename, fraction, name, inkey, key, telescope, fmt, seed, verbose):
+@click.option('--format',  default='h5py', type=click.Choice(['h5py', 'tables']),)
+def main(input_path, output_basename, fraction, name, inkey, key, telescope, seed, verbose, format):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -71,14 +69,16 @@ def main(input_path, output_basename, fraction, name, inkey, key, telescope, fmt
     log.debug("input_path: {}".format(input_path))
 
     np.random.seed(seed)
+    
+    use_h5py = format == 'h5py' 
 
     if telescope == 'fact':
-        split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fraction, name)
+        split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name, use_h5py=use_h5py)
     else:
-        split_multi_telescope_data(input_path, output_basename, fraction, name)
+        split_multi_telescope_data(input_path, output_basename, fraction, name, use_h5py=use_h5py)
 
 
-def split_multi_telescope_data(input_path, output_basename, fraction, name):
+def split_multi_telescope_data(input_path, output_basename, fraction, name, use_h5py=True):
 
     _, file_extension = os.path.splitext(input_path)
 
@@ -103,15 +103,15 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name):
 
         path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} runs events to: {}'.format(n, path))
-        write_data(selected_runs, path, key='runs', use_h5py=True, mode='w')
-        write_data(selected_array_events, path, key='array_events', use_h5py=True, mode='a')
-        write_data(selected_telescope_events, path, key='telescope_events', use_h5py=True, mode='a')
+        write_hdf(selected_runs, path, table_name='runs', use_h5py=use_h5py, mode='w')
+        write_hdf(selected_array_events, path, table_name='array_events', use_h5py=use_h5py, mode='a')
+        write_hdf(selected_telescope_events, path, table_name='telescope_events', use_h5py=use_h5py, mode='a')
         log.debug(f'selected runs {set(selected_run_ids)}')
         log.debug(f'Runs minus selected runs {ids - set(selected_run_ids)}')
         ids = ids - set(selected_run_ids)
 
 
-def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fraction, name):
+def split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name, use_h5py=True):
 
     _, file_extension = os.path.splitext(input_path)
 
@@ -136,15 +136,10 @@ def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fr
         selected_ids = np.random.choice(ids, size=n, replace=False)
         selected_data = data.loc[selected_ids]
 
-        if fmt in ['hdf5', 'hdf', 'h5']:
-            path = output_basename + '_' + part_name + file_extension
-            log.info('Writing {} telescope-array events to: {}'.format(n, path))
-            write_data(selected_data, path, key=key, use_h5py=True, mode='w')
 
-        elif fmt == 'csv':
-            filename = output_basename + '_' + part_name + '.csv'
-            log.info('Writing {} telescope-array events to: {}'.format(n, filename))
-            selected_data.to_csv(filename, index=False)
+        path = output_basename + '_' + part_name + file_extension
+        log.info('Writing {} telescope-array events to: {}'.format(n, path))
+        write_hdf(selected_data, path, key=key, use_h5py=use_h5py, mode='w')
 
         data = data.loc[list(set(data.index.values) - set(selected_data.index.values))]
         ids = data.index.values

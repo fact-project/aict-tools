@@ -74,7 +74,6 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
                 d = df_data[['run_id', 'array_event_id']].copy()
                 d[prediction_column_name] = energy_prediction
                 chunked_frames.append(d)
-
             appender.add_data(energy_prediction,  prediction_column_name, start, stop)
 
     if config.has_multiple_telescopes:
