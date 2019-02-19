@@ -15,12 +15,12 @@ __all__ = ['pickle_model']
 log = logging.getLogger(__name__)
 
 # write_data(selected_array_events, path, key='array_events', use_h5py=use_h5py, mode='a')
-def write_hdf(data, path, table_name, mode='w', use_h5py='h5py'):
+def write_hdf(data, path, table_name, mode='w', use_h5py='h5py', **kwargs):
     if use_h5py:
-        write_data(data, path, key=table_name, use_h5py=True, mode=mode)
+        write_data(data, path, key=table_name, use_h5py=True, mode=mode, **kwargs)
     else:
         with pd.HDFStore(path, mode) as storer:
-            storer.put(table_name, data, format='t', append=(mode in ['a', 'r+']))
+            storer.put(table_name, data, format='t', append=(mode in ['a', 'r+']), **kwargs)
 
 
 def get_number_of_rows_in_table(path, key):
@@ -81,7 +81,7 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
 
 def read_telescope_data_chunked(path, aict_config, chunksize, columns=None, feature_generation_config=None):
     '''
-    Reads data from hdf5 file given as PATH and yields dataframes for each chunk
+    Reads data from hdf5 file given as PATH and yields merged datafrmes with feature generation applied for each chunk
     '''
     return TelescopeDataIterator(
         path,
@@ -90,6 +90,64 @@ def read_telescope_data_chunked(path, aict_config, chunksize, columns=None, feat
         columns,
         feature_generation_config=feature_generation_config,
     )
+
+def read_data_chunked(path, table_name, chunksize, columns=None):
+    '''
+    Reads data from hdf5 file given as PATH and yields dataframes for each chunk
+    '''
+    return HDFDataIterator(
+        path,
+        table_name, 
+        chunksize,
+        columns,
+    )
+
+
+class HDFDataIterator:
+    def __init__(
+        self,
+        path,
+        table_name, 
+        chunksize,
+        columns,
+    ):
+        self.path = path
+        self.table_name = table_name
+        self.n_rows = get_number_of_rows_in_table(path, table_name)
+        self.columns = columns
+        if chunksize:
+            self.chunksize = chunksize
+            self.n_chunks = int(np.ceil(self.n_rows / chunksize))
+        else:
+            self.n_chunks = 1
+            self.chunksize = self.n_rows
+        log.info('Splitting data into {} chunks'.format(self.n_chunks))
+
+        self._current_chunk = 0
+
+    def __len__(self):
+        return self.n_chunks
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self._current_chunk == self.n_chunks:
+            raise StopIteration
+
+        chunk = self._current_chunk
+        start = chunk * self.chunksize
+        end = min(self.n_rows, (chunk + 1) * self.chunksize)
+        self._current_chunk += 1
+        df = read_data(
+            self.path,
+            key=self.table_name,
+            columns=self.columns,
+            first=start,
+            last=end,
+        )
+
+        return df, start, end
 
 
 class TelescopeDataIterator:
@@ -135,7 +193,6 @@ class TelescopeDataIterator:
         start = chunk * self.chunksize
         end = min(self.n_rows, (chunk + 1) * self.chunksize)
         self._current_chunk += 1
-
         df = read_telescope_data(
             self.path,
             aict_config=self.aict_config,
@@ -196,6 +253,7 @@ def read_telescope_data(path, aict_config, columns=None, feature_generation_conf
     array_event_columns = None
     if aict_config.has_multiple_telescopes:
         join_keys = [aict_config.run_id_column, aict_config.array_event_id_column]
+
         if columns:
             t = aict_config.array_events_key
             array_event_columns = get_column_names_in_file(path, table_name=t)
@@ -207,14 +265,11 @@ def read_telescope_data(path, aict_config, columns=None, feature_generation_conf
             array_event_columns |= set(join_keys)
             telescope_event_columns |= set(join_keys)
 
-
         tel_event_index = read_data(
             file_path=path,
             key=aict_config.telescope_events_key,
-            # columns=telescope_event_columns,
             columns=['run_id', 'array_event_id', 'width'],
         ).reset_index(drop=True)
-
         array_event_index = read_data(
             file_path=path,
             key=aict_config.array_events_key,
@@ -226,7 +281,6 @@ def read_telescope_data(path, aict_config, columns=None, feature_generation_conf
 
         assert is_sorted(r.index_in_file) 
         assert not has_holes(r.index_in_file) 
-
         telescope_events = read_data(
             file_path=path,
             key=aict_config.telescope_events_key,
@@ -234,13 +288,11 @@ def read_telescope_data(path, aict_config, columns=None, feature_generation_conf
             first=r.index_in_file.iloc[0],
             last=r.index_in_file.iloc[-1] + 1,
         )
-
         array_events = read_data(
             file_path=path,
             key=aict_config.array_events_key,
             columns=array_event_columns,
         )
-        
         df = pd.merge(left=array_events, right=telescope_events, left_on=join_keys, right_on=join_keys)
         assert len(df) == len(telescope_events)
         assert len(df) == len(r)
@@ -374,7 +426,6 @@ def _append_column_to_h5py(path, array, table_name, new_column_name):
 
         max_shape = list(array.shape)
         max_shape[0] = None
-
         if new_column_name not in table_name.keys():
             table_name.create_dataset(
                 new_column_name,
