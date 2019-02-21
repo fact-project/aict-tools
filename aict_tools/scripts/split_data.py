@@ -104,11 +104,11 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name, use_
         path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} runs events to: {}'.format(n, path))
         write_hdf(selected_runs, path, table_name='runs', use_h5py=use_h5py, mode='w')
-        write_hdf(selected_array_events, path, table_name='array_events', use_h5py=use_h5py, mode='a', compression='lzf')
+        write_hdf(selected_array_events, path, table_name='array_events', use_h5py=use_h5py, mode='a',)
 
         for telescope_events, _, _ in tqdm(read_data_chunked(input_path, table_name='telescope_events', chunksize=300000)):
             selected_telescope_events = telescope_events[telescope_events.run_id.isin(selected_run_ids)]
-            write_hdf(selected_telescope_events, path, table_name='telescope_events', use_h5py=use_h5py, mode='a', compression='lzf')
+            write_hdf(selected_telescope_events, path, table_name='telescope_events', use_h5py=use_h5py, mode='a',)
 
         log.debug(f'selected runs {set(selected_run_ids)}')
         log.debug(f'Runs minus selected runs {ids - set(selected_run_ids)}')
