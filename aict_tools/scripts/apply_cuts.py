@@ -47,36 +47,6 @@ def main(configuration_path, input_path, output_path, chunksize, key, verbose):
     if chunksize is None:
         chunksize = n_events + 1
 
-    # if multiple_telescopes:
-    #     print('Copying telescope events.')
-    #     # this guarantees that array events are bunched together in here.
-    #     df_iterator = read_data_chunked(input_path, 'telescope_events', chunksize=chunksize) 
-    #     for telescope_events, _, _ in tqdm(df_iterator):
-    #         mask = create_mask_dataframe(telescope_events, selection)
-    #         telescope_events = telescope_events[mask]
-
-    #         # create mask to select all duplicate index entries. we want to keep those 
-    #         # and remove remaining single telescope events.
-    #         telescope_events.set_index(['run_id', 'array_event_id'], inplace=True)
-    #         selected = telescope_events.index.duplicated(keep=False)
-    #         telescope_events = telescope_events[selected]
-    #         write_hdf(telescope_events, output_path, table_name='telescope_events', mode='a')
-
-    #     print('Copying selected array events.')
-    #     # read incdex of remaining telescope events.
-    #     df_index = read_data(output_path, key='telescope_events', columns=['array_event_id', 'run_id', 'telescope_id'])
-    #     df_index.set_index(['run_id', 'array_event_id',], inplace=True)
-    #     df_index = df_index[~df_index.index.duplicated()]
-
-    #     df_iterator = read_data_chunked(input_path, 'array_events', chunksize=chunksize//5)
-    #     for array_events, _, _ in tqdm(df_iterator):
-    #         array_events.set_index(['run_id', 'array_event_id'], inplace=True)
-    #         print(f'Have  {len(array_events)} array events')
-    #         array_events = pd.merge(array_events, df_index, left_index=True, right_index=True, validate='one_to_one')
-    #         print(f'writing  {len(array_events)} to file')
-    #         write_hdf(array_events, output_path, table_name='array_events', mode='a')
-    
-    # else:
     apply_cuts_h5py_chunked(
         input_path, output_path, selection, chunksize=chunksize, key=key
     )
@@ -104,29 +74,3 @@ def main(configuration_path, input_path, output_path, chunksize, key, verbose):
     n_events_after = get_number_of_rows_in_table(output_path, key=key)
     percentage = 100 * n_events_after/n_events
     print(f'Events in new file after cuts {n_events_after}. That is {percentage:.2f} %')
-
-def verify_file(input_file_path):
-    try:
-        
-        telescope_events = read_data(input_file_path, key='telescope_events')
-        array_events = read_data(input_file_path, key='array_events')
-        runs = read_data(input_file_path, key='runs')
-
-        runs.set_index('run_id', drop=True, verify_integrity=True, inplace=True)
-        telescope_events.set_index(['run_id', 'array_event_id', 'telescope_id'], drop=True, verify_integrity=True, inplace=True)
-        array_events.set_index(['run_id', 'array_event_id'], drop=True, verify_integrity=True, inplace=True)
-        result = pd.merge(runs, array_events, left_index=True, right_index=True, validate='one_to_many')  
-        assert result.shape[0] == array_events.shape[0]
-
-        telescope_events.reset_index(drop=False, inplace=True)
-        telescope_events.set_index(['run_id', 'array_event_id'], inplace=True)
-        result = pd.merge(array_events, telescope_events, left_index=True, right_index=True, validate='one_to_many')
-        assert result.shape[0] == telescope_events.shape[0]
-
-        print(Fore.GREEN + Style.BRIGHT + f'File "{input_file_path}" seems fine.   ✔ ')
-        print(Style.RESET_ALL)   
-    except:
-        print(Fore.RED + f'File {input_file_path} seems to be broken. \n')
-        print(Style.RESET_ALL)   
-        import sys, traceback
-        traceback.print_exc(file=sys.stdout)
