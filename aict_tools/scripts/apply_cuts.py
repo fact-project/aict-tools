@@ -43,7 +43,6 @@ def main(configuration_path, input_path, output_path, chunksize, key, verbose):
         key = 'telescope_events'
     
     n_events = get_number_of_rows_in_table(input_path, key=key)
-    print(f'Events in file before cuts {n_events}')
     if chunksize is None:
         chunksize = n_events + 1
 
@@ -51,7 +50,7 @@ def main(configuration_path, input_path, output_path, chunksize, key, verbose):
         input_path, output_path, selection, chunksize=chunksize, key=key
     )
     if multiple_telescopes:
-        print('Copying selected array events.')
+        log.info('Copying selected array events.')
         # read incdex of remaining telescope events.
         df_index = read_data(output_path, key='telescope_events', columns=['array_event_id', 'run_id', 'telescope_id'])
         df_index.set_index(['run_id', 'array_event_id',], inplace=True)
@@ -73,4 +72,5 @@ def main(configuration_path, input_path, output_path, chunksize, key, verbose):
 
     n_events_after = get_number_of_rows_in_table(output_path, key=key)
     percentage = 100 * n_events_after/n_events
-    print(f'Events in new file after cuts {n_events_after}. That is {percentage:.2f} %')
+    log.info(f'Events in file before cuts {n_events}')
+    log.info(f'Events in new file after cuts {n_events_after}. That is {percentage:.2f} %')
