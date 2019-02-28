@@ -84,7 +84,7 @@ def create_mask_h5py(input_path, selection_config, key='events', start=None, end
 
     with h5py.File(input_path) as infile:
 
-        n_events = get_number_of_rows_in_table(input_path, key=key, mode=mode)
+        n_events = get_number_of_rows_in_table(input_path, key=key)
         start = start or 0
         end = min(n_events, end) if end else n_events
 
@@ -118,7 +118,7 @@ def apply_cuts_h5py_chunked(
     outputpath. Apply cuts to chunksize events at a time.
     '''
 
-    n_events = get_number_of_rows_in_table(input_path, key=key, mode="r")
+    n_events = get_number_of_rows_in_table(input_path, key=key, )
     n_chunks = int(np.ceil(n_events / chunksize))
     log.debug('Using {} chunks of size {}'.format(n_chunks, chunksize))
 
