@@ -7,7 +7,7 @@ with open(path.join(d, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='aict_tools',
-    version='0.13.1',
+    version='0.14.0',
     description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
     long_description=long_description,
     long_description_content_type='text/markdown',
