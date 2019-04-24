@@ -6,6 +6,7 @@ from fact.io import read_data, write_data, read_h5py
 import warnings
 from math import ceil
 import h5py
+from tqdm import tqdm
 
 log = logging.getLogger()
 
@@ -137,9 +138,11 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
     for n, part_name in zip(num_ids, name):
         selected_ids[part_name] = np.random.choice(ids, size=n, replace=False)
         ids = list(set(ids) - set(selected_ids[part_name]))
-        print(part_name, len(selected_ids[part_name]), selected_ids[part_name][:5])
 
-    for chunk in range(n_chunks):
+        path = output_basename + '_' + part_name + '.hdf5'
+        log.info('Will write {n} single-telescope events to {path}'.format(n=n, path=path))
+
+    for chunk in tqdm(range(n_chunks)):
         first = chunk * chunksize
         last = (chunk + 1) * chunksize
 
@@ -152,7 +155,7 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
             selected_data = data.iloc[chunk_ids - first]
 
             path = output_basename + '_' + part_name + '.hdf5'
-            log.info('Writing {} telescope-array events to: {}'.format(
+            log.debug('Writing {} telescope-array events to: {}'.format(
                 len(selected_data), path
             ))
             write_data(selected_data, path, key=key, use_h5py=True, mode=mode)
