@@ -14,7 +14,10 @@ import astropy.units as u
 from fact.io import read_h5py, to_h5py
 from fact.instrument.constants import LOCATION
 from fact.analysis.source import calc_theta_camera, calc_theta_offs_camera
-from fact.coordinates import camera_to_equatorial, horizontal_to_camera
+from fact.coordinates import (
+    camera_to_equatorial, horizontal_to_camera, camera_to_horizontal,
+)
+from fact.instrument import camera_distance_mm_to_deg
 
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
@@ -22,6 +25,60 @@ from ..io import read_telescope_data_chunked
 from ..configuration import AICTConfig
 from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
+
+
+dl3_columns = [
+    'run_id',
+    'event_num',
+    'gamma_energy_prediction',
+    'gamma_prediction',
+    'disp_prediction',
+    'theta_deg',
+    'theta_deg_off_1',
+    'theta_deg_off_2',
+    'theta_deg_off_3',
+    'theta_deg_off_4',
+    'theta_deg_off_5',
+    'pointing_position_az',
+    'pointing_position_zd',
+]
+dl3_columns_sim_read = [
+    'corsika_run_header_run_number',
+    'corsika_event_header_event_number',
+    'ceres_event_event_reuse',
+    'corsika_event_header_num_reuse',
+    'corsika_event_header_total_energy',
+    'corsika_event_header_x',
+    'corsika_event_header_y',
+    'corsika_event_header_first_interaction_height',
+    'source_position_az',
+    'source_position_zd',
+]
+dl3_columns_sim = dl3_columns_sim_read + dl3_columns + ['true_disp']
+
+dl3_columns_obs = dl3_columns + [
+    'night',
+    'ra_prediction',
+    'dec_prediction',
+    'timestamp'
+]
+
+needed_columns = [
+    'cog_x', 'cog_y', 'delta', 'pointing_position_az', 'pointing_position_zd',
+    'run_id', 'event_num',
+]
+
+
+def calc_random_source(pointing_zd, pointing_az, wobble_distance):
+    phi = np.random.uniform(0, 2 * np.pi, len(pointing_zd))
+
+    r = wobble_distance / camera_distance_mm_to_deg(1)
+    x = r * np.cos(phi)
+    y = r * np.sin(phi)
+
+    zd, az = camera_to_horizontal(x, y, pointing_zd, pointing_az)
+
+    return zd, az
 
 
 def to_altaz(obstime, source):
@@ -39,8 +96,8 @@ def concat_results_altaz(results):
 
 
 def calc_source_features_common(
-    source_x,
-    source_y,
+    prediction_x,
+    prediction_y,
     source_zd,
     source_az,
     pointing_position_zd,
@@ -48,16 +105,17 @@ def calc_source_features_common(
 ):
     result = {}
     result['theta_deg'] = calc_theta_camera(
-        source_x,
-        source_y,
+        prediction_x,
+        prediction_y,
         source_zd=source_zd,
         source_az=source_az,
         zd_pointing=pointing_position_zd,
         az_pointing=pointing_position_az,
     )
+
     theta_offs = calc_theta_offs_camera(
-        source_x,
-        source_y,
+        prediction_x,
+        prediction_y,
         source_zd=source_zd,
         source_az=source_az,
         zd_pointing=pointing_position_zd,
@@ -70,8 +128,8 @@ def calc_source_features_common(
 
 
 def calc_source_features_sim(
-    source_x,
-    source_y,
+    prediction_x,
+    prediction_y,
     source_zd,
     source_az,
     pointing_position_zd,
@@ -81,8 +139,8 @@ def calc_source_features_sim(
     delta,
 ):
     result = calc_source_features_common(
-        source_x,
-        source_y,
+        prediction_x,
+        prediction_y,
         source_zd,
         source_az,
         pointing_position_zd,
@@ -134,48 +192,6 @@ def calc_source_features_obs(
     return result
 
 
-dl3_columns = [
-    'run_id',
-    'event_num',
-    'gamma_energy_prediction',
-    'gamma_prediction',
-    'disp_prediction',
-    'theta_deg',
-    'theta_deg_off_1',
-    'theta_deg_off_2',
-    'theta_deg_off_3',
-    'theta_deg_off_4',
-    'theta_deg_off_5',
-    'pointing_position_az',
-    'pointing_position_zd',
-]
-dl3_columns_sim_read = [
-    'corsika_run_header_run_number',
-    'corsika_event_header_event_number',
-    'ceres_event_event_reuse',
-    'corsika_event_header_num_reuse',
-    'corsika_event_header_total_energy',
-    'corsika_event_header_x',
-    'corsika_event_header_y',
-    'corsika_event_header_first_interaction_height',
-    'source_position_az',
-    'source_position_zd',
-]
-dl3_columns_sim = dl3_columns_sim_read + dl3_columns + ['true_disp']
-
-dl3_columns_obs = dl3_columns + [
-    'night',
-    'ra_prediction',
-    'dec_prediction',
-    'timestamp'
-]
-
-needed_columns = [
-    'cog_x', 'cog_y', 'delta', 'pointing_position_az', 'pointing_position_zd',
-    'run_id', 'event_num',
-]
-
-
 @click.command()
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
@@ -184,6 +200,8 @@ needed_columns = [
 @click.argument('disp_model_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('sign_model_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output', type=click.Path(exists=False, dir_okay=False))
+@click.option('--random-source', help='Draw a random source position')
+@click.option('--wobble-distance', help='Wobble distance in degree for random source position', default=0.6)
 @click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-n', '--n-jobs', default=-1, type=int, help='Number of cores to use')
 @click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
@@ -200,6 +218,8 @@ def main(
     disp_model_path,
     sign_model_path,
     output,
+    random_source,
+    wobble_distance,
     key,
     chunksize,
     n_jobs,
@@ -261,7 +281,7 @@ def main(
             )
         source = SkyCoord.from_name(sources[0])
         columns.update(['timestamp', 'night'])
-    except (KeyError, OSError) as e:
+    except (KeyError, OSError):
         source = None
         columns.update(dl3_columns_sim_read)
 
@@ -291,10 +311,10 @@ def main(
             df_disp[config.disp.features], disp_model, sign_model
         )
 
-        source_x = df.cog_x + disp * np.cos(df.delta)
-        source_y = df.cog_y + disp * np.sin(df.delta)
-        df['source_x_prediction'] = source_x
-        df['source_y_prediction'] = source_y
+        prediction_x = df.cog_x + disp * np.cos(df.delta)
+        prediction_y = df.cog_y + disp * np.sin(df.delta)
+        df['source_x_prediction'] = prediction_x
+        df['source_y_prediction'] = prediction_y
         df['disp_prediction'] = disp
 
         if source:
@@ -307,8 +327,8 @@ def main(
 
             result = parallelize_array_computation(
                 calc_source_features_obs,
-                source_x,
-                source_y,
+                prediction_x,
+                prediction_y,
                 source_altaz.zen.deg,
                 source_altaz.az.deg,
                 df['pointing_position_zd'].values,
@@ -318,10 +338,19 @@ def main(
             )
         else:
 
+            if random_source:
+                zd, az = calc_random_source(
+                    df['pointing_position_zd'],
+                    df['pointing_position_az'],
+                    wobble_distance,
+                )
+                df['source_position_zd'] = zd
+                df['source_position_az'] = az
+
             result = parallelize_array_computation(
                 calc_source_features_sim,
-                source_x,
-                source_y,
+                prediction_x,
+                prediction_y,
                 df['source_position_zd'].values,
                 df['source_position_az'].values,
                 df['pointing_position_zd'].values,
