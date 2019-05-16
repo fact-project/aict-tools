@@ -267,6 +267,7 @@ def test_to_dl3():
             print_exception(*result.exc_info)
         assert result.exit_code == 0
 
+        output = os.path.join(d, 'gamma_dl3.hdf5')
         result = runner.invoke(
             to_dl3,
             [
@@ -276,7 +277,7 @@ def test_to_dl3():
                 os.path.join(d, 'regressor.pkl'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
-                os.path.join(d, 'gamma_dl3.hdf5'),
+                output,
             ]
         )
 
@@ -284,6 +285,9 @@ def test_to_dl3():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+
+        with h5py.File(output) as f:
+            assert f.attrs['sample_fraction'] == 1000 / 1851297
 
 
 def test_split_data_executable():
