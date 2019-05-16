@@ -6,6 +6,7 @@ from tqdm import tqdm
 import pandas as pd
 from functools import partial
 import os
+import h5py
 
 from astropy.time import Time
 from astropy.coordinates import AltAz, SkyCoord
@@ -368,6 +369,13 @@ def main(
             to_h5py(df[dl3_columns_obs], output, key='events', mode='a')
         else:
             to_h5py(df[dl3_columns_sim], output, key='events', mode='a')
+
+    with h5py.File(data_path, 'r') as f:
+        sample_fraction = f.attrs.get('sample_fraction')
+
+    if sample_fraction is not None:
+        with h5py.File(output, 'r+') as f:
+            f.attrs['sample_fraction'] = sample_fraction
 
     if source:
         log.info('Copying "runs" group')

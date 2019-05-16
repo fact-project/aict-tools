@@ -7,6 +7,7 @@ import warnings
 from math import ceil
 import h5py
 from tqdm import tqdm
+import h5py
 
 log = logging.getLogger()
 
@@ -117,6 +118,10 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name):
         write_data(selected_runs, path, key='runs', use_h5py=True, mode='w')
         write_data(selected_array_events, path, key='array_events', use_h5py=True, mode='a')
         write_data(selected_telescope_events, path, key='telescope_events', use_h5py=True, mode='a')
+
+        with h5py.File(path, 'r+') as f:
+            f.attrs['sample_fraction'] = n / n_total
+
         log.debug(f'selected runs {set(selected_run_ids)}')
         log.debug(f'Runs minus selected runs {ids - set(selected_run_ids)}')
         ids = ids - set(selected_run_ids)
@@ -160,6 +165,11 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
             ))
             write_data(selected_data, path, key=key, use_h5py=True, mode=mode)
 
+    for n, part_name in zip(num_ids, name):
+        path = output_basename + '_' + part_name + '.hdf5'
+        with h5py.File(path, mode='r+') as f:
+            f.attrs['sample_fraction'] = n / n_total
+
 
 def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fraction, name):
 
@@ -183,6 +193,9 @@ def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fr
             path = output_basename + '_' + part_name + '.hdf5'
             log.info('Writing {} telescope-array events to: {}'.format(n, path))
             write_data(selected_data, path, key=key, use_h5py=True, mode='w')
+
+            with h5py.File(path, mode='r+') as f:
+                f.attrs['sample_fraction'] = n / n_total
 
         elif fmt == 'csv':
             filename = output_basename + '_' + part_name + '.csv'

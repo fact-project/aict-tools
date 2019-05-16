@@ -3,6 +3,7 @@ import os
 from click.testing import CliRunner
 import shutil
 from traceback import print_exception
+import h5py
 
 
 def test_train_regressor():
@@ -266,6 +267,7 @@ def test_to_dl3():
             print_exception(*result.exc_info)
         assert result.exit_code == 0
 
+        output = os.path.join(d, 'gamma_dl3.hdf5')
         result = runner.invoke(
             to_dl3,
             [
@@ -275,7 +277,7 @@ def test_to_dl3():
                 os.path.join(d, 'regressor.pkl'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
-                os.path.join(d, 'gamma_dl3.hdf5'),
+                output,
             ]
         )
 
@@ -283,6 +285,9 @@ def test_to_dl3():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+
+        with h5py.File(output) as f:
+            assert f.attrs['sample_fraction'] == 1000 / 1851297
 
 
 def test_split_data_executable():
@@ -299,9 +304,9 @@ def test_split_data_executable():
                 os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'signal'),
                 '-ntest',  # no spaces here. maybe a bug in click?
-                '-f0.5',
+                '-f0.75',
                 '-ntrain',
-                '-f0.5',
+                '-f0.25',
             ]
         )
         if result.exit_code != 0:
@@ -313,8 +318,14 @@ def test_split_data_executable():
         test_path = os.path.join(d, 'signal_test.hdf5')
         assert os.path.isfile(test_path)
 
+        with h5py.File(test_path, 'r') as f:
+            assert f.attrs['sample_fraction'] == 0.75
+
         train_path = os.path.join(d, 'signal_train.hdf5')
         assert os.path.isfile(train_path)
+
+        with h5py.File(train_path, 'r') as f:
+            assert f.attrs['sample_fraction'] == 0.25
 
 
 def test_split_data_executable_chunked():
@@ -331,9 +342,9 @@ def test_split_data_executable_chunked():
                 os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'signal'),
                 '-ntest',  # no spaces here. maybe a bug in click?
-                '-f0.5',
+                '-f0.75',
                 '-ntrain',
-                '-f0.5',
+                '-f0.25',
                 '--chunksize=100',
             ]
         )
@@ -346,5 +357,11 @@ def test_split_data_executable_chunked():
         test_path = os.path.join(d, 'signal_test.hdf5')
         assert os.path.isfile(test_path)
 
+        with h5py.File(test_path, 'r') as f:
+            assert f.attrs['sample_fraction'] == 0.75
+
         train_path = os.path.join(d, 'signal_train.hdf5')
         assert os.path.isfile(train_path)
+
+        with h5py.File(train_path, 'r') as f:
+            assert f.attrs['sample_fraction'] == 0.25
