@@ -30,7 +30,7 @@ setup(
         'pyfact>=0.16.0',
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
-        'ruamel-yaml>=0.15.0',      # in anaconda
+        'ruamel.yaml>=0.15.0',      # in anaconda
         'scikit-learn~=0.20.0',  # See PEP 440, compatible releases
         'sklearn2pmml',
         'tqdm',
