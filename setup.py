@@ -7,7 +7,7 @@ with open(path.join(d, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='aict_tools',
-    version='0.16.0',
+    version='0.16.1',
     description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -30,7 +30,7 @@ setup(
         'pyfact>=0.16.0',
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
-        'pyyaml',             # in anaconda
+        'ruamel-yaml>=0.15.0',      # in anaconda
         'scikit-learn~=0.20.0',  # See PEP 440, compatible releases
         'sklearn2pmml',
         'tqdm',
