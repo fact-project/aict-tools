@@ -10,6 +10,7 @@ before_install:
   - export MPLBACKEND=agg
 
 install:
+  - pip install --upgrade pip
   - pip install .
 
 script:
