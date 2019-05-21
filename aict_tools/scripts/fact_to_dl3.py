@@ -22,7 +22,7 @@ from fact.instrument import camera_distance_mm_to_deg
 
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
-from ..io import read_telescope_data_chunked
+from ..io import read_telescope_data_chunked, copy_runs_group
 from ..configuration import AICTConfig
 from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
@@ -370,16 +370,12 @@ def main(
         else:
             to_h5py(df[dl3_columns_sim], output, key='events', mode='a')
 
-    with h5py.File(data_path, 'r') as f:
+    with h5py.File(data_path, 'r') as f, h5py.File(output, 'r+') as output:
         sample_fraction = f.attrs.get('sample_fraction')
+        if sample_fraction is not None:
+            output.attrs['sample_fraction'] = sample_fraction
 
-    if sample_fraction is not None:
-        with h5py.File(output, 'r+') as f:
-            f.attrs['sample_fraction'] = sample_fraction
-
-    if source:
-        log.info('Copying "runs" group')
-        to_h5py(runs, output, key='runs', mode='a')
+        copy_runs_group(f, output)
 
 
 if __name__ == '__main__':

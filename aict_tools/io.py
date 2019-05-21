@@ -205,3 +205,10 @@ def append_to_h5py(f, array, group, key):
 
         group[key].resize(n_existing + n_new, axis=0)
         group[key][n_existing:n_existing + n_new] = array
+
+
+def copy_runs_group(infile, outfile):
+    for key in ('runs', 'corsika_runs'):
+        if key in infile:
+            log.info('Copying group "{}"'.format(key))
+            infile.copy(key, outfile)

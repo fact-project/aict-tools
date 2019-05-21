@@ -7,7 +7,8 @@ import warnings
 from math import ceil
 import h5py
 from tqdm import tqdm
-import h5py
+
+from ..io import copy_runs_group
 
 log = logging.getLogger()
 
@@ -167,8 +168,10 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
 
     for n, part_name in zip(num_ids, name):
         path = output_basename + '_' + part_name + '.hdf5'
-        with h5py.File(path, mode='r+') as f:
+
+        with h5py.File(path, mode='r+') as f, h5py.File(input_path, mode='r') as infile:
             f.attrs['sample_fraction'] = n / n_total
+            copy_runs_group(infile, f)
 
 
 def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fraction, name):
@@ -194,8 +197,9 @@ def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fr
             log.info('Writing {} telescope-array events to: {}'.format(n, path))
             write_data(selected_data, path, key=key, use_h5py=True, mode='w')
 
-            with h5py.File(path, mode='r+') as f:
+            with h5py.File(path, mode='r+') as f, h5py.File(input_path) as infile:
                 f.attrs['sample_fraction'] = n / n_total
+                copy_runs_group(infile, f)
 
         elif fmt == 'csv':
             filename = output_basename + '_' + part_name + '.csv'
