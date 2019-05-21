@@ -1,4 +1,4 @@
-import yaml
+from ruamel.yaml import YAML
 from sklearn import ensemble
 from collections import namedtuple
 from .features import find_used_source_features
@@ -8,6 +8,8 @@ FeatureGenerationConfig = namedtuple(
     'FeatureGenerationConfig',
     ['needed_columns', 'features']
 )
+
+yaml = YAML(typ='safe')
 
 
 class AICTConfig:
