@@ -3,22 +3,22 @@ seed: 0
 
 # Quality cuts from Fabian Temme's phd thesis
 selection:
-    numPixelInShower:
+    num_pixel_in_shower:
       - '>='  # needs to be in quotes because > and ! are special character in yaml
       - 10
-    numIslands:
+    num_islands:
       - <=
       - 8
-    Width:
+    width:
       - <=
       - 30
-    Leakage:
+    leakage1:
       - <
       - 0.6
-    Leakage2:
+    leakage2:
       - lt # string representation also possible
       - 0.85
-    Length:
+    length:
       - lt
       - 70
     

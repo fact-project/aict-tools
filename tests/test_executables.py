@@ -6,6 +6,27 @@ from traceback import print_exception
 import h5py
 
 
+def test_apply_cuts():
+    from aict_tools.scripts.apply_cuts import main
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        runner = CliRunner()
+
+        result = runner.invoke(
+            main,
+            [
+                'examples/quality_cuts.yaml',
+                'examples/gamma.hdf5',
+                os.path.join(d, 'gamma_cuts.hdf5'),
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+
 def test_train_regressor():
     from aict_tools.scripts.train_energy_regressor import main
 
