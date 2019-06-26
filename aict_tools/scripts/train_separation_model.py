@@ -27,7 +27,7 @@ log = logging.getLogger()
     show_default=True, help='Name for the output'
 )
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, signal_path, background_path, predictions_path, model_path, verbose):
+def main(configuration_path, signal_path, background_path, predictions_path, model_path, label_text, verbose):
     '''
     Train a classifier on signal and background monte carlo data and write the model
     to MODEL_PATH in pmml or pickle format.
@@ -144,9 +144,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
 
     log.info('Pickling model to {} ...'.format(model_path))
     save_model(
-        classifier=classifier,
+        classifier,
         model_path=model_path,
-        label_text='label',
+        label_text=label_text,
         feature_names=list(df_training.columns)
     )
 

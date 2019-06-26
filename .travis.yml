@@ -7,11 +7,15 @@ matrix:
       dist: xenial
 
 before_install:
+  - find /usr/lib/jvm -name libjvm.so
   - export MPLBACKEND=agg
+  - export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
 
 install:
   - pip install --upgrade pip
-  - pip install .
+  - pip install Cython
+  - pip install onnxruntime https://github.com/jpmml/jpmml-evaluator-python/archive/master.tar.gz
+  - pip install .[all]
 
 script:
   - python setup.py test
@@ -33,3 +37,4 @@ addons:
   apt:
     packages:
       - libhdf5-serial-dev
+      - openjdk-8-jdk

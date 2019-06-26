@@ -161,14 +161,14 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         disp_regressor,
         feature_names=list(df_train.columns),
         model_path=disp_model_path,
-        label_text='disp',
+        label_text='abs_disp',
     )
     log.info('Pickling sign model to {} ...'.format(sign_model_path))
     save_model(
         sign_classifier,
         feature_names=list(df_train.columns),
         model_path=sign_model_path,
-        label_text='disp',
+        label_text='sign_disp',
     )
 
 

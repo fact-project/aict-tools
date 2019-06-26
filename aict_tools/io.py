@@ -203,7 +203,7 @@ def save_model(model, feature_names, model_path, label_text='label'):
             from onnx.onnx_pb import StringStringEntryProto
         except ImportError:
             raise ImportError(
-                'You need to install `skl2onnx` to store models in pmml format'
+                'You need to install `skl2onnx` to store models in onnx format'
             )
 
         onnx = convert_sklearn(
@@ -213,7 +213,7 @@ def save_model(model, feature_names, model_path, label_text='label'):
             doc_string='Model created by aict-tools to estimate {}'.format(label_text),
         )
         metadata = dict(
-            model_author='aict_tools',
+            model_author='aict-tools',
             aict_tools_version=__version__,
             feature_names=','.join(feature_names),
         )
