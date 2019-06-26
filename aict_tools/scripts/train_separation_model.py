@@ -9,7 +9,7 @@ import logging
 from fact.io import check_extension, write_data
 
 from ..configuration import AICTConfig
-from ..io import pickle_model, read_telescope_data
+from ..io import save_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 
 logging.basicConfig()
@@ -139,7 +139,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         classifier.fit(X, y)
 
     log.info('Pickling model to {} ...'.format(model_path))
-    pickle_model(
+    save_model(
         classifier=classifier,
         model_path=model_path,
         label_text='label',

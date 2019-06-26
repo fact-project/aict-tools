@@ -1,14 +1,22 @@
 import os
 from sklearn.externals import joblib
-from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
 import numpy as np
-from .feature_generation import feature_generation
 from fact.io import read_data, h5py_get_n_rows
 import pandas as pd
 import h5py
 import click
-__all__ = ['pickle_model']
+
+from .feature_generation import feature_generation
+from . import __version__
+
+
+__all__ = [
+    'drop_prediction_column',
+    'read_telescope_data',
+    'read_telescope_data_chunked',
+    'save_model',
+]
 
 
 log = logging.getLogger(__name__)
@@ -166,22 +174,64 @@ def read_telescope_data(path, aict_config, columns, feature_generation_config=No
     return df
 
 
-def pickle_model(classifier, feature_names, model_path, label_text='label'):
+def save_model(model, feature_names, model_path, label_text='label'):
     p, extension = os.path.splitext(model_path)
-    classifier.feature_names = feature_names
+    model.feature_names = feature_names
+    pickle_path = p + '.pkl'
 
-    if (extension == '.pmml'):
-        joblib.dump(classifier, p + '.pkl', compress=4)
+    if extension == '.pmml':
+        try:
+            from sklearn2pmml import sklearn2pmml, PMMLPipeline
+        except ImportError:
+            raise ImportError(
+                'You need to install `sklearn2pmml` to store models in pmml format'
+            )
 
         pipeline = PMMLPipeline([
-            ('classifier', classifier)
+            ('model', model)
         ])
         pipeline.target_field = label_text
         pipeline.active_fields = np.array(feature_names)
         sklearn2pmml(pipeline, model_path)
 
+    elif extension == '.onnx':
+
+        try:
+            from skl2onnx import convert_sklearn
+            from skl2onnx.common.data_types import FloatTensorType
+            from skl2onnx.helpers.onnx_helper import select_model_inputs_outputs
+            from onnx.onnx_pb import StringStringEntryProto
+        except ImportError:
+            raise ImportError(
+                'You need to install `skl2onnx` to store models in pmml format'
+            )
+
+        onnx = convert_sklearn(
+            model,
+            name=label_text,
+            initial_types=[('input', FloatTensorType((1, len(feature_names))))],
+            doc_string='Model created by aict-tools to estimate {}'.format(label_text),
+        )
+        metadata = dict(
+            model_author='aict_tools',
+            aict_tools_version=__version__,
+            feature_names=','.join(feature_names),
+        )
+        for key, value in metadata.items():
+            onnx.metadata_props.append(StringStringEntryProto(key=key, value=value))
+
+        # this makes sure we only get the scores and that they are numpy arrays and not
+        # a list of dicts
+        if hasattr(model, 'predict_proba'):
+            onnx = select_model_inputs_outputs(onnx, ['probabilities'])
+
+        with open(model_path, 'wb') as f:
+            f.write(onnx.SerializeToString())
     else:
-        joblib.dump(classifier, model_path, compress=4)
+        pickle_path = model_path
+
+    # Always store the pickle dump,just in case
+    joblib.dump(model, pickle_path, compress=4)
 
 
 def append_to_h5py(f, array, group, key):

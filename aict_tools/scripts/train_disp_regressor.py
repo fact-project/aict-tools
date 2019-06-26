@@ -7,7 +7,7 @@ import numpy as np
 
 from fact.io import write_data
 from fact.coordinates.utils import horizontal_to_camera
-from ..io import pickle_model, read_telescope_data
+from ..io import save_model, read_telescope_data
 from ..preprocessing import convert_to_float32, calc_true_disp
 from ..feature_generation import feature_generation
 from ..configuration import AICTConfig
@@ -157,14 +157,14 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     sign_classifier.fit(df_train.values, target_sign.values)
 
     log.info('Pickling disp model to {} ...'.format(disp_model_path))
-    pickle_model(
+    save_model(
         disp_regressor,
         feature_names=list(df_train.columns),
         model_path=disp_model_path,
         label_text='disp',
     )
     log.info('Pickling sign model to {} ...'.format(sign_model_path))
-    pickle_model(
+    save_model(
         sign_classifier,
         feature_names=list(df_train.columns),
         model_path=sign_model_path,
