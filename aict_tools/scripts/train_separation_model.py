@@ -22,6 +22,10 @@ log = logging.getLogger()
 @click.argument('background_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
+@click.option(
+    '-l', '--label-text', default='gamma_prediction',
+    show_default=True, help='Name for the output'
+)
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 def main(configuration_path, signal_path, background_path, predictions_path, model_path, verbose):
     '''
