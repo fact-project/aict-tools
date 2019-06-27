@@ -1,13 +1,23 @@
 from setuptools import setup, find_packages
 from os import path
+import re
 
 d = path.abspath(path.dirname(__file__))
 with open(path.join(d, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
+with open('aict_tools/__init__.py', 'r') as f:
+    version = re.search(r'__version__ = \'(\d+[.]\d+[.]\d+)\'', f.read()).groups()[0]
+
+extras_require = {
+    'pmml': ['sklearn2pmml'],
+    'onnx': ['skl2onnx', 'onnxmltools'],
+}
+extras_require['all'] = list({dep for deps in extras_require.values() for dep in deps})
+
 setup(
     name='aict_tools',
-    version='0.16.2',
+    version=version,
     description='Artificial Intelligence for Imaging Atmospheric Cherenkov Telescopes',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -32,9 +42,9 @@ setup(
         'pytz',             # in anaconda
         'ruamel.yaml>=0.15.0',      # in anaconda
         'scikit-learn~=0.20.0',  # See PEP 440, compatible releases
-        'sklearn2pmml',
         'tqdm',
     ],
+    extras_require=extras_require,
     zip_safe=False,
     entry_points={
         'console_scripts': [

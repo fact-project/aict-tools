@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 
 from fact.io import write_data
-from ..io import pickle_model, read_telescope_data
+from ..io import save_model, read_telescope_data
 from ..preprocessing import convert_to_float32
 from ..configuration import AICTConfig
 import logging
@@ -108,7 +108,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
     regressor.fit(df_train.values, target.values)
 
     log.info('Pickling model to {} ...'.format(model_path))
-    pickle_model(
+    save_model(
         regressor,
         feature_names=list(df_train.columns),
         model_path=model_path,
