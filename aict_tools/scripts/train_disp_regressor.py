@@ -11,8 +11,7 @@ from ..io import save_model, read_telescope_data
 from ..preprocessing import convert_to_float32, calc_true_disp
 from ..feature_generation import feature_generation
 from ..configuration import AICTConfig
-
-import logging
+from ..logging import setup_logging
 
 
 @click.command()
@@ -42,9 +41,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         Allowed extensions are .pkl and .pmml.
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
-
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
+    log = setup_logging(verbose=verbose)
 
     config = AICTConfig.from_yaml(configuration_path)
     model_config = config.disp
