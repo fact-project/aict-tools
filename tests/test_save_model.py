@@ -39,15 +39,14 @@ def test_pickle():
         assert np.all(clf.predict(X_clf) == clf_load.predict(X_clf))
 
 
-@mark.xfail(reason='JPMML not working on travis')
 def test_pmml():
     importorskip('sklearn2pmml')
     jpmml_evaluator = importorskip('jpmml_evaluator')
-    from jpmml_evaluator.py4j import launch_gateway, Py4JBackend
+    from jpmml_evaluator.pyjnius import jnius_configure_classpath, PyJNIusBackend
     from aict_tools.io import save_model
 
-    gateway = launch_gateway()
-    backend = Py4JBackend(gateway)
+    jnius_configure_classpath()
+    backend = PyJNIusBackend()
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as tmpdir:
         model_path = os.path.join(tmpdir, 'model.pmml')
