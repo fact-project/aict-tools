@@ -68,7 +68,8 @@ def test_pmml():
         save_model(reg, feature_names, model_path, label_text='regressor')
 
         evaluator = jpmml_evaluator.make_evaluator(backend, model_path).verify()
-        assert [i.getName() for i in evaluator.getInputFields()] == feature_names
+        # order seems to be changing
+        assert sorted([i.getName() for i in evaluator.getInputFields()]) == feature_names
 
         df = evaluator.evaluateAll(pd.DataFrame(dict(zip(feature_names, X_reg.T))))
         assert np.all(np.isclose(df['regressor'], reg.predict(X_reg)))
@@ -77,8 +78,6 @@ def test_pmml():
         reg_load = joblib.load(model_path.replace('.pmml', '.pkl'))
         assert reg_load.feature_names == feature_names
         assert np.all(reg.predict(X_reg) == reg_load.predict(X_reg))
-
-    gateway.close()
 
 
 def test_onnx():
