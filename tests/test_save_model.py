@@ -1,6 +1,6 @@
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 import tempfile
-from pytest import importorskip, mark
+from pytest import importorskip
 import numpy as np
 import os
 from sklearn.externals import joblib
@@ -9,8 +9,15 @@ import pandas as pd
 
 y_clf = np.random.randint(0, 2, 100)
 y_reg = np.random.uniform(0, 1, 100)
-X_clf = np.random.normal(y_clf, 0.5, size=(5, 100)).T.astype('float32')
-X_reg = np.random.normal(y_reg, 0.5, size=(5, 100)).T.astype('float32')
+X_clf = np.random.normal(
+    y_clf.reshape(1, 100) + np.arange(5).reshape(5, 1),
+    0.5,
+    size=(5, 100),
+).T.astype('float32')
+X_reg = np.random.normal(
+    y_reg.reshape(1, 100) + np.arange(5).reshape(5, 1),
+    0.5, size=(5, 100)
+).T.astype('float32')
 feature_names = list('abcde')
 
 clf = RandomForestClassifier(n_estimators=10)
@@ -53,7 +60,8 @@ def test_pmml():
         save_model(clf, feature_names, model_path, label_text='classifier')
 
         evaluator = jpmml_evaluator.make_evaluator(backend, model_path).verify()
-        assert [i.getName() for i in evaluator.getInputFields()] == feature_names
+        # order seems to be changing
+        assert sorted([i.getName() for i in evaluator.getInputFields()]) == feature_names
 
         df = evaluator.evaluateAll(pd.DataFrame(dict(zip(feature_names, X_clf.T))))
         assert np.all(np.isclose(df['probability(1)'], clf.predict_proba(X_clf)[:, 1]))
