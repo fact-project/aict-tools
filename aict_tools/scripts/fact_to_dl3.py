@@ -26,6 +26,7 @@ from ..io import read_telescope_data_chunked, copy_runs_group
 from ..configuration import AICTConfig
 from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
+from ..logging import setup_logging
 
 
 dl3_columns = [
@@ -243,8 +244,7 @@ def main(
 
     SIGN_MODEL_PATH: Path to the pickled sign model.
     '''
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
+    log = setup_logging()
 
     config = AICTConfig.from_yaml(configuration_path)
 

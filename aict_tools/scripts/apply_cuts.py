@@ -1,10 +1,10 @@
 import click
 from ruamel.yaml import YAML
 import h5py
-import logging
 
 from fact.io import h5py_get_n_rows
 from ..apply import create_mask_h5py, apply_cuts_h5py_chunked
+from ..logging import setup_logging
 
 
 yaml = YAML(typ='safe')
@@ -30,8 +30,7 @@ def main(configuration_path, input_path, output_path, chunksize, key, verbose):
         Width: ['<=', 50]
     ```
     '''
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
+    log = setup_logging(verbose=verbose)
 
     with open(configuration_path) as f:
         config = yaml.load(f)

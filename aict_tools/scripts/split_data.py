@@ -9,6 +9,8 @@ import h5py
 from tqdm import tqdm
 
 from ..io import copy_runs_group
+from ..logging import setup_logging
+
 
 log = logging.getLogger()
 
@@ -73,8 +75,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, telescope, fmt
     Example call: aict_split_data input.hdf5 output_base -n test -f 0.5 -n train -f 0.5
     '''
 
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-
+    setup_logging(verbose=verbose)
     log.debug("input_path: {}".format(input_path))
 
     assert len(fraction) == len(name), 'You must give a name for each fraction'

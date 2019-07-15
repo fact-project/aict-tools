@@ -5,15 +5,12 @@ from sklearn.calibration import CalibratedClassifierCV
 from tqdm import tqdm
 import numpy as np
 from sklearn import metrics
-import logging
 from fact.io import check_extension, write_data
 
 from ..configuration import AICTConfig
 from ..io import save_model, read_telescope_data
 from ..preprocessing import convert_to_float32
-
-logging.basicConfig()
-log = logging.getLogger()
+from ..logging import setup_logging
 
 
 @click.command()
@@ -43,8 +40,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     MODEL_PATH: Path to save the model to. Allowed extensions are .pkl and .pmml.
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
-
-    logging.getLogger().setLevel(logging.DEBUG if verbose else logging.INFO)
+    log = setup_logging(verbose=verbose)
 
     check_extension(predictions_path)
     check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
