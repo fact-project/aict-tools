@@ -57,8 +57,7 @@ def split_indices(idx, n_total, fractions):
 )
 @click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
 @click.option('-v', '--verbose', is_flag=True, help='Verbose log output',)
-@click.option('--format',  default='h5py', type=click.Choice(['h5py', 'tables']),)
-def main(input_path, output_basename, fraction, name, inkey, key, telescope, seed, verbose, format):
+def main(input_path, output_basename, fraction, name, inkey, key, telescope, seed, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -72,15 +71,14 @@ def main(input_path, output_basename, fraction, name, inkey, key, telescope, see
 
     np.random.seed(seed)
     
-    use_h5py = format == 'h5py' 
 
     if telescope == 'fact':
-        split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name, use_h5py=use_h5py)
+        split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name,)
     else:
-        split_multi_telescope_data(input_path, output_basename, fraction, name, use_h5py=use_h5py)
+        split_multi_telescope_data(input_path, output_basename, fraction, name,)
 
 
-def split_multi_telescope_data(input_path, output_basename, fraction, name, use_h5py=True):
+def split_multi_telescope_data(input_path, output_basename, fraction, name):
 
     _, file_extension = os.path.splitext(input_path)
 
@@ -103,19 +101,19 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name, use_
 
         path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} runs events to: {}'.format(n, path))
-        write_hdf(selected_runs, path, table_name='runs', use_h5py=use_h5py, mode='w')
-        write_hdf(selected_array_events, path, table_name='array_events', use_h5py=use_h5py, mode='a',)
+        write_hdf(selected_runs, path, table_name='runs', mode='w')
+        write_hdf(selected_array_events, path, table_name='array_events', mode='a',)
 
         for telescope_events, _, _ in tqdm(read_data_chunked(input_path, table_name='telescope_events', chunksize=300000)):
             selected_telescope_events = telescope_events[telescope_events.run_id.isin(selected_run_ids)]
-            write_hdf(selected_telescope_events, path, table_name='telescope_events', use_h5py=use_h5py, mode='a',)
+            write_hdf(selected_telescope_events, path, table_name='telescope_events', mode='a',)
 
         log.debug(f'selected runs {set(selected_run_ids)}')
         log.debug(f'Runs minus selected runs {ids - set(selected_run_ids)}')
         ids = ids - set(selected_run_ids)
 
 
-def split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name, use_h5py=True):
+def split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name):
 
     _, file_extension = os.path.splitext(input_path)
 
@@ -139,7 +137,7 @@ def split_single_telescope_data(input_path, output_basename, inkey, key, fractio
 
         path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} telescope-array events to: {}'.format(n, path))
-        write_data_fact(selected_data, path, key=key, use_h5py=use_h5py, mode='w')
+        write_data_fact(selected_data, path, key=key, mode='w')
 
         data = data.loc[list(set(data.index.values) - set(selected_data.index.values))]
         ids = data.index.values

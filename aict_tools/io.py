@@ -8,32 +8,23 @@ from fact.io import read_h5py, write_data
 import pandas as pd
 import h5py
 import click
-import tables
+
 __all__ = ['pickle_model']
 
 
 log = logging.getLogger(__name__)
 
-# write_data(selected_array_events, path, key='array_events', use_h5py=use_h5py, mode='a')
-def write_hdf(data, path, table_name, mode='w', use_h5py='h5py', **kwargs):
-    if use_h5py:
-        write_data(data, path, key=table_name, use_h5py=True, mode=mode, **kwargs)
-    else:
-        with pd.HDFStore(path, mode) as storer:
-            storer.put(table_name, data, format='t', append=(mode in ['a', 'r+']), **kwargs)
+
+def write_hdf(data, path, table_name, mode='w', **kwargs):
+    write_data(data, path, key=table_name, use_h5py=True, mode=mode, **kwargs)
 
 
 def get_number_of_rows_in_table(path, key):
-    try:
-        with h5py.File(path, 'r') as f:
-            group = f.get(key)
-            nrows = group[next(iter(group.keys()))].shape[0]
-    
-    except AttributeError:
-        with pd.HDFStore(path, 'r') as storer:
-            nrows = storer.get_storer(key).nrows
 
-    return nrows
+    with h5py.File(path, 'r') as f:
+        group = f.get(key)
+        return group[next(iter(group.keys()))].shape[0]
+
 
 
 def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs):
@@ -90,6 +81,7 @@ def read_telescope_data_chunked(path, aict_config, chunksize, columns=None, feat
         columns,
         feature_generation_config=feature_generation_config,
     )
+
 
 def read_data_chunked(path, table_name, chunksize, columns=None):
     '''
@@ -214,40 +206,80 @@ class TelescopeDataIterator:
 
 
 def get_column_names_in_file(path, table_name):
-    try:
-        with pd.HDFStore(path, 'r') as storer:
-            names = storer.select(table_name, stop=0).columns.values
-    except TypeError:
-        with h5py.File(path, 'r') as f:
-            names = list(f[table_name].keys())
-    return names
+    '''Returns the list of column names in the given group
+    
+    Parameters
+    ----------
+    path : str
+        path to hdf5 file
+    table_name : str
+        name of group/table in file
+    
+    Returns
+    -------
+    list
+        list of column names
+    '''
+    with h5py.File(path, 'r') as f:
+        return list(f[table_name].keys())
 
 
 def remove_column_from_file(path, table_name, column_to_remove):
     '''
-    Removes a column from a hdf5 file. In case of 'tables' format needs to copy the entire table.
+    Removes a column from a hdf5 file. 
+
+    Note: this is one of the reasons why we decided to not support pytables.
+    In case of 'tables' format this needs to copy the entire table into memory and then some.
+
+
+    Parameters
+    ----------
+    path : str
+        path to hdf5 file
+    table_name : str
+        name of the group/table from which the column should be removed
+    column_to_remove : str
+        name of column to remove
     '''
-    try:
-        with pd.HDFStore(path, 'r+') as store:
-            df = store.select(table_name)
-            df.drop(columns=[column_to_remove], inplace=True) 
-            store.remove(table_name)
-            store.put(table_name, df, format='t')
-    except TypeError:
-        with h5py.File(path, 'r+') as f:
-            del f[table_name][column_to_remove]
+    with h5py.File(path, 'r+') as f:
+        del f[table_name][column_to_remove]
+
 
 def is_sorted(values, stable=False):
     i = 1 if stable else 0
     return (np.diff(values) >= i).all()
 
+
 def has_holes(values):
     return (np.diff(values) > 1).any()
 
+
 def read_telescope_data(path, aict_config, columns=None, feature_generation_config=None, n_sample=None, first=None, last=None):
-    '''
-    Read given columns from data and perform a random sample if n_sample is supplied.
-    Returns a single pandas data frame
+    '''    Read columns from data in file given under PATH.
+        Returns a single pandas data frame containing all the requested data
+        
+    Parameters
+    ----------
+    path : str
+        path to the hdf5 file to read
+    aict_config : AICTConfig
+        The configuration object. This is needed for gathering the primary keys to merge merge on.
+    columns : list, optional
+        column names to read, by default None
+    feature_generation_config : FeatureGenerationConfig, optional
+        The configuration object containing the information for feature generation, by default None
+    n_sample : int, optional
+        number of rows to randomly sample from the file, by default None
+    first : int, optional
+        first row to read from file, by default None
+    last : int, optional
+        last row to read form file, by default None
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe containing the requested data.
+
     '''
     telescope_event_columns = None
     array_event_columns = None
@@ -279,8 +311,10 @@ def read_telescope_data(path, aict_config, columns=None, feature_generation_conf
         tel_event_index['index_in_file'] = tel_event_index.index
         r = pd.merge(array_event_index, tel_event_index, left_on=join_keys, right_on=join_keys)
 
-        assert is_sorted(r.index_in_file) 
-        assert not has_holes(r.index_in_file) 
+        # these asserts have been added to catch weird effects on old pandas version (< 0.20).
+        # I'll leave them here in case this changes again with new version. as the consequences were quite subtle
+        assert is_sorted(r.index_in_file)
+        assert not has_holes(r.index_in_file)
         telescope_events = read_data(
             file_path=path,
             key=aict_config.telescope_events_key,
@@ -345,10 +379,14 @@ def pickle_model(classifier, feature_names, model_path, label_text='label'):
 
 class HDFColumnAppender():
     '''
-    This is a ContextManager which can append columns to an existing hdf5 table 
+    This is a context manager which can append columns to an existing hdf5 table
     in a chunkwise manner.
-    For hdf5 files in *tables format* this will temprarily occupy twice the disk space.
-    
+
+    The contex manager was introduced to handle hypothetical
+    memory problems with pytables.
+
+    For now we decided to drop pytables support.
+
     Parameters
     ----------
     path: str
@@ -359,24 +397,12 @@ class HDFColumnAppender():
     def __init__(self, path, table_name):
         self.path = path
         self.table_name = table_name
-        try:
-            with pd.HDFStore(path, mode='r') as r:
-                _ = r[table_name]
-            self.is_tables_format = True
-        except TypeError:
-            self.is_tables_format = False
 
     def __enter__(self):
         return self
-    
+
     def __exit__(self, exc_type, exc_value, exc_traceback):
-        if self.is_tables_format:
-            with tables.open_file(self.path, 'r+') as t:
-                try:
-                    t.remove_node(f'/{self.table_name}', recursive='force')
-                    t.rename_node(f'/{self.table_name}_copy', newname=self.table_name)
-                except tables.exceptions.NoSuchNodeError:
-                    pass
+        pass
 
     def add_data(self, data, new_column_name, start, stop):
         '''
@@ -393,34 +419,26 @@ class HDFColumnAppender():
         stop: int or None
             last event to replace in the file
         '''
-        if self.is_tables_format:
-            with pd.HDFStore(self.path, 'r+') as store:
-                df = store.select(self.table_name, start=start, stop=stop)
-                df[new_column_name] = data
-                # store.remove(self.table_name, start=0, stop=stop-start)
-                store.put(self.table_name + '_copy', df, format='t', append=True)
-        else:
-            _append_column_to_h5py(self.path, data, self.table_name, new_column_name)
+        append_column_to_hdf5(self.path, data, self.table_name, new_column_name)
+
 
 
 
 def append_column_to_hdf5(path, array, table_name, new_column_name):
     '''
-    Add array as a column to the hdf5 file. This needs to load the 
-    entire table into memory if the hdf5 file is in 'tables' format.
+    Add array of values as a new column to the given file.
+
+    Parameters
+    ----------
+    path : str
+        path to file
+    array : array-like
+        values to append to the file
+    table_name : str
+        name of the group to append to
+    new_column_name : str
+        name of the new column
     '''
-    try:
-        with pd.HDFStore(path, 'r+') as store:
-            df = store.select(table_name)
-            df[new_column_name] = array
-            store.remove(table_name)
-            store.put(table_name, df, format='t')
-            
-    except TypeError:
-        _append_column_to_h5py(path, array, table_name, new_column_name)
-
-
-def _append_column_to_h5py(path, array, table_name, new_column_name):
     with h5py.File(path, 'r+') as f:
         table_name = f.require_group(table_name)  # create if not exists
 

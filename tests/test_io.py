@@ -4,43 +4,29 @@ import pytest
 from aict_tools.configuration import AICTConfig
 
 
-@pytest.fixture(scope='function', params=['tables', 'h5py'])
+@pytest.fixture(scope='function')
 def hdf5_file(tmpdir_factory, request):
-    if request.param == 'h5py':
-        fn = tmpdir_factory.mktemp('aict_test_data').join('test_file.hdf5')
-        shutil.copy('examples/gamma.hdf5', fn)
-        return fn, 'events', AICTConfig.from_yaml('examples/config_energy.yaml')
-    else:
-        fn = tmpdir_factory.mktemp('aict_test_data').join('test_file.hdf5')
-        shutil.copy('examples/cta_tables_file.hdf5', fn)
-        return fn, 'telescope_events', AICTConfig.from_yaml('examples/cta_config.yaml')
-
-
-@pytest.fixture(scope='function')
-def tables_file(request, tmpdir_factory):
-    fn = tmpdir_factory.mktemp('aict_test_data').join('test_file.hdf5')
-    shutil.copy('examples/cta_tables_file.hdf5', fn)
-    return fn
-
-
-@pytest.fixture(scope='function')
-def h5py_file(tmpdir_factory):
     fn = tmpdir_factory.mktemp('aict_test_data').join('test_file.hdf5')
     shutil.copy('examples/gamma.hdf5', fn)
+    return fn, 'events', AICTConfig.from_yaml('examples/config_energy.yaml')
+
+
+@pytest.fixture(scope='function')
+def cta_file(tmpdir_factory, request):
+    fn = tmpdir_factory.mktemp('aict_test_data').join('cta_file_test.h5')
+    shutil.copy('examples/cta_gammas.h5', fn)
     return fn
 
 
 @pytest.fixture(scope='session')
 def fact_config():
     from aict_tools.configuration import AICTConfig
-
     return AICTConfig.from_yaml('examples/config_energy.yaml')
 
 
 @pytest.fixture(scope='session')
 def cta_config():
     from aict_tools.configuration import AICTConfig
-
     return AICTConfig.from_yaml('examples/cta_config.yaml')
 
 
@@ -56,11 +42,12 @@ def test_read_default_columns(hdf5_file):
     df_all_columns = read_data(path, table_name, columns=cols)
     assert_frame_equal(df, df_all_columns)
 
+
 def test_read_default_columns_chunked(hdf5_file):
-    from aict_tools.io import read_telescope_data, read_telescope_data_chunked, get_column_names_in_file
+    from aict_tools.io import read_telescope_data, read_telescope_data_chunked
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
-    
+
     path, table_name, config = hdf5_file
 
     generator = read_telescope_data_chunked(path, config, 100)
@@ -78,7 +65,7 @@ def test_read_chunks(hdf5_file):
     from pandas.util.testing import assert_frame_equal
 
     path, table_name, config = hdf5_file
-    cols =  ['width', 'length', ]
+    cols = ['width', 'length', ]
     
     chunk_size = 125
     generator = read_telescope_data_chunked(path, config, chunk_size, cols)
@@ -97,17 +84,18 @@ def test_read_chunks(hdf5_file):
     'chunk_size',
     (125, 500, 50000),
 )
-def test_read_chunks_cta(tables_file, cta_config, chunk_size):
+def test_read_chunks_cta(cta_file, cta_config, chunk_size):
     from aict_tools.io import read_telescope_data, read_telescope_data_chunked
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
 
     columns = ['width', 'num_triggered_telescopes', 'telescope_id']
     
-    generator = read_telescope_data_chunked(tables_file, cta_config, chunk_size, columns=columns)
+    
+    generator = read_telescope_data_chunked(cta_file, cta_config, chunk_size, columns=columns)
     df1 = pd.concat([df for df, _, _ in generator]).reset_index(drop=True)
     
-    df2 = read_telescope_data(tables_file, cta_config, columns=columns)
+    df2 = read_telescope_data(cta_file, cta_config, columns=columns)
     assert_frame_equal(df1, df2)
   
 
@@ -133,21 +121,22 @@ def test_columns_in_file(hdf5_file):
     assert 'length' in columns
 
 
-def test_read_data(h5py_file):
+def test_read_data(hdf5_file):
     from aict_tools.io import read_data
-
-    df = read_data(h5py_file, 'events')
+    
+    path, _, _ = hdf5_file
+    df = read_data(path, 'events')
     assert 'run_id' in df.columns
     assert 'width' in df.columns
 
 
-def test_read_data_tables(tables_file):
+def test_read_data_cta(cta_file):
     from aict_tools.io import read_data
 
-    df = read_data(tables_file, 'telescope_events')
+    df = read_data(cta_file, 'telescope_events')
     assert 'telescope_id' in df.columns
 
-    df = read_data(tables_file, 'array_events')
+    df = read_data(cta_file, 'array_events')
     assert 'array_event_id' in df.columns
 
 
@@ -190,18 +179,46 @@ def test_append_column_chunked(hdf5_file):
             appender.add_data(new_data, new_column_name, start, stop)
 
     df = read_data(path, table_name)
+
     assert new_column_name in df.columns
     assert np.array_equal(df.foobar, np.arange(0, len(df)))
-    if table_name == 'telescope_events':
-        df.set_index(
-            ['run_id', 'array_event_id', 'telescope_id'],
-            drop=True,
-            verify_integrity=True,
-            inplace=True,
-        )
 
 
-def test_read_chunks_tables_feature_gen(tables_file, cta_config):
+def test_append_column_chunked_cta(cta_file, cta_config):
+    from aict_tools.io import read_telescope_data_chunked, read_data
+    from aict_tools.io import HDFColumnAppender
+
+
+    new_column_name = 'foobar'
+    chunk_size = 125
+    table_name = 'telescope_events'
+
+    df = read_data(cta_file, table_name)
+
+    assert new_column_name not in df.columns
+
+    columns = cta_config.energy.columns_to_read_train
+    with HDFColumnAppender(cta_file, table_name) as appender:
+        generator = read_telescope_data_chunked(cta_file, cta_config, chunk_size, columns=columns)
+        for df, start, stop in generator:
+            assert not df.empty
+            new_data = np.arange(start, stop, step=1)
+            appender.add_data(new_data, new_column_name, start, stop)
+
+    df = read_data(cta_file, table_name)
+
+    assert new_column_name in df.columns
+    assert np.array_equal(df.foobar, np.arange(0, len(df)))
+
+    df.set_index(
+        ['run_id', 'array_event_id', 'telescope_id'],
+        drop=True,
+        verify_integrity=True,
+        inplace=True,
+    )
+
+
+def test_read_chunks_cta_feature_gen(cta_file, cta_config):
     from aict_tools.io import read_telescope_data_chunked
 
     chunk_size = 125
@@ -209,7 +226,7 @@ def test_read_chunks_tables_feature_gen(tables_file, cta_config):
     columns = cta_config.energy.columns_to_read_train
     fg = cta_config.energy.feature_generation
     generator = read_telescope_data_chunked(
-        tables_file, cta_config, chunk_size, columns=columns, feature_generation_config=fg
+        cta_file, cta_config, chunk_size, columns=columns, feature_generation_config=fg
     )
     for df, _, _ in generator:
         assert not df.empty
@@ -218,14 +235,14 @@ def test_read_chunks_tables_feature_gen(tables_file, cta_config):
         ) | set([cta_config.energy.target_column])
 
 
-def test_read_telescope_data_feature_gen(h5py_file, fact_config):
+def test_read_telescope_data_feature_gen(hdf5_file, fact_config):
     from aict_tools.io import read_telescope_data
 
     columns = fact_config.energy.columns_to_read_train
-
+    path, _, _ = hdf5_file
     feature_gen_config = fact_config.energy.feature_generation
     df = read_telescope_data(
-        h5py_file, fact_config, columns=columns, feature_generation_config=feature_gen_config
+        path, fact_config, columns=columns, feature_generation_config=feature_gen_config
     )
     assert set(df.columns) == set(fact_config.energy.features) | set(
         [fact_config.energy.target_column]
