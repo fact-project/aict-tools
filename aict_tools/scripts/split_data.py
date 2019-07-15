@@ -10,8 +10,10 @@ from tqdm import tqdm
 import h5py
 
 from ..io import read_data, write_hdf, read_data_chunked, copy_runs_group
+from ..logging import setup_logging
 
-log = logging.getLogger()
+
+log = logging.getLogger(__name__)
 
 
 def split_indices(idx, n_total, fractions):
@@ -70,8 +72,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, telescope, chu
     Example call: aict_split_data input.hdf5 output_base -n test -f 0.5 -n train -f 0.5
     '''
 
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-
+    setup_logging(verbose=verbose)
     log.debug("input_path: {}".format(input_path))
 
     assert len(fraction) == len(name), 'You must give a name for each fraction'

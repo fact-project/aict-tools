@@ -1,6 +1,6 @@
 from sklearn.ensemble import RandomForestRegressor, RandomForestClassifier
 import tempfile
-from pytest import importorskip, mark
+from pytest import importorskip
 import numpy as np
 import os
 from sklearn.externals import joblib
@@ -9,8 +9,15 @@ import pandas as pd
 
 y_clf = np.random.randint(0, 2, 100)
 y_reg = np.random.uniform(0, 1, 100)
-X_clf = np.random.normal(y_clf, 0.5, size=(5, 100)).T.astype('float32')
-X_reg = np.random.normal(y_reg, 0.5, size=(5, 100)).T.astype('float32')
+X_clf = np.random.normal(
+    y_clf.reshape(1, 100) + np.arange(5).reshape(5, 1),
+    0.5,
+    size=(5, 100),
+).T.astype('float32')
+X_reg = np.random.normal(
+    y_reg.reshape(1, 100) + np.arange(5).reshape(5, 1),
+    0.5, size=(5, 100)
+).T.astype('float32')
 feature_names = list('abcde')
 
 clf = RandomForestClassifier(n_estimators=10)
@@ -39,22 +46,22 @@ def test_pickle():
         assert np.all(clf.predict(X_clf) == clf_load.predict(X_clf))
 
 
-@mark.xfail(reason='JPMML not working on travis')
 def test_pmml():
     importorskip('sklearn2pmml')
     jpmml_evaluator = importorskip('jpmml_evaluator')
-    from jpmml_evaluator.py4j import launch_gateway, Py4JBackend
+    from jpmml_evaluator.pyjnius import jnius_configure_classpath, PyJNIusBackend
     from aict_tools.io import save_model
 
-    gateway = launch_gateway()
-    backend = Py4JBackend(gateway)
+    jnius_configure_classpath()
+    backend = PyJNIusBackend()
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as tmpdir:
         model_path = os.path.join(tmpdir, 'model.pmml')
         save_model(clf, feature_names, model_path, label_text='classifier')
 
         evaluator = jpmml_evaluator.make_evaluator(backend, model_path).verify()
-        assert [i.getName() for i in evaluator.getInputFields()] == feature_names
+        # order seems to be changing
+        assert sorted([i.getName() for i in evaluator.getInputFields()]) == feature_names
 
         df = evaluator.evaluateAll(pd.DataFrame(dict(zip(feature_names, X_clf.T))))
         assert np.all(np.isclose(df['probability(1)'], clf.predict_proba(X_clf)[:, 1]))
@@ -69,7 +76,8 @@ def test_pmml():
         save_model(reg, feature_names, model_path, label_text='regressor')
 
         evaluator = jpmml_evaluator.make_evaluator(backend, model_path).verify()
-        assert [i.getName() for i in evaluator.getInputFields()] == feature_names
+        # order seems to be changing
+        assert sorted([i.getName() for i in evaluator.getInputFields()]) == feature_names
 
         df = evaluator.evaluateAll(pd.DataFrame(dict(zip(feature_names, X_reg.T))))
         assert np.all(np.isclose(df['regressor'], reg.predict(X_reg)))
@@ -78,8 +86,6 @@ def test_pmml():
         reg_load = joblib.load(model_path.replace('.pmml', '.pkl'))
         assert reg_load.feature_names == feature_names
         assert np.all(reg.predict(X_reg) == reg_load.predict(X_reg))
-
-    gateway.close()
 
 
 def test_onnx():

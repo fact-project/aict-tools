@@ -9,7 +9,8 @@ matrix:
 before_install:
   - find /usr/lib/jvm -name libjvm.so
   - export MPLBACKEND=agg
-  - export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+  - export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+  - export JDK_HOME=/usr/lib/jvm/java-8-openjdk-amd64
 
 install:
   - pip install --upgrade pip

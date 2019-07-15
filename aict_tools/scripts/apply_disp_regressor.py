@@ -1,7 +1,7 @@
 import click
 import numpy as np
 from sklearn.externals import joblib
-import logging
+import h5py
 from tqdm import tqdm
 
 from ..io import (
@@ -12,6 +12,7 @@ from ..io import (
 )
 from ..apply import predict_disp
 from ..configuration import AICTConfig
+from ..logging import setup_logging
 
 
 @click.command()
@@ -36,8 +37,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
     DISP_MODEL_PATH: Path to the pickled disp model.
     SIGN_MODEL_PATH: Path to the pickled sign model.
     '''
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
+    log = setup_logging(verbose=verbose)
 
     config = AICTConfig.from_yaml(configuration_path)
     model_config = config.disp

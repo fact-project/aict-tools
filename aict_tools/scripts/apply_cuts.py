@@ -1,9 +1,10 @@
 import numpy as np
 import click
 from ruamel.yaml import YAML
-import logging
 from tqdm import tqdm
 import pandas as pd
+from shutil import copyfile
+
 from ..io import (
     get_number_of_rows_in_table,
     read_data_chunked,
@@ -12,11 +13,7 @@ from ..io import (
     copy_runs_group,
 )
 from ..apply import apply_cuts_h5py_chunked
-from shutil import copyfile
-
-
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger()
+from ..logging import setup_logging
 
 yaml = YAML(typ='safe')
 
@@ -39,6 +36,7 @@ def main(configuration_path, input_path, output_path, chunksize):
         Width: ['<=', 50]
     ```
     '''
+    log = setup_logging(verbose=verbose)
 
     with open(configuration_path) as f:
         config = yaml.load(f)

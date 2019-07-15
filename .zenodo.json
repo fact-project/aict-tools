@@ -1,0 +1,28 @@
+{
+    "description": "Reproducible Artificial Intelligence for Cherenkov Telescopes",
+    "license": "mit",
+    "keywords": [
+        "Machine Learning",
+        "FACT",
+        "CTA",
+        "gamma-ray astronomy",
+        "Imaging Atmospheric Cherenkov Telescope",
+        "IACT"
+    ],
+    "upload_type": "software",
+    "creators": [
+        {
+            "affiliation": "TU Dortmund",
+            "name": "Maximilian N\u00f6the"
+        },
+        {
+            "affiliation": "TU Dortmund",
+            "name": "Kai Br\u00fcgge"
+        },
+        {
+            "affiliation": "TU Dortmund",
+            "name": "Jens Bu\u00df"
+        }
+    ],
+    "access_right": "open"
+}

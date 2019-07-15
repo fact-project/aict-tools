@@ -1,6 +1,5 @@
 import click
 from sklearn.externals import joblib
-import logging
 from tqdm import tqdm
 
 import pandas as pd
@@ -8,6 +7,7 @@ import pandas as pd
 from ..apply import predict_energy
 from ..io import append_column_to_hdf5, read_telescope_data_chunked, drop_prediction_column
 from ..configuration import AICTConfig
+from ..logging import setup_logging
 
 
 @click.command()
@@ -30,8 +30,7 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
     DATA_PATH: path to the FACT/CTA data in a h5py hdf5 file, e.g. erna_gather_fits output
     MODEL_PATH: Path to the pickled model
     '''
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
-    log = logging.getLogger()
+    log = setup_logging(verbose=verbose)
     config = AICTConfig.from_yaml(configuration_path)
     model_config = config.energy
 
