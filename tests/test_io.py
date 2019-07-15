@@ -33,7 +33,7 @@ def cta_config():
 def test_read_default_columns(hdf5_file):
     from aict_tools.io import read_data, get_column_names_in_file
     from pandas.util.testing import assert_frame_equal
-    
+
     path, table_name, config = hdf5_file
 
     df = read_data(path, table_name)
@@ -66,7 +66,7 @@ def test_read_chunks(hdf5_file):
 
     path, table_name, config = hdf5_file
     cols = ['width', 'length', ]
-    
+
     chunk_size = 125
     generator = read_telescope_data_chunked(path, config, chunk_size, cols)
 
@@ -90,14 +90,14 @@ def test_read_chunks_cta(cta_file, cta_config, chunk_size):
     from pandas.util.testing import assert_frame_equal
 
     columns = ['width', 'num_triggered_telescopes', 'telescope_id']
-    
-    
+
+
     generator = read_telescope_data_chunked(cta_file, cta_config, chunk_size, columns=columns)
     df1 = pd.concat([df for df, _, _ in generator]).reset_index(drop=True)
-    
+
     df2 = read_telescope_data(cta_file, cta_config, columns=columns)
     assert_frame_equal(df1, df2)
-  
+
 
 def test_remove_column(hdf5_file):
     from aict_tools.io import get_column_names_in_file
@@ -123,7 +123,7 @@ def test_columns_in_file(hdf5_file):
 
 def test_read_data(hdf5_file):
     from aict_tools.io import read_data
-    
+
     path, _, _ = hdf5_file
     df = read_data(path, 'events')
     assert 'run_id' in df.columns

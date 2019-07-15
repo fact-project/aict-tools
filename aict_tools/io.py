@@ -498,7 +498,7 @@ def append_column_to_hdf5(path, array, table_name, new_column_name):
                 maxshape=tuple(max_shape),
             )
         else:
-            n_existing = table_name[new_column_name].shape[0]
+            n_existing = group[new_column_name].shape[0]
             n_new = array.shape[0]
 
             group[new_column_name].resize(n_existing + n_new, axis=0)
