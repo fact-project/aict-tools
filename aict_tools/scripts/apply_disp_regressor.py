@@ -4,7 +4,12 @@ from sklearn.externals import joblib
 import logging
 from tqdm import tqdm
 
-from ..io import HDFColumnAppender, read_telescope_data_chunked, get_column_names_in_file, remove_column_from_file
+from ..io import (
+    append_column_to_hdf5,
+    read_telescope_data_chunked,
+    get_column_names_in_file,
+    remove_column_from_file,
+)
 from ..apply import predict_disp
 from ..configuration import AICTConfig
 
@@ -85,19 +90,19 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
     )
 
     log.info('Predicting on data...')
-    with HDFColumnAppender(data_path, config.telescope_events_key) as appender:
-        for df_data, start, stop in tqdm(df_generator):
+    for df_data, start, stop in tqdm(df_generator):
 
-            disp = predict_disp(
-                df_data[model_config.features], disp_model, sign_model
-            )
+        disp = predict_disp(
+            df_data[model_config.features], disp_model, sign_model
+        )
 
-            source_x = df_data.cog_x + disp * np.cos(df_data.delta)
-            source_y = df_data.cog_y + disp * np.sin(df_data.delta)
+        source_x = df_data.cog_x + disp * np.cos(df_data.delta)
+        source_y = df_data.cog_y + disp * np.sin(df_data.delta)
 
-            appender.add_data(source_x, 'source_x_prediction', start, stop)
-            appender.add_data(source_y, 'source_y_prediction', start, stop)
-            appender.add_data(disp, 'disp_prediction', start, stop)
+        key = config.telescope_events_key
+        append_column_to_hdf5(data_path, source_x, key, 'source_x_prediction')
+        append_column_to_hdf5(data_path, source_y, key, 'source_y_prediction')
+        append_column_to_hdf5(data_path, disp, key, 'disp_prediction')
 
 
 if __name__ == '__main__':

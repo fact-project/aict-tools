@@ -6,7 +6,7 @@ from tqdm import tqdm
 import pandas as pd
 
 from ..apply import predict_energy
-from ..io import append_column_to_hdf5, read_telescope_data_chunked, drop_prediction_column, HDFColumnAppender
+from ..io import append_column_to_hdf5, read_telescope_data_chunked, drop_prediction_column
 from ..configuration import AICTConfig
 
 
@@ -61,20 +61,20 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
     if config.has_multiple_telescopes:
         chunked_frames = []
 
-    with HDFColumnAppender(data_path, config.telescope_events_key) as appender:
-        for df_data, start, stop in tqdm(df_generator):
+    table = config.telescope_events_key
+    for df_data, start, stop in tqdm(df_generator):
 
-            energy_prediction = predict_energy(
-                df_data[model_config.features],
-                model,
-                log_target=model_config.log_target,
-            )
+        energy_prediction = predict_energy(
+            df_data[model_config.features],
+            model,
+            log_target=model_config.log_target,
+        )
 
-            if config.has_multiple_telescopes:
-                d = df_data[['run_id', 'array_event_id']].copy()
-                d[prediction_column_name] = energy_prediction
-                chunked_frames.append(d)
-            appender.add_data(energy_prediction,  prediction_column_name, start, stop)
+        if config.has_multiple_telescopes:
+            d = df_data[['run_id', 'array_event_id']].copy()
+            d[prediction_column_name] = energy_prediction
+            chunked_frames.append(d)
+        append_column_to_hdf5(data_path, energy_prediction, table, prediction_column_name)
 
     if config.has_multiple_telescopes:
         d = pd.concat(chunked_frames).groupby(
@@ -83,12 +83,12 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
 
         mean = d[prediction_column_name]['mean'].values
         std = d[prediction_column_name]['std'].values
-    
+
         append_column_to_hdf5(
-            data_path, mean, config.array_events_key, prediction_column_name + '_mean'
+            data_path, mean, table, prediction_column_name + '_mean'
         )
         append_column_to_hdf5(
-            data_path, std, config.array_events_key, prediction_column_name + '_std'
+            data_path, std, table, prediction_column_name + '_std'
         )
 
 

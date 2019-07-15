@@ -426,51 +426,6 @@ def save_model(model, feature_names, model_path, label_text='label'):
     joblib.dump(model, pickle_path, compress=4)
 
 
-class HDFColumnAppender():
-    '''
-    This is a context manager which can append columns to an existing hdf5 table
-    in a chunkwise manner.
-
-    The contex manager was introduced to handle hypothetical
-    memory problems with pytables.
-
-    For now we decided to drop pytables support.
-
-    Parameters
-    ----------
-    path: str
-        path to the hdf5 file
-    table_name: str
-        name of the table columns should be appended to
-    '''
-    def __init__(self, path, table_name):
-        self.path = path
-        self.table_name = table_name
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        pass
-
-    def add_data(self, data, new_column_name, start, stop):
-        '''
-        Appends a column containing new data to existing table.
-
-        Parameters
-        ----------
-        data: array-like
-            the data to append
-        new_column_name: str
-            name of the new column to append
-        start: int or None
-            first row to replace in the file
-        stop: int or None
-            last event to replace in the file
-        '''
-        append_column_to_hdf5(self.path, data, self.table_name, new_column_name)
-
-
 def append_column_to_hdf5(path, array, table_name, new_column_name):
     '''
     Add array of values as a new column to the given file.

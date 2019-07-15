@@ -58,7 +58,6 @@ def test_read_default_columns_chunked(hdf5_file):
     assert_frame_equal(df, df_chunked)
 
 
-
 def test_read_chunks(hdf5_file):
     from aict_tools.io import read_telescope_data_chunked, read_telescope_data
     import pandas as pd
@@ -90,7 +89,6 @@ def test_read_chunks_cta(cta_file, cta_config, chunk_size):
     from pandas.util.testing import assert_frame_equal
 
     columns = ['width', 'num_triggered_telescopes', 'telescope_id']
-
 
     generator = read_telescope_data_chunked(cta_file, cta_config, chunk_size, columns=columns)
     df1 = pd.concat([df for df, _, _ in generator]).reset_index(drop=True)
@@ -159,7 +157,7 @@ def test_append_column(hdf5_file):
 
 def test_append_column_chunked(hdf5_file):
     from aict_tools.io import read_telescope_data_chunked, read_data
-    from aict_tools.io import HDFColumnAppender
+    from aict_tools.io import append_column_to_hdf5
 
     path, table_name, config = hdf5_file
 
@@ -171,12 +169,12 @@ def test_append_column_chunked(hdf5_file):
     assert new_column_name not in df.columns
 
     columns = config.energy.columns_to_read_train
-    with HDFColumnAppender(path, table_name) as appender:
-        generator = read_telescope_data_chunked(path, config, chunk_size, columns=columns)
-        for df, start, stop in generator:
-            assert not df.empty
-            new_data = np.arange(start, stop, step=1)
-            appender.add_data(new_data, new_column_name, start, stop)
+
+    generator = read_telescope_data_chunked(path, config, chunk_size, columns=columns)
+    for df, start, stop in generator:
+        assert not df.empty
+        new_data = np.arange(start, stop, step=1)
+        append_column_to_hdf5(path, new_data, table_name, new_column_name)
 
     df = read_data(path, table_name)
 
@@ -186,8 +184,7 @@ def test_append_column_chunked(hdf5_file):
 
 def test_append_column_chunked_cta(cta_file, cta_config):
     from aict_tools.io import read_telescope_data_chunked, read_data
-    from aict_tools.io import HDFColumnAppender
-
+    from aict_tools.io import append_column_to_hdf5
 
     new_column_name = 'foobar'
     chunk_size = 125
@@ -198,12 +195,11 @@ def test_append_column_chunked_cta(cta_file, cta_config):
     assert new_column_name not in df.columns
 
     columns = cta_config.energy.columns_to_read_train
-    with HDFColumnAppender(cta_file, table_name) as appender:
-        generator = read_telescope_data_chunked(cta_file, cta_config, chunk_size, columns=columns)
-        for df, start, stop in generator:
-            assert not df.empty
-            new_data = np.arange(start, stop, step=1)
-            appender.add_data(new_data, new_column_name, start, stop)
+    generator = read_telescope_data_chunked(cta_file, cta_config, chunk_size, columns=columns)
+    for df, start, stop in generator:
+        assert not df.empty
+        new_data = np.arange(start, stop, step=1)
+        append_column_to_hdf5(cta_file, new_data, table_name, new_column_name)
 
     df = read_data(cta_file, table_name)
 
