@@ -76,6 +76,7 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
 
     # combine predictions
     if config.has_multiple_telescopes:
+        array_table = config.array_events_key
         d = pd.concat(chunked_frames).groupby(
             ['run_id', 'array_event_id'], sort=False
         ).agg(['mean', 'std'])
@@ -83,10 +84,10 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
         std = d[prediction_column_name]['std'].values
 
         append_column_to_hdf5(
-            data_path, mean, table, prediction_column_name + '_mean'
+            data_path, mean, array_table, prediction_column_name + '_mean'
         )
         append_column_to_hdf5(
-            data_path, std, table, prediction_column_name + '_std'
+            data_path, std, array_table, prediction_column_name + '_std'
         )
 
 
