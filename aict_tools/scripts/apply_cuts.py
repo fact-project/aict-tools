@@ -23,7 +23,8 @@ yaml = YAML(typ='safe')
 @click.argument('input_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output_path', type=click.Path(exists=False, dir_okay=False))
 @click.option('-N', '--chunksize', type=int, help='Chunksize to use')
-def main(configuration_path, input_path, output_path, chunksize):
+@click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
+def main(configuration_path, input_path, output_path, chunksize, verbose):
     '''
     Apply cuts given in CONFIGURATION_PATH to the data in INPUT_PATH and
     write the result to OUTPUT_PATH.
