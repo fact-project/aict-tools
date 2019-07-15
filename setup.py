@@ -50,7 +50,6 @@ setup(
             'aict_apply_cuts = aict_tools.scripts.apply_cuts:main',
             'aict_convert_pandas2h5py = aict_tools.scripts.convert_pandas2h5py:main',
             'fact_to_dl3 = aict_tools.scripts.fact_to_dl3:main',
-            'cta_to_dl3 = aict_tools.scripts.cta_to_dl2:main',
         ],
     },
     classifiers=[
