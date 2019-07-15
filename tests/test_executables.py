@@ -15,7 +15,7 @@ def test_train_regressor_cta():
             main,
             [
                 'examples/cta_config.yaml',
-                'examples/cta_tables_file.hdf5',
+                'examples/cta_gammas.h5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'test.pkl'),
             ]
