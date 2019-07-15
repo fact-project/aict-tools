@@ -1,28 +1,22 @@
 import numpy as np
 import click
 from ruamel.yaml import YAML
-import h5py
 import logging
 from tqdm import tqdm
 import pandas as pd
-from ..io import get_number_of_rows_in_table, read_data_chunked, read_data, write_hdf
+from ..io import (
+    get_number_of_rows_in_table,
+    read_data_chunked,
+    read_data,
+    write_hdf,
+    copy_runs_group,
+)
 from ..apply import apply_cuts_h5py_chunked
 from shutil import copyfile
 
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger()
-
-
-def copy_group(input_path, output_path, group_name='runs'):
-    with h5py.File(input_path, mode='r') as infile, h5py.File(output_path, 'r+') as outfile:
-        if group_name in infile.keys():
-            log.info('Copying runs group to outputfile')
-            infile.copy(f'/{group_name}', outfile['/'])
-        else:
-            log.error(f'Group with name {group_name} not in infput file')
-            raise ValueError
-
 
 yaml = YAML(typ='safe')
 
@@ -49,7 +43,7 @@ def main(configuration_path, input_path, output_path, chunksize):
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    multiple_telescopes = config['multiple_telescopes']
+    multiple_telescopes = config.get('multiple_telescopes', False)
     selection = config.get('selection', None)
 
     if multiple_telescopes:
@@ -98,7 +92,7 @@ def main(configuration_path, input_path, output_path, chunksize):
             if len(array_events > 0):
                 write_hdf(array_events, output_path, table_name='array_events', mode='a')
 
-    copy_group(input_path, output_path, group_name='runs')
+    copy_runs_group(input_path, output_path)
 
     n_events_after = get_number_of_rows_in_table(output_path, key=key)
     percentage = 100 * n_events_after / n_events

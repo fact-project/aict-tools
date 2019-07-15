@@ -174,7 +174,7 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
             log.debug('Writing {} telescope-array events to: {}'.format(
                 len(selected_data), path
             ))
-            write_hdf(selected_data, path, key=key, use_h5py=True, mode=mode)
+            write_hdf(selected_data, path, table_name=key, mode=mode)
 
     for n, part_name in zip(num_ids, name):
         path = output_basename + '_' + part_name + '.hdf5'
@@ -206,7 +206,7 @@ def split_single_telescope_data(input_path, output_basename, inkey, key, fractio
 
         path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} telescope-array events to: {}'.format(n, path))
-        write_hdf(selected_data, path, key=key, mode='w')
+        write_hdf(selected_data, path, table_name=key, mode='w')
         with h5py.File(path, mode='r+') as f, h5py.File(input_path) as infile:
             f.attrs['sample_fraction'] = n / n_total
             copy_runs_group(infile, f)
