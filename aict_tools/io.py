@@ -1,15 +1,23 @@
 import os
 from sklearn.externals import joblib
-from sklearn2pmml import sklearn2pmml, PMMLPipeline
 import logging
 import numpy as np
-from .feature_generation import feature_generation
-from fact.io import read_h5py, write_data
 import pandas as pd
 import h5py
 import click
 
-__all__ = ['pickle_model']
+from fact.io import read_h5py, write_data
+
+from .feature_generation import feature_generation
+from . import __version__
+
+
+__all__ = [
+    'drop_prediction_column',
+    'read_telescope_data',
+    'read_telescope_data_chunked',
+    'save_model',
+]
 
 
 log = logging.getLogger(__name__)
@@ -24,7 +32,6 @@ def get_number_of_rows_in_table(path, key):
     with h5py.File(path, 'r') as f:
         group = f.get(key)
         return group[next(iter(group.keys()))].shape[0]
-
 
 
 def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs):
@@ -89,7 +96,7 @@ def read_data_chunked(path, table_name, chunksize, columns=None):
     '''
     return HDFDataIterator(
         path,
-        table_name, 
+        table_name,
         chunksize,
         columns,
     )
@@ -99,7 +106,7 @@ class HDFDataIterator:
     def __init__(
         self,
         path,
-        table_name, 
+        table_name,
         chunksize,
         columns,
     ):
@@ -169,7 +176,7 @@ class TelescopeDataIterator:
         log.info('Splitting data into {} chunks'.format(self.n_chunks))
 
         self._current_chunk = 0
-        self._index_start = 0 
+        self._index_start = 0
 
     def __len__(self):
         return self.n_chunks
@@ -207,14 +214,14 @@ class TelescopeDataIterator:
 
 def get_column_names_in_file(path, table_name):
     '''Returns the list of column names in the given group
-    
+
     Parameters
     ----------
     path : str
         path to hdf5 file
     table_name : str
         name of group/table in file
-    
+
     Returns
     -------
     list
@@ -226,7 +233,7 @@ def get_column_names_in_file(path, table_name):
 
 def remove_column_from_file(path, table_name, column_to_remove):
     '''
-    Removes a column from a hdf5 file. 
+    Removes a column from a hdf5 file.
 
     Note: this is one of the reasons why we decided to not support pytables.
     In case of 'tables' format this needs to copy the entire table into memory and then some.
@@ -257,7 +264,7 @@ def has_holes(values):
 def read_telescope_data(path, aict_config, columns=None, feature_generation_config=None, n_sample=None, first=None, last=None):
     '''    Read columns from data in file given under PATH.
         Returns a single pandas data frame containing all the requested data
-        
+
     Parameters
     ----------
     path : str
@@ -291,7 +298,7 @@ def read_telescope_data(path, aict_config, columns=None, feature_generation_conf
             array_event_columns = get_column_names_in_file(path, table_name=t)
             t = aict_config.telescope_events_key
             telescope_event_columns = get_column_names_in_file(path, table_name=t)
-            
+
             array_event_columns = set(array_event_columns) & set(columns)
             telescope_event_columns = set(telescope_event_columns) & set(columns)
             array_event_columns |= set(join_keys)
@@ -359,22 +366,64 @@ def read_telescope_data(path, aict_config, columns=None, feature_generation_conf
     return df
 
 
-def pickle_model(classifier, feature_names, model_path, label_text='label'):
+def save_model(model, feature_names, model_path, label_text='label'):
     p, extension = os.path.splitext(model_path)
-    classifier.feature_names = feature_names
+    model.feature_names = feature_names
+    pickle_path = p + '.pkl'
 
-    if (extension == '.pmml'):
-        joblib.dump(classifier, p + '.pkl', compress=4)
+    if extension == '.pmml':
+        try:
+            from sklearn2pmml import sklearn2pmml, PMMLPipeline
+        except ImportError:
+            raise ImportError(
+                'You need to install `sklearn2pmml` to store models in pmml format'
+            )
 
         pipeline = PMMLPipeline([
-            ('classifier', classifier)
+            ('model', model)
         ])
         pipeline.target_field = label_text
         pipeline.active_fields = np.array(feature_names)
         sklearn2pmml(pipeline, model_path)
 
+    elif extension == '.onnx':
+
+        try:
+            from skl2onnx import convert_sklearn
+            from skl2onnx.common.data_types import FloatTensorType
+            from skl2onnx.helpers.onnx_helper import select_model_inputs_outputs
+            from onnx.onnx_pb import StringStringEntryProto
+        except ImportError:
+            raise ImportError(
+                'You need to install `skl2onnx` to store models in onnx format'
+            )
+
+        onnx = convert_sklearn(
+            model,
+            name=label_text,
+            initial_types=[('input', FloatTensorType((1, len(feature_names))))],
+            doc_string='Model created by aict-tools to estimate {}'.format(label_text),
+        )
+        metadata = dict(
+            model_author='aict-tools',
+            aict_tools_version=__version__,
+            feature_names=','.join(feature_names),
+        )
+        for key, value in metadata.items():
+            onnx.metadata_props.append(StringStringEntryProto(key=key, value=value))
+
+        # this makes sure we only get the scores and that they are numpy arrays and not
+        # a list of dicts
+        if hasattr(model, 'predict_proba'):
+            onnx = select_model_inputs_outputs(onnx, ['probabilities'])
+
+        with open(model_path, 'wb') as f:
+            f.write(onnx.SerializeToString())
     else:
-        joblib.dump(classifier, model_path, compress=4)
+        pickle_path = model_path
+
+    # Always store the pickle dump,just in case
+    joblib.dump(model, pickle_path, compress=4)
 
 
 class HDFColumnAppender():
@@ -422,8 +471,6 @@ class HDFColumnAppender():
         append_column_to_hdf5(self.path, data, self.table_name, new_column_name)
 
 
-
-
 def append_column_to_hdf5(path, array, table_name, new_column_name):
     '''
     Add array of values as a new column to the given file.
@@ -440,12 +487,12 @@ def append_column_to_hdf5(path, array, table_name, new_column_name):
         name of the new column
     '''
     with h5py.File(path, 'r+') as f:
-        table_name = f.require_group(table_name)  # create if not exists
+        group = f.require_group(table_name)  # create if not exists
 
         max_shape = list(array.shape)
         max_shape[0] = None
-        if new_column_name not in table_name.keys():
-            table_name.create_dataset(
+        if new_column_name not in group.keys():
+            group.create_dataset(
                 new_column_name,
                 data=array,
                 maxshape=tuple(max_shape),
@@ -454,5 +501,12 @@ def append_column_to_hdf5(path, array, table_name, new_column_name):
             n_existing = table_name[new_column_name].shape[0]
             n_new = array.shape[0]
 
-            table_name[new_column_name].resize(n_existing + n_new, axis=0)
-            table_name[new_column_name][n_existing:n_existing + n_new] = array
+            group[new_column_name].resize(n_existing + n_new, axis=0)
+            group[new_column_name][n_existing:n_existing + n_new] = array
+
+
+def copy_runs_group(infile, outfile):
+    for key in ('runs', 'corsika_runs'):
+        if key in infile:
+            log.info('Copying group "{}"'.format(key))
+            infile.copy(key, outfile)

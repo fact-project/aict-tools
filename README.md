@@ -15,8 +15,19 @@ All you ever wanted to do  with your IACT data in one package. This project is m
 
 Then you can install the aict-tools by:
 ```
-pip install https://github.com/fact-project/aict-tools/archive/v0.12.4.tar.gz
+pip install aict-tools
 ```
+
+By default, this does not install optional dependencies for writing out
+models in `onnx` or `pmml` format.
+If you want to serialize models to these formats, install this using:
+
+```
+$ pip install aict-tools[pmml] # for pmml support
+$ pip install aict-tools[onnx] # for onnx support
+$ pip install aict-tools[all]  # for both
+```
+
 
 Alternatively you can clone the repo, `cd` into the folder and do the usual `pip install .` dance.
 

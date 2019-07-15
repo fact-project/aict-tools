@@ -1,14 +1,13 @@
 import numpy as np
 import click
-import yaml
+from ruamel.yaml import YAML
 import h5py
 import logging
-from tqdm import tqdm 
+from tqdm import tqdm
 import pandas as pd
 from ..io import get_number_of_rows_in_table, read_data_chunked, read_data, write_hdf
-from ..apply import apply_cuts_h5py_chunked #, create_mask_dataframe, create_mask_h5py
+from ..apply import apply_cuts_h5py_chunked
 from shutil import copyfile
-from colorama import Fore, Style
 
 
 logging.basicConfig(level=logging.INFO)
@@ -23,6 +22,9 @@ def copy_group(input_path, output_path, group_name='runs'):
         else:
             log.error(f'Group with name {group_name} not in infput file')
             raise ValueError
+
+
+yaml = YAML(typ='safe')
 
 
 @click.command()
@@ -45,7 +47,8 @@ def main(configuration_path, input_path, output_path, chunksize):
     '''
 
     with open(configuration_path) as f:
-        config = yaml.safe_load(f)
+        config = yaml.load(f)
+
     multiple_telescopes = config['multiple_telescopes']
     selection = config.get('selection', None)
 
@@ -59,7 +62,7 @@ def main(configuration_path, input_path, output_path, chunksize):
         copyfile(input_path, output_path)
         log.info('Copying finished')
         return
-            
+
     n_events = get_number_of_rows_in_table(input_path, key=key)
     if chunksize is None:
         chunksize = n_events + 1
@@ -70,24 +73,34 @@ def main(configuration_path, input_path, output_path, chunksize):
     if multiple_telescopes:
         log.info('Copying selected array events.')
         # read incdex of remaining telescope events.
-        df_index = read_data(output_path, key='telescope_events', columns=['array_event_id', 'run_id', 'telescope_id'])
-        df_index.set_index(['run_id', 'array_event_id',], inplace=True)
+        df_index = read_data(
+            output_path,
+            key='telescope_events',
+            columns=['array_event_id', 'run_id', 'telescope_id']
+        )
+        df_index.set_index(['run_id', 'array_event_id'], inplace=True)
         df_index = df_index[~df_index.index.duplicated()]
-        
+
         df_iterator = read_data_chunked(input_path, 'array_events', chunksize=500000)
         for array_events, _, _ in tqdm(df_iterator):
             array_events.set_index(['run_id', 'array_event_id'], inplace=True)
-            array_events['index_in_file'] = np.arange(0, len(array_events)) 
-            
-            array_events = pd.merge(array_events, df_index, left_index=True, right_index=True, validate='one_to_one')
-            array_events.sort_values('index_in_file', inplace=True) 
+            array_events['index_in_file'] = np.arange(0, len(array_events))
+
+            array_events = pd.merge(
+                array_events,
+                df_index,
+                left_index=True,
+                right_index=True,
+                validate='one_to_one',
+            )
+            array_events.sort_values('index_in_file', inplace=True)
             array_events.drop('index_in_file', axis='columns', inplace=True,)
             if len(array_events > 0):
                 write_hdf(array_events, output_path, table_name='array_events', mode='a')
-    
+
     copy_group(input_path, output_path, group_name='runs')
 
     n_events_after = get_number_of_rows_in_table(output_path, key=key)
-    percentage = 100 * n_events_after/n_events
+    percentage = 100 * n_events_after / n_events
     log.info(f'Events in file before cuts {n_events}')
     log.info(f'Events in new file after cuts {n_events_after}. That is {percentage:.2f} %')
