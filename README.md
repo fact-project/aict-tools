@@ -10,6 +10,11 @@ All you ever wanted to do  with your IACT data in one package. This project is m
 * Gamma/Hadron Separation
 * Reconstruction of origin (Mono for now)
 
+# Citing
+
+If you use the `aict-tools`, please cite us like this using the doi provided by
+zenodo.
+
 
 # Installation
 
