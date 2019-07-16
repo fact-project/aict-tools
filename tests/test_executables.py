@@ -11,13 +11,40 @@ def test_apply_cuts():
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
+        output_file = os.path.join(d, 'crab_cuts.hdf5')
 
         result = runner.invoke(
             main,
             [
                 'examples/quality_cuts.yaml',
-                'examples/gamma.hdf5',
-                os.path.join(d, 'gamma_cuts.hdf5'),
+                'examples/crab.hdf5',
+                output_file,
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+
+        assert result.exit_code == 0
+        with h5py.File(output_file, 'r') as f:
+            assert 'events' in f
+            assert 'runs' in f
+
+
+def test_train_regressor_cta():
+    from aict_tools.scripts.train_energy_regressor import main
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        runner = CliRunner()
+
+        result = runner.invoke(
+            main,
+            [
+                'examples/cta_config.yaml',
+                'examples/cta_gammas.h5',
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'test.pkl'),
             ]
         )
 

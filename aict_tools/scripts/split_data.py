@@ -1,18 +1,25 @@
+import os
+
 import click
 import numpy as np
 import logging
 
-from fact.io import read_data, write_data, read_h5py
 import warnings
 from math import ceil
-import h5py
 from tqdm import tqdm
+import h5py
 
-from ..io import copy_runs_group
+from ..io import (
+    read_data,
+    write_hdf,
+    read_data_chunked,
+    copy_runs_group,
+    set_sample_fraction,
+)
 from ..logging import setup_logging
 
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 
 def split_indices(idx, n_total, fractions):
@@ -57,17 +64,13 @@ def split_indices(idx, n_total, fractions):
     show_default=True, help='Which telescope created the data',
 )
 @click.option(
-    '--fmt', type=click.Choice(['csv', 'hdf5', 'hdf', 'h5']), default='hdf5',
-    show_default=True, help='The output format',
-)
-@click.option(
     '--chunksize',
     type=int,
     help='How many events to read at once, only supported for h5py and single telescopes'
 )
 @click.option('-s', '--seed', help='Random Seed', type=int, default=0, show_default=True)
 @click.option('-v', '--verbose', is_flag=True, help='Verbose log output',)
-def main(input_path, output_basename, fraction, name, inkey, key, telescope, fmt, chunksize, seed, verbose):
+def main(input_path, output_basename, fraction, name, inkey, key, telescope, chunksize, seed, verbose):
     '''
     Split dataset in INPUT_PATH into multiple parts for given fractions and names
     Outputs hdf5 or csv files to OUTPUT_BASENAME_NAME.FORMAT
@@ -87,17 +90,24 @@ def main(input_path, output_basename, fraction, name, inkey, key, telescope, fmt
 
     if telescope == 'fact':
         if chunksize is None:
-            split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fraction, name)
+            split_single_telescope_data(
+                input_path, output_basename, inkey, key, fraction, name
+            )
         else:
-            split_single_telescope_data_chunked(input_path, output_basename, inkey, key, fraction, name, chunksize)
+            split_single_telescope_data_chunked(
+                input_path, output_basename, inkey, key, fraction, name, chunksize,
+            )
     else:
-        split_multi_telescope_data(input_path, output_basename, fraction, name)
+        split_multi_telescope_data(input_path, output_basename, fraction, name, chunksize)
 
 
-def split_multi_telescope_data(input_path, output_basename, fraction, name):
+def split_multi_telescope_data(input_path, output_basename, fraction, name, chunksize=None):
+    if chunksize is None:
+        chunksize = 300000
+
+    _, file_extension = os.path.splitext(input_path)
 
     array_events = read_data(input_path, key='array_events')
-    telescope_events = read_data(input_path, key='telescope_events')
     runs = read_data(input_path, key='runs')
 
     # split by runs
@@ -113,16 +123,21 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name):
         selected_run_ids = np.random.choice(list(ids), size=n, replace=False)
         selected_runs = runs[runs.run_id.isin(selected_run_ids)]
         selected_array_events = array_events[array_events.run_id.isin(selected_run_ids)]
-        selected_telescope_events = telescope_events[telescope_events.run_id.isin(selected_run_ids)]
 
-        path = output_basename + '_' + part_name + '.hdf5'
+        path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} runs events to: {}'.format(n, path))
-        write_data(selected_runs, path, key='runs', use_h5py=True, mode='w')
-        write_data(selected_array_events, path, key='array_events', use_h5py=True, mode='a')
-        write_data(selected_telescope_events, path, key='telescope_events', use_h5py=True, mode='a')
+        write_hdf(selected_runs, path, table_name='runs', mode='w')
+        write_hdf(selected_array_events, path, table_name='array_events', mode='a',)
 
-        with h5py.File(path, 'r+') as f:
-            f.attrs['sample_fraction'] = n / n_total
+        df_iterator = read_data_chunked(
+            input_path, table_name='telescope_events', chunksize=chunksize
+        )
+        for telescope_events, _, _ in tqdm(df_iterator):
+            selected = telescope_events.run_id.isin(selected_run_ids)
+            selected_telescope_events = telescope_events[selected]
+            write_hdf(selected_telescope_events, path, table_name='telescope_events', mode='a')
+
+        set_sample_fraction(path, n / n_total)
 
         log.debug(f'selected runs {set(selected_run_ids)}')
         log.debug(f'Runs minus selected runs {ids - set(selected_run_ids)}')
@@ -153,7 +168,7 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
         first = chunk * chunksize
         last = (chunk + 1) * chunksize
 
-        data = read_h5py(input_path, key=inkey, first=first, last=last)
+        data = read_data(input_path, key=inkey, first=first, last=last)
         mode = 'w' if chunk == 0 else 'a'
 
         for part_name in name:
@@ -165,22 +180,22 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
             log.debug('Writing {} telescope-array events to: {}'.format(
                 len(selected_data), path
             ))
-            write_data(selected_data, path, key=key, use_h5py=True, mode=mode)
+            write_hdf(selected_data, path, table_name=key, mode=mode)
 
     for n, part_name in zip(num_ids, name):
         path = output_basename + '_' + part_name + '.hdf5'
-
-        with h5py.File(path, mode='r+') as f, h5py.File(input_path, mode='r') as infile:
-            f.attrs['sample_fraction'] = n / n_total
-            copy_runs_group(infile, f)
+        set_sample_fraction(path, n / n_total)
+        copy_runs_group(input_path, path)
 
 
-def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fraction, name):
+def split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name):
+    _, file_extension = os.path.splitext(input_path)
 
-    if fmt in ['hdf5', 'hdf', 'h5']:
-        data = read_data(input_path, key=inkey)
-    elif fmt == 'csv':
-        data = read_data(input_path)
+    data = read_data(input_path, key=inkey)
+    assert len(fraction) == len(name), 'You must give a name for each fraction'
+
+    if sum(fraction) != 1:
+        warnings.warn('Fractions do not sum up to 1')
 
     ids = data.index.values
     n_total = len(data)
@@ -193,19 +208,12 @@ def split_single_telescope_data(input_path, output_basename, fmt, inkey, key, fr
         selected_ids = np.random.choice(ids, size=n, replace=False)
         selected_data = data.loc[selected_ids]
 
-        if fmt in ['hdf5', 'hdf', 'h5']:
-            path = output_basename + '_' + part_name + '.hdf5'
-            log.info('Writing {} telescope-array events to: {}'.format(n, path))
-            write_data(selected_data, path, key=key, use_h5py=True, mode='w')
+        path = output_basename + '_' + part_name + file_extension
+        log.info('Writing {} telescope-array events to: {}'.format(n, path))
+        write_hdf(selected_data, path, table_name=key, mode='w')
 
-            with h5py.File(path, mode='r+') as f, h5py.File(input_path) as infile:
-                f.attrs['sample_fraction'] = n / n_total
-                copy_runs_group(infile, f)
-
-        elif fmt == 'csv':
-            filename = output_basename + '_' + part_name + '.csv'
-            log.info('Writing {} telescope-array events to: {}'.format(n, filename))
-            selected_data.to_csv(filename, index=False)
+        set_sample_fraction(path, n / n_total)
+        copy_runs_group(input_path, path)
 
         data = data.loc[list(set(data.index.values) - set(selected_data.index.values))]
         ids = data.index.values

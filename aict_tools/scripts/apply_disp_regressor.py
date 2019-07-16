@@ -4,7 +4,12 @@ from sklearn.externals import joblib
 import h5py
 from tqdm import tqdm
 
-from ..io import append_to_h5py, read_telescope_data_chunked
+from ..io import (
+    append_column_to_hdf5,
+    read_telescope_data_chunked,
+    get_column_names_in_file,
+    remove_column_from_file,
+)
 from ..apply import predict_disp
 from ..configuration import AICTConfig
 from ..logging import setup_logging
@@ -15,7 +20,6 @@ from ..logging import setup_logging
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('disp_model_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('sign_model_path', type=click.Path(exists=False, dir_okay=False))
-@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-n', '--n-jobs', type=int, help='Number of cores to use')
 @click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
@@ -23,7 +27,7 @@ from ..logging import setup_logging
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once',
 )
-def main(configuration_path, data_path, disp_model_path, sign_model_path, key, chunksize, n_jobs, yes, verbose):
+def main(configuration_path, data_path, disp_model_path, sign_model_path, chunksize, n_jobs, yes, verbose):
     '''
     Apply given model to data. Two columns are added to the file, energy_prediction
     and energy_prediction_std
@@ -54,18 +58,18 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         ])
 
     n_del_cols = 0
-    with h5py.File(data_path, 'r+') as f:
-        for column in columns_to_delete:
-            if column in f[key].keys():
-                if not yes:
-                    click.confirm(
-                        'Dataset "{}" exists in file, overwrite?'.format(column),
-                        abort=True,
-                    )
-                    yes = True
-                del f[key][column]
-                log.warn("Deleted {} from the feature set.".format(column))
-                n_del_cols += 1
+
+    for column in columns_to_delete:
+        if column in get_column_names_in_file(data_path, config.telescope_events_key):
+            if not yes:
+                click.confirm(
+                    'Dataset "{}" exists in file, overwrite?'.format(column),
+                    abort=True,
+                )
+                yes = True
+            remove_column_from_file(data_path, config.telescope_events_key, column)
+            log.warn("Deleted {} from the feature set.".format(column))
+            n_del_cols += 1
 
     if n_del_cols > 0:
         log.warn("Source dependent features need to be calculated from the predicted source possition. "
@@ -86,7 +90,7 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
     )
 
     log.info('Predicting on data...')
-    for df_data, start, end in tqdm(df_generator):
+    for df_data, start, stop in tqdm(df_generator):
 
         disp = predict_disp(
             df_data[model_config.features], disp_model, sign_model
@@ -95,11 +99,12 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, key, c
         source_x = df_data.cog_x + disp * np.cos(df_data.delta)
         source_y = df_data.cog_y + disp * np.sin(df_data.delta)
 
-        with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(f, source_x, key, 'source_x_prediction')
-            append_to_h5py(f, source_y, key, 'source_y_prediction')
-            append_to_h5py(f, disp, key, 'disp_prediction')
+        key = config.telescope_events_key
+        append_column_to_hdf5(data_path, source_x, key, 'source_x_prediction')
+        append_column_to_hdf5(data_path, source_y, key, 'source_y_prediction')
+        append_column_to_hdf5(data_path, disp, key, 'disp_prediction')
 
 
 if __name__ == '__main__':
+    # pylint: disable=no-value-for-parameter
     main()

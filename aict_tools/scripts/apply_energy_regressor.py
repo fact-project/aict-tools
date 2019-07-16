@@ -1,12 +1,11 @@
 import click
 from sklearn.externals import joblib
-import h5py
 from tqdm import tqdm
 
 import pandas as pd
 
 from ..apply import predict_energy
-from ..io import append_to_h5py, read_telescope_data_chunked, drop_prediction_column
+from ..io import append_column_to_hdf5, read_telescope_data_chunked, drop_prediction_column
 from ..configuration import AICTConfig
 from ..logging import setup_logging
 
@@ -61,7 +60,8 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
     if config.has_multiple_telescopes:
         chunked_frames = []
 
-    for df_data, start, end in tqdm(df_generator):
+    table = config.telescope_events_key
+    for df_data, start, stop in tqdm(df_generator):
 
         energy_prediction = predict_energy(
             df_data[model_config.features],
@@ -73,27 +73,25 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
             d = df_data[['run_id', 'array_event_id']].copy()
             d[prediction_column_name] = energy_prediction
             chunked_frames.append(d)
-
-        with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(
-                f, energy_prediction, config.telescope_events_key, prediction_column_name
-            )
+        append_column_to_hdf5(data_path, energy_prediction, table, prediction_column_name)
 
     if config.has_multiple_telescopes:
+        array_table = config.array_events_key
         d = pd.concat(chunked_frames).groupby(
             ['run_id', 'array_event_id'], sort=False
         ).agg(['mean', 'std'])
 
         mean = d[prediction_column_name]['mean'].values
         std = d[prediction_column_name]['std'].values
-        with h5py.File(data_path, 'r+') as f:
-            append_to_h5py(
-                f, mean, config.array_events_key, prediction_column_name + '_mean'
-            )
-            append_to_h5py(
-                f, std, config.array_events_key, prediction_column_name + '_std'
-            )
+
+        append_column_to_hdf5(
+            data_path, mean, array_table, prediction_column_name + '_mean'
+        )
+        append_column_to_hdf5(
+            data_path, std, array_table, prediction_column_name + '_std'
+        )
 
 
 if __name__ == '__main__':
+    # pylint: disable=no-value-for-parameter
     main()

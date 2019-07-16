@@ -1,11 +1,20 @@
+import numpy as np
 import click
 from ruamel.yaml import YAML
+from tqdm import tqdm
+import pandas as pd
+from shutil import copyfile
 import h5py
 
-from fact.io import h5py_get_n_rows
-from ..apply import create_mask_h5py, apply_cuts_h5py_chunked
+from ..io import (
+    get_number_of_rows_in_table,
+    read_data_chunked,
+    read_data,
+    write_hdf,
+    copy_runs_group,
+)
+from ..apply import apply_cuts_h5py_chunked
 from ..logging import setup_logging
-
 
 yaml = YAML(typ='safe')
 
@@ -15,9 +24,8 @@ yaml = YAML(typ='safe')
 @click.argument('input_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('output_path', type=click.Path(exists=False, dir_okay=False))
 @click.option('-N', '--chunksize', type=int, help='Chunksize to use')
-@click.option('-k', '--key', help='Name of the hdf5 group', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, input_path, output_path, chunksize, key, verbose):
+def main(configuration_path, input_path, output_path, chunksize, verbose):
     '''
     Apply cuts given in CONFIGURATION_PATH to the data in INPUT_PATH and
     write the result to OUTPUT_PATH.
@@ -35,33 +43,58 @@ def main(configuration_path, input_path, output_path, chunksize, key, verbose):
     with open(configuration_path) as f:
         config = yaml.load(f)
 
-    selection = config.get('selection', {})
+    multiple_telescopes = config.get('multiple_telescopes', False)
+    selection = config.get('selection', None)
 
-    if chunksize is None:
-        n_events = h5py_get_n_rows(input_path, key=key, mode='r')
-
-        mask = create_mask_h5py(input_path, selection, key=key)
-        log.info('Before cuts: {}, after cuts: {}'.format(n_events, mask.sum()))
-
-        with h5py.File(input_path, mode='r') as infile, h5py.File(output_path, 'w') as outfile:
-            group = outfile.create_group(key)
-
-            for name, dataset in infile[key].items():
-
-                if dataset.ndim == 1:
-                    group.create_dataset(name, data=dataset[mask], maxshape=(None, ))
-                elif dataset.ndim == 2:
-                    group.create_dataset(
-                        name, data=dataset[mask, :], maxshape=(None, 2)
-                    )
-                else:
-                    log.warning('Skipping not 1d or 2d column {}'.format(name))
+    if multiple_telescopes:
+        key = 'telescope_events'
     else:
-        apply_cuts_h5py_chunked(
-            input_path, output_path, selection, chunksize=chunksize, key=key
-        )
+        key = 'events'
 
-    with h5py.File(input_path, mode='r') as infile, h5py.File(output_path, 'r+') as outfile:
-        if 'runs' in infile.keys():
-            log.info('Copying runs group to outputfile')
-            infile.copy('/runs', outfile['/'])
+    if not selection:
+        log.info('No entries for selection cuts. Just copying files.')
+        copyfile(input_path, output_path)
+        log.info('Copying finished')
+        return
+
+    n_events = get_number_of_rows_in_table(input_path, key=key)
+    if chunksize is None:
+        chunksize = n_events + 1
+
+    apply_cuts_h5py_chunked(
+        input_path, output_path, selection, chunksize=chunksize, key=key
+    )
+    if multiple_telescopes:
+        log.info('Copying selected array events.')
+        # read incdex of remaining telescope events.
+        df_index = read_data(
+            output_path,
+            key='telescope_events',
+            columns=['array_event_id', 'run_id', 'telescope_id']
+        )
+        df_index.set_index(['run_id', 'array_event_id'], inplace=True)
+        df_index = df_index[~df_index.index.duplicated()]
+
+        df_iterator = read_data_chunked(input_path, 'array_events', chunksize=500000)
+        for array_events, _, _ in tqdm(df_iterator):
+            array_events.set_index(['run_id', 'array_event_id'], inplace=True)
+            array_events['index_in_file'] = np.arange(0, len(array_events))
+
+            array_events = pd.merge(
+                array_events,
+                df_index,
+                left_index=True,
+                right_index=True,
+                validate='one_to_one',
+            )
+            array_events.sort_values('index_in_file', inplace=True)
+            array_events.drop('index_in_file', axis='columns', inplace=True,)
+            if len(array_events > 0):
+                write_hdf(array_events, output_path, table_name='array_events', mode='a')
+
+    copy_runs_group(input_path, output_path)
+
+    n_events_after = get_number_of_rows_in_table(output_path, key=key)
+    remaining = n_events_after / n_events
+    log.info(f'Events in file before cuts {n_events}')
+    log.info(f'Events in new file after cuts {n_events_after}. That is {remaining:.2%}')
