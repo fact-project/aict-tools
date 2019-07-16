@@ -1,4 +1,4 @@
-# aict-tools [![Build Status](https://travis-ci.org/fact-project/aict-tools.svg?branch=master)](https://travis-ci.org/fact-project/aict-tools)
+# aict-tools [![Build Status](https://travis-ci.org/fact-project/aict-tools.svg?branch=master)](https://travis-ci.org/fact-project/aict-tools) [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3338081.svg)](https://doi.org/10.5281/zenodo.3338081) [![PyPI version](https://badge.fury.io/py/aict-tools.svg)](https://badge.fury.io/py/aict-tools)
 
 
 Executables to perform machine learning tasks on FACT and CTA eventlist data.
