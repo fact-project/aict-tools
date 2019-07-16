@@ -460,8 +460,15 @@ def append_column_to_hdf5(path, array, table_name, new_column_name):
             group[new_column_name][n_existing:n_existing + n_new] = array
 
 
-def copy_runs_group(infile, outfile):
-    for key in ('runs', 'corsika_runs'):
-        if key in infile:
-            log.info('Copying group "{}"'.format(key))
-            infile.copy(key, outfile)
+def set_sample_fraction(path, fraction):
+    with h5py.File(path, mode='r+') as f:
+        before = f.attrs.get('sample_fraction', 1.0)
+        f.attrs['sample_fraction'] = before * fraction
+
+
+def copy_runs_group(inpath, outpath):
+    with h5py.File(inpath, mode='r+') as infile, h5py.File(outpath) as outfile:
+        for key in ('runs', 'corsika_runs'):
+            if key in infile:
+                log.info('Copying group "{}"'.format(key))
+                infile.copy(key, outfile)

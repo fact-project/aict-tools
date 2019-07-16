@@ -4,6 +4,7 @@ from ruamel.yaml import YAML
 from tqdm import tqdm
 import pandas as pd
 from shutil import copyfile
+import h5py
 
 from ..io import (
     get_number_of_rows_in_table,
@@ -94,6 +95,6 @@ def main(configuration_path, input_path, output_path, chunksize, verbose):
     copy_runs_group(input_path, output_path)
 
     n_events_after = get_number_of_rows_in_table(output_path, key=key)
-    percentage = 100 * n_events_after / n_events
+    remaining = n_events_after / n_events
     log.info(f'Events in file before cuts {n_events}')
-    log.info(f'Events in new file after cuts {n_events_after}. That is {percentage:.2f} %')
+    log.info(f'Events in new file after cuts {n_events_after}. That is {remaining:.2%}')

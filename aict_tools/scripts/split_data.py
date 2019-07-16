@@ -9,7 +9,13 @@ from math import ceil
 from tqdm import tqdm
 import h5py
 
-from ..io import read_data, write_hdf, read_data_chunked, copy_runs_group
+from ..io import (
+    read_data,
+    write_hdf,
+    read_data_chunked,
+    copy_runs_group,
+    set_sample_fraction,
+)
 from ..logging import setup_logging
 
 
@@ -129,10 +135,9 @@ def split_multi_telescope_data(input_path, output_basename, fraction, name, chun
         for telescope_events, _, _ in tqdm(df_iterator):
             selected = telescope_events.run_id.isin(selected_run_ids)
             selected_telescope_events = telescope_events[selected]
-            write_hdf(selected_telescope_events, path, table_name='telescope_events', mode='a',)
+            write_hdf(selected_telescope_events, path, table_name='telescope_events', mode='a')
 
-        with h5py.File(path, 'r+') as f:
-            f.attrs['sample_fraction'] = n / n_total
+        set_sample_fraction(path, n / n_total)
 
         log.debug(f'selected runs {set(selected_run_ids)}')
         log.debug(f'Runs minus selected runs {ids - set(selected_run_ids)}')
@@ -179,10 +184,8 @@ def split_single_telescope_data_chunked(input_path, output_basename, inkey, key,
 
     for n, part_name in zip(num_ids, name):
         path = output_basename + '_' + part_name + '.hdf5'
-
-        with h5py.File(path, mode='r+') as f, h5py.File(input_path, mode='r') as infile:
-            f.attrs['sample_fraction'] = n / n_total
-            copy_runs_group(infile, f)
+        set_sample_fraction(path, n / n_total)
+        copy_runs_group(input_path, path)
 
 
 def split_single_telescope_data(input_path, output_basename, inkey, key, fraction, name):
@@ -208,9 +211,9 @@ def split_single_telescope_data(input_path, output_basename, inkey, key, fractio
         path = output_basename + '_' + part_name + file_extension
         log.info('Writing {} telescope-array events to: {}'.format(n, path))
         write_hdf(selected_data, path, table_name=key, mode='w')
-        with h5py.File(path, mode='r+') as f, h5py.File(input_path) as infile:
-            f.attrs['sample_fraction'] = n / n_total
-            copy_runs_group(infile, f)
+
+        set_sample_fraction(path, n / n_total)
+        copy_runs_group(input_path, path)
 
         data = data.loc[list(set(data.index.values) - set(selected_data.index.values))]
         ids = data.index.values

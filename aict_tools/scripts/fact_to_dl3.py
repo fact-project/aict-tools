@@ -1,7 +1,6 @@
 import click
 import numpy as np
 from sklearn.externals import joblib
-import logging
 from tqdm import tqdm
 import pandas as pd
 from functools import partial
@@ -22,7 +21,7 @@ from fact.instrument import camera_distance_mm_to_deg
 
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
-from ..io import read_telescope_data_chunked, copy_runs_group
+from ..io import read_telescope_data_chunked, copy_runs_group, set_sample_fraction
 from ..configuration import AICTConfig
 from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
@@ -370,12 +369,11 @@ def main(
         else:
             to_h5py(df[dl3_columns_sim], output, key='events', mode='a')
 
-    with h5py.File(data_path, 'r') as f, h5py.File(output, 'r+') as output:
-        sample_fraction = f.attrs.get('sample_fraction')
-        if sample_fraction is not None:
-            output.attrs['sample_fraction'] = sample_fraction
+    with h5py.File(data_path, 'r') as f:
+        sample_fraction = f.attrs.get('sample_fraction', 1.0)
 
-        copy_runs_group(f, output)
+    set_sample_fraction(output, sample_fraction)
+    copy_runs_group(data_path, output)
 
 
 if __name__ == '__main__':
