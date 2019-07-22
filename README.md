@@ -13,7 +13,16 @@ All you ever wanted to do  with your IACT data in one package. This project is m
 # Citing
 
 If you use the `aict-tools`, please cite us like this using the doi provided by
-zenodo.
+zenodo, e.g. like this if using bibtex files:
+```bibtex
+@misc{aict-tools,
+      author = {Nöthe, Maximilian and Brügge, Kai Arno and Buß, Jens Björn},
+      title = {aict-tools},
+      subtitle = {Reproducible Artificial Intelligence for Cherenkov Telescopes},
+      doi = {10.5281/zenodo.3338081},
+      url = {https://github.com/fact-project/aict-tools},
+}
+```
 
 
 # Installation
