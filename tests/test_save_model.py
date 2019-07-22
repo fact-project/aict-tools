@@ -3,7 +3,7 @@ import tempfile
 from pytest import importorskip
 import numpy as np
 import os
-from sklearn.externals import joblib
+import joblib
 import pandas as pd
 
 

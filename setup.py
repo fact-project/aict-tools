@@ -41,7 +41,7 @@ setup(
         'python-dateutil',  # in anaconda
         'pytz',             # in anaconda
         'ruamel.yaml>=0.15.0',      # in anaconda
-        'scikit-learn~=0.20.0',  # See PEP 440, compatible releases
+        'scikit-learn~=0.21.0',  # See PEP 440, compatible releases
         'tqdm',
     ],
     extras_require=extras_require,

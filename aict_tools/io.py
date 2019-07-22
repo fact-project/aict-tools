@@ -1,5 +1,5 @@
 import os
-from sklearn.externals import joblib
+import joblib
 import logging
 import numpy as np
 import pandas as pd
