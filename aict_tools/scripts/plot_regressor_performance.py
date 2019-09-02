@@ -51,13 +51,14 @@ def main(configuration_path, performance_path, model_path, output, key):
     ax.set_title('Bias and Resolution')
     plot_bias_resolution(df, bins=15, ax=ax)
 
-    # Plot feature importances
-    figures.append(plt.figure())
-    ax = figures[-1].add_subplot(1, 1, 1)
+    if hasattr(model, 'feature_importances_'):
+        # Plot feature importances
+        figures.append(plt.figure())
+        ax = figures[-1].add_subplot(1, 1, 1)
 
-    features = model_config.features
+        features = model_config.features
 
-    plot_feature_importances(model, features, ax=ax)
+        plot_feature_importances(model, features, ax=ax)
 
     if output is None:
         plt.show()
