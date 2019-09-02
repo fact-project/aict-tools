@@ -1,6 +1,6 @@
 import click
 import numpy as np
-from sklearn.externals import joblib
+import joblib
 from tqdm import tqdm
 import pandas as pd
 from functools import partial

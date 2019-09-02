@@ -1,5 +1,5 @@
 import click
-from sklearn.externals import joblib
+import joblib
 from tqdm import tqdm
 
 import pandas as pd

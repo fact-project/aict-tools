@@ -2,7 +2,7 @@ import click
 import logging
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_pdf import PdfPages
-from sklearn.externals import joblib
+import joblib
 from ..configuration import AICTConfig
 import fact.io
 

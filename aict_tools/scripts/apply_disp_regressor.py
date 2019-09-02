@@ -1,6 +1,6 @@
 import click
 import numpy as np
-from sklearn.externals import joblib
+import joblib
 import h5py
 from tqdm import tqdm
 
