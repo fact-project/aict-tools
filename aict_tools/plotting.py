@@ -29,6 +29,7 @@ def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None):
         range=[limits, limits],
         norm=LogNorm() if log_z is True else None,
     )
+    img.set_rasterized(True)
     ax.set_aspect(1)
     ax.figure.colorbar(img, ax=ax)
 
@@ -130,7 +131,8 @@ def plot_probabilities(performace_df, model, ax=None, classnames=('Proton', 'Gam
     if isinstance(model, CalibratedClassifierCV):
         model = model.base_estimator
 
-    bin_edges = np.linspace(0, 1, model.n_estimators + 2)
+    n_bins = (model.n_estimators + 1) if hasattr(model, 'n_estimators') else 100
+    bin_edges = np.linspace(0, 1, n_bins + 1)
 
     for label, df in performace_df.groupby('label'):
         ax.hist(
@@ -150,7 +152,8 @@ def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
     if isinstance(model, CalibratedClassifierCV):
         model = model.base_estimator
 
-    thresholds = np.linspace(0, 1, model.n_estimators + 2)
+    n_bins = (model.n_estimators + 1) if hasattr(model, 'n_estimators') else 100
+    thresholds = np.linspace(0, 1, n_bins + 1)
     precision = []
     recall = []
     f_beta = []
@@ -188,8 +191,10 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
         model = model.base_estimator
 
     if hasattr(model, 'estimators_'):
-        feature_importances = [est.feature_importances_ for est in model.estimators_]
-        feature_importances = np.array(feature_importances)
+        feature_importances = np.array([
+            est.feature_importances_
+            for est in np.array(model.estimators_).ravel()
+        ])
 
         idx = np.argsort(np.median(feature_importances, axis=0))[-max_features:]
 
@@ -203,9 +208,6 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
 
         for imp, y in zip(feature_importances.T[idx], y_jittered.T):
             ax.scatter(imp, y, color='C1', alpha=0.5, lw=0, s=5)
-
-        print(np.cov(feature_importances.T))
-
     else:
         feature_importances = model.feature_importances_
         idx = np.argsort(feature_importances)[-max_features:]

@@ -56,12 +56,13 @@ def main(configuration_path, performance_path, model_path, output, key):
     plot_precision_recall(df, model, ax=ax)
 
     # Plot feature importances
-    figures.append(plt.figure())
-    ax = figures[-1].add_subplot(1, 1, 1)
+    if hasattr(model, 'feature_importances_'):
+        figures.append(plt.figure())
+        ax = figures[-1].add_subplot(1, 1, 1)
 
-    features = model_config.features
+        features = model_config.features
 
-    plot_feature_importances(model, features, ax=ax)
+        plot_feature_importances(model, features, ax=ax)
 
     if output is None:
         plt.show()

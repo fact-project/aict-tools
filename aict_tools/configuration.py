@@ -1,8 +1,18 @@
 from ruamel.yaml import YAML
-from sklearn import ensemble
 from collections import namedtuple
 from .features import find_used_source_features
 import numpy as np
+from sklearn.base import is_classifier, is_regressor
+import logging
+
+from sklearn import ensemble
+from sklearn import linear_model
+from sklearn import neighbors
+from sklearn import svm
+
+
+log = logging.getLogger(__name__)
+
 
 FeatureGenerationConfig = namedtuple(
     'FeatureGenerationConfig',
@@ -10,6 +20,42 @@ FeatureGenerationConfig = namedtuple(
 )
 
 yaml = YAML(typ='safe')
+
+
+def print_supported_classifiers():
+    logging.info('Supported Classifiers:')
+    for module in (ensemble, linear_model, neighbors, svm):
+        for name in dir(module):
+            cls = getattr(module, name)
+            if is_classifier(cls):
+                logging.info(module.__name__.replace('sklearn.', '', 1) + '.' + cls.__name__)
+
+
+def print_supported_regressors():
+    logging.info('Supported Regressors:')
+    for module in (ensemble, linear_model, neighbors, svm):
+        for name in dir(module):
+            cls = getattr(module, name)
+            if is_regressor(cls):
+                logging.info(module.__name__.replace('sklearn.', '', 1) + '.' + cls.__name__)
+
+
+def load_regressor(config):
+    try:
+        return eval(config)
+    except (NameError, AttributeError):
+        log.error('Unsupported Regressor: "' + config + '"')
+        print_supported_regressors()
+        raise
+
+
+def load_classifier(config):
+    try:
+        return eval(config)
+    except (NameError, AttributeError):
+        log.error('Unsupported Regressor: "' + config + '"')
+        print_supported_classifiers()
+        raise
 
 
 class AICTConfig:
@@ -88,8 +134,9 @@ class DispConfig:
 
     def __init__(self, config):
         model_config = config['disp']
-        self.disp_regressor = eval(model_config['disp_regressor'])
-        self.sign_classifier = eval(model_config['sign_classifier'])
+
+        self.disp_regressor = load_regressor(model_config['disp_regressor'])
+        self.sign_classifier = load_classifier(model_config['sign_classifier'])
 
         self.n_signal = model_config.get('n_signal', None)
         k = 'n_cross_validations'
@@ -152,7 +199,7 @@ class EnergyConfig:
 
     def __init__(self, config):
         model_config = config['energy']
-        self.model = eval(model_config['regressor'])
+        self.model = load_regressor(model_config['regressor'])
         self.features = model_config['features'].copy()
 
         self.n_signal = model_config.get('n_signal', None)
@@ -198,7 +245,7 @@ class SeparatorConfig:
 
     def __init__(self, config):
         model_config = config['separator']
-        self.model = eval(model_config['classifier'])
+        self.model = load_classifier(model_config['classifier'])
         self.features = model_config['features'].copy()
 
         self.n_signal = model_config.get('n_signal', None)
