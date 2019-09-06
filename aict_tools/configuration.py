@@ -11,6 +11,14 @@ from sklearn import neighbors
 from sklearn import svm
 
 
+sklearn_modules = {
+    'ensemble': ensemble,
+    'linear_model': linear_model,
+    'neighbors': neighbors,
+    'svm': svm,
+}
+
+
 log = logging.getLogger(__name__)
 
 
@@ -24,25 +32,25 @@ yaml = YAML(typ='safe')
 
 def print_supported_classifiers():
     logging.info('Supported Classifiers:')
-    for module in (ensemble, linear_model, neighbors, svm):
-        for name in dir(module):
-            cls = getattr(module, name)
+    for name, module in sklearn_modules.items():
+        for cls_name in dir(module):
+            cls = getattr(module, cls_name)
             if is_classifier(cls):
-                logging.info(module.__name__.replace('sklearn.', '', 1) + '.' + cls.__name__)
+                logging.info(name + '.' + cls.__name__)
 
 
 def print_supported_regressors():
     logging.info('Supported Regressors:')
-    for module in (ensemble, linear_model, neighbors, svm):
-        for name in dir(module):
-            cls = getattr(module, name)
+    for name, module in sklearn_modules.items():
+        for cls_name in dir(module):
+            cls = getattr(module, cls_name)
             if is_regressor(cls):
-                logging.info(module.__name__.replace('sklearn.', '', 1) + '.' + cls.__name__)
+                logging.info(name + '.' + cls.__name__)
 
 
 def load_regressor(config):
     try:
-        return eval(config)
+        return eval(config, {}, sklearn_modules)
     except (NameError, AttributeError):
         log.error('Unsupported Regressor: "' + config + '"')
         print_supported_regressors()
@@ -51,7 +59,7 @@ def load_regressor(config):
 
 def load_classifier(config):
     try:
-        return eval(config)
+        return eval(config, {}, sklearn_modules)
     except (NameError, AttributeError):
         log.error('Unsupported Regressor: "' + config + '"')
         print_supported_classifiers()

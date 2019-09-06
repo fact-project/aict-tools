@@ -202,12 +202,15 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
             feature_importances[:, idx],
             vert=False,
             sym='',  # no outliers
+            medianprops={'color': 'C0'}
         )
 
         y_jittered = np.random.normal(ypos, 0.1, size=feature_importances[:, idx].shape)
 
         for imp, y in zip(feature_importances.T[idx], y_jittered.T):
-            ax.scatter(imp, y, color='C1', alpha=0.5, lw=0, s=5)
+            res = ax.scatter(imp, y, color='C1', alpha=0.5, lw=0, s=5)
+            res.set_rasterized(True)
+
     else:
         feature_importances = model.feature_importances_
         idx = np.argsort(feature_importances)[-max_features:]
