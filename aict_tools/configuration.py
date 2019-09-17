@@ -9,6 +9,8 @@ from sklearn import ensemble
 from sklearn import linear_model
 from sklearn import neighbors
 from sklearn import svm
+from sklearn import tree
+from sklearn import naive_bayes
 
 
 sklearn_modules = {
@@ -16,6 +18,8 @@ sklearn_modules = {
     'linear_model': linear_model,
     'neighbors': neighbors,
     'svm': svm,
+    'tree': tree,
+    'naive_bayes': naive_bayes,
 }
 
 
