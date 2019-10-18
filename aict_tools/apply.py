@@ -79,27 +79,23 @@ def predict_separator(df, model):
     return score
 
 
-def create_mask_h5py(input_path, selection_config, key='events', start=None, end=None, mode="r"):
+def create_mask_h5py(infile, selection_config, n_events, key='events', start=None, end=None):
+    start = start or 0
+    end = min(n_events, end) if end else n_events
 
-    with h5py.File(input_path) as infile:
+    n_selected = end - start
+    mask = np.ones(n_selected, dtype=bool)
 
-        n_events = get_number_of_rows_in_table(input_path, key=key)
-        start = start or 0
-        end = min(n_events, end) if end else n_events
+    for name, (operator, value) in selection_config.items():
 
-        n_selected = end - start
-        mask = np.ones(n_selected, dtype=bool)
-
-        for name, (operator, value) in selection_config.items():
-
-            before = mask.sum()
-            mask = np.logical_and(
-                mask, OPERATORS[operator](infile[key][name][start:end], value)
-            )
-            after = mask.sum()
-            log.debug('Cut "{} {} {}" removed {} events'.format(
-                name, operator, value, before - after
-            ))
+        before = mask.sum()
+        mask = np.logical_and(
+            mask, OPERATORS[operator](infile[key][name][start:end], value)
+        )
+        after = mask.sum()
+        log.debug('Cut "{} {} {}" removed {} events'.format(
+            name, operator, value, before - after
+        ))
 
     return mask
 
@@ -129,7 +125,7 @@ def apply_cuts_h5py_chunked(
             end = min(n_events, (chunk + 1) * chunksize)
 
             mask = create_mask_h5py(
-                input_path, selection_config, key=key, start=start, end=end
+                infile, selection_config, n_events, key=key, start=start, end=end
             )
 
             for name, dataset in infile[key].items():
