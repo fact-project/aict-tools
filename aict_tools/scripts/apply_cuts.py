@@ -4,7 +4,6 @@ from ruamel.yaml import YAML
 from tqdm import tqdm
 import pandas as pd
 from shutil import copyfile
-import h5py
 
 from ..io import (
     get_number_of_rows_in_table,
