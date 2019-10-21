@@ -6,6 +6,22 @@ from traceback import print_exception
 import h5py
 
 
+class DateNotModified:
+    def __init__(self, files):
+        if isinstance(files, str):
+            self.files = [files]
+        else:
+            self.files = files
+
+    def __enter__(self):
+        self.times = {f: os.path.getmtime(f) for f in self.files}
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        for f, t in self.times.items():
+            assert t == os.path.getmtime(f), 'timestamp of "{}" was modified'.format(f)
+
+
 def test_apply_cuts():
     from aict_tools.scripts.apply_cuts import main
 
@@ -14,27 +30,24 @@ def test_apply_cuts():
         output_file = os.path.join(d, 'crab_cuts.hdf5')
         input_file = 'examples/crab.hdf5'
 
-        mtime = os.path.getmtime(input_file)
+        with DateNotModified(input_file):
+            result = runner.invoke(
+                main,
+                [
+                    'examples/quality_cuts.yaml',
+                    input_file,
+                    output_file,
+                ]
+            )
 
-        result = runner.invoke(
-            main,
-            [
-                'examples/quality_cuts.yaml',
-                input_file,
-                output_file,
-            ]
-        )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
 
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-
-        assert result.exit_code == 0
-        with h5py.File(output_file, 'r') as f:
-            assert 'events' in f
-            assert 'runs' in f
-
-        assert mtime == os.path.getmtime(input_file)
+            assert result.exit_code == 0
+            with h5py.File(output_file, 'r') as f:
+                assert 'events' in f
+                assert 'runs' in f
 
 
 def test_train_regressor_cta():
@@ -43,23 +56,21 @@ def test_train_regressor_cta():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
-        mtime = os.path.getmtime('examples/cta_gammas.h5')
-        result = runner.invoke(
-            main,
-            [
-                'examples/cta_config.yaml',
-                'examples/cta_gammas.h5',
-                os.path.join(d, 'test.hdf5'),
-                os.path.join(d, 'test.pkl'),
-            ]
-        )
+        with DateNotModified('examples/cta_gammas.h5'):
+            result = runner.invoke(
+                main,
+                [
+                    'examples/cta_config.yaml',
+                    'examples/cta_gammas.h5',
+                    os.path.join(d, 'test.hdf5'),
+                    os.path.join(d, 'test.pkl'),
+                ]
+            )
 
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
-
-        assert mtime == os.path.getmtime('examples/cta_gammas.h5')
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
 
 def test_train_regressor():
@@ -68,22 +79,21 @@ def test_train_regressor():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
-        mtime = os.path.getmtime('examples/gamma.hdf5')
-        result = runner.invoke(
-            main,
-            [
-                'examples/config_energy.yaml',
-                'examples/gamma.hdf5',
-                os.path.join(d, 'test.hdf5'),
-                os.path.join(d, 'test.pkl'),
-            ]
-        )
+        with DateNotModified('examples/gamma.hdf5'):
+            result = runner.invoke(
+                main,
+                [
+                    'examples/config_energy.yaml',
+                    'examples/gamma.hdf5',
+                    os.path.join(d, 'test.hdf5'),
+                    os.path.join(d, 'test.pkl'),
+                ]
+            )
 
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
-        assert mtime == os.path.getmtime('examples/gamma.hdf5')
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
 
 def test_apply_regression():
@@ -132,26 +142,22 @@ def test_train_separator():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
-        mtime_g = os.path.getmtime('examples/gamma.hdf5')
-        mtime_p = os.path.getmtime('examples/proton.hdf5')
+        with DateNotModified(['examples/gamma.hdf5', 'examples/proton.hdf5']):
+            result = runner.invoke(
+                main,
+                [
+                    'examples/config_separator.yaml',
+                    'examples/gamma.hdf5',
+                    'examples/proton.hdf5',
+                    os.path.join(d, 'test.hdf5'),
+                    os.path.join(d, 'test.pkl'),
+                ]
+            )
 
-        result = runner.invoke(
-            main,
-            [
-                'examples/config_separator.yaml',
-                'examples/gamma.hdf5',
-                'examples/proton.hdf5',
-                os.path.join(d, 'test.hdf5'),
-                os.path.join(d, 'test.pkl'),
-            ]
-        )
-
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
-        assert mtime_g == os.path.getmtime('examples/gamma.hdf5')
-        assert mtime_p == os.path.getmtime('examples/proton.hdf5')
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
 
 def test_apply_separator():
@@ -198,23 +204,22 @@ def test_train_disp():
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
-        mtime = os.path.getmtime('examples/gamma_diffuse.hdf5')
-        runner = CliRunner()
-        result = runner.invoke(
-            train,
-            [
-                'examples/config_source.yaml',
-                'examples/gamma_diffuse.hdf5',
-                os.path.join(d, 'test.hdf5'),
-                os.path.join(d, 'disp.pkl'),
-                os.path.join(d, 'sign.pkl'),
-            ]
-        )
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
-        assert mtime == os.path.getmtime('examples/gamma_diffuse.hdf5')
+        with DateNotModified('examples/gamma_diffuse.hdf5'):
+            runner = CliRunner()
+            result = runner.invoke(
+                train,
+                [
+                    'examples/config_source.yaml',
+                    'examples/gamma_diffuse.hdf5',
+                    os.path.join(d, 'test.hdf5'),
+                    os.path.join(d, 'disp.pkl'),
+                    os.path.join(d, 'sign.pkl'),
+                ]
+            )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
 
 def test_apply_disp():
@@ -268,95 +273,98 @@ def test_to_dl3():
 
         runner = CliRunner()
 
-        mtime = os.path.getmtime('examples/crab.hdf5')
+        with DateNotModified([
+            'examples/crab.hdf5',
+            'examples/gamma_diffuse.hdf5',
+            'examples/gamma.hdf5',
+            'examples/proton.hdf5',
+        ]):
 
-        result = runner.invoke(
-            train_disp,
-            [
-                'examples/full_config.yaml',
-                'examples/gamma_diffuse.hdf5',
-                os.path.join(d, 'disp_performance.hdf5'),
-                os.path.join(d, 'disp.pkl'),
-                os.path.join(d, 'sign.pkl'),
-            ]
-        )
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
+            result = runner.invoke(
+                train_disp,
+                [
+                    'examples/full_config.yaml',
+                    'examples/gamma_diffuse.hdf5',
+                    os.path.join(d, 'disp_performance.hdf5'),
+                    os.path.join(d, 'disp.pkl'),
+                    os.path.join(d, 'sign.pkl'),
+                ]
+            )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
-        result = runner.invoke(
-            train_energy,
-            [
-                'examples/full_config.yaml',
-                'examples/gamma.hdf5',
-                os.path.join(d, 'regressor_performance.hdf5'),
-                os.path.join(d, 'regressor.pkl'),
-            ]
-        )
+            result = runner.invoke(
+                train_energy,
+                [
+                    'examples/full_config.yaml',
+                    'examples/gamma.hdf5',
+                    os.path.join(d, 'regressor_performance.hdf5'),
+                    os.path.join(d, 'regressor.pkl'),
+                ]
+            )
 
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
-        result = runner.invoke(
-            train_separator,
-            [
-                'examples/full_config.yaml',
-                'examples/gamma.hdf5',
-                'examples/proton.hdf5',
-                os.path.join(d, 'separator_performance.hdf5'),
-                os.path.join(d, 'separator.pkl'),
-            ]
-        )
+            result = runner.invoke(
+                train_separator,
+                [
+                    'examples/full_config.yaml',
+                    'examples/gamma.hdf5',
+                    'examples/proton.hdf5',
+                    os.path.join(d, 'separator_performance.hdf5'),
+                    os.path.join(d, 'separator.pkl'),
+                ]
+            )
 
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
-        result = runner.invoke(
-            to_dl3,
-            [
-                'examples/full_config.yaml',
-                'examples/crab.hdf5',
-                os.path.join(d, 'separator.pkl'),
-                os.path.join(d, 'regressor.pkl'),
-                os.path.join(d, 'disp.pkl'),
-                os.path.join(d, 'sign.pkl'),
-                os.path.join(d, 'crab_dl3.hdf5'),
-            ]
-        )
+            result = runner.invoke(
+                to_dl3,
+                [
+                    'examples/full_config.yaml',
+                    'examples/crab.hdf5',
+                    os.path.join(d, 'separator.pkl'),
+                    os.path.join(d, 'regressor.pkl'),
+                    os.path.join(d, 'disp.pkl'),
+                    os.path.join(d, 'sign.pkl'),
+                    os.path.join(d, 'crab_dl3.hdf5'),
+                ]
+            )
 
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
-        output = os.path.join(d, 'gamma_dl3.hdf5')
-        result = runner.invoke(
-            to_dl3,
-            [
-                'examples/full_config.yaml',
-                'examples/gamma.hdf5',
-                os.path.join(d, 'separator.pkl'),
-                os.path.join(d, 'regressor.pkl'),
-                os.path.join(d, 'disp.pkl'),
-                os.path.join(d, 'sign.pkl'),
-                output,
-            ]
-        )
+            output = os.path.join(d, 'gamma_dl3.hdf5')
+            result = runner.invoke(
+                to_dl3,
+                [
+                    'examples/full_config.yaml',
+                    'examples/gamma.hdf5',
+                    os.path.join(d, 'separator.pkl'),
+                    os.path.join(d, 'regressor.pkl'),
+                    os.path.join(d, 'disp.pkl'),
+                    os.path.join(d, 'sign.pkl'),
+                    output,
+                ]
+            )
 
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
-        with h5py.File(output) as f:
-            assert f.attrs['sample_fraction'] == 1000 / 1851297
-
-        assert mtime == os.path.getmtime('examples/crab.hdf5')
+            with h5py.File(output) as f:
+                assert f.attrs['sample_fraction'] == 1000 / 1851297
 
 
 def test_split_data_executable():
@@ -366,39 +374,37 @@ def test_split_data_executable():
 
         infile = os.path.join(d, 'gamma.hdf5')
         shutil.copy('examples/gamma.hdf5', infile)
-        mtime = os.path.getmtime(infile)
+        with DateNotModified(infile):
 
-        runner = CliRunner()
-        result = runner.invoke(
-            split,
-            [
-                infile,
-                os.path.join(d, 'signal'),
-                '-ntest',  # no spaces here. maybe a bug in click?
-                '-f0.75',
-                '-ntrain',
-                '-f0.25',
-            ]
-        )
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
+            runner = CliRunner()
+            result = runner.invoke(
+                split,
+                [
+                    infile,
+                    os.path.join(d, 'signal'),
+                    '-ntest',  # no spaces here. maybe a bug in click?
+                    '-f0.75',
+                    '-ntrain',
+                    '-f0.25',
+                ]
+            )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
-        print(os.listdir(d))
-        test_path = os.path.join(d, 'signal_test.hdf5')
-        assert os.path.isfile(test_path)
+            print(os.listdir(d))
+            test_path = os.path.join(d, 'signal_test.hdf5')
+            assert os.path.isfile(test_path)
 
-        with h5py.File(test_path, 'r') as f:
-            assert f.attrs['sample_fraction'] == 0.75
+            with h5py.File(test_path, 'r') as f:
+                assert f.attrs['sample_fraction'] == 0.75
 
-        train_path = os.path.join(d, 'signal_train.hdf5')
-        assert os.path.isfile(train_path)
+            train_path = os.path.join(d, 'signal_train.hdf5')
+            assert os.path.isfile(train_path)
 
-        with h5py.File(train_path, 'r') as f:
-            assert f.attrs['sample_fraction'] == 0.25
-
-        assert mtime == os.path.getmtime(infile)
+            with h5py.File(train_path, 'r') as f:
+                assert f.attrs['sample_fraction'] == 0.25
 
 
 def test_split_data_executable_chunked():
@@ -408,37 +414,35 @@ def test_split_data_executable_chunked():
 
         infile = os.path.join(d, 'gamma.hdf5')
         shutil.copy('examples/gamma.hdf5', infile)
-        mtime = os.path.getmtime(infile)
+        with DateNotModified(infile):
 
-        runner = CliRunner()
-        result = runner.invoke(
-            split,
-            [
-                infile,
-                os.path.join(d, 'signal'),
-                '-ntest',  # no spaces here. maybe a bug in click?
-                '-f0.75',
-                '-ntrain',
-                '-f0.25',
-                '--chunksize=100',
-            ]
-        )
-        if result.exit_code != 0:
-            print(result.output)
-            print_exception(*result.exc_info)
-        assert result.exit_code == 0
+            runner = CliRunner()
+            result = runner.invoke(
+                split,
+                [
+                    infile,
+                    os.path.join(d, 'signal'),
+                    '-ntest',  # no spaces here. maybe a bug in click?
+                    '-f0.75',
+                    '-ntrain',
+                    '-f0.25',
+                    '--chunksize=100',
+                ]
+            )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
 
-        print(os.listdir(d))
-        test_path = os.path.join(d, 'signal_test.hdf5')
-        assert os.path.isfile(test_path)
+            print(os.listdir(d))
+            test_path = os.path.join(d, 'signal_test.hdf5')
+            assert os.path.isfile(test_path)
 
-        with h5py.File(test_path, 'r') as f:
-            assert f.attrs['sample_fraction'] == 0.75
+            with h5py.File(test_path, 'r') as f:
+                assert f.attrs['sample_fraction'] == 0.75
 
-        train_path = os.path.join(d, 'signal_train.hdf5')
-        assert os.path.isfile(train_path)
+            train_path = os.path.join(d, 'signal_train.hdf5')
+            assert os.path.isfile(train_path)
 
-        with h5py.File(train_path, 'r') as f:
-            assert f.attrs['sample_fraction'] == 0.25
-
-        assert mtime == os.path.getmtime(infile)
+            with h5py.File(train_path, 'r') as f:
+                assert f.attrs['sample_fraction'] == 0.25
