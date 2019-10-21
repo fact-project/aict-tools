@@ -12,12 +12,15 @@ def test_apply_cuts():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
         output_file = os.path.join(d, 'crab_cuts.hdf5')
+        input_file = 'examples/crab.hdf5'
+
+        mtime = os.path.getmtime(input_file)
 
         result = runner.invoke(
             main,
             [
                 'examples/quality_cuts.yaml',
-                'examples/crab.hdf5',
+                input_file,
                 output_file,
             ]
         )
@@ -31,6 +34,8 @@ def test_apply_cuts():
             assert 'events' in f
             assert 'runs' in f
 
+        assert mtime == os.path.getmtime(input_file)
+
 
 def test_train_regressor_cta():
     from aict_tools.scripts.train_energy_regressor import main
@@ -38,6 +43,7 @@ def test_train_regressor_cta():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
+        mtime = os.path.getmtime('examples/cta_gammas.h5')
         result = runner.invoke(
             main,
             [
@@ -53,6 +59,8 @@ def test_train_regressor_cta():
             print_exception(*result.exc_info)
         assert result.exit_code == 0
 
+        assert mtime == os.path.getmtime('examples/cta_gammas.h5')
+
 
 def test_train_regressor():
     from aict_tools.scripts.train_energy_regressor import main
@@ -60,6 +68,7 @@ def test_train_regressor():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
+        mtime = os.path.getmtime('examples/gamma.hdf5')
         result = runner.invoke(
             main,
             [
@@ -74,6 +83,7 @@ def test_train_regressor():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+        assert mtime == os.path.getmtime('examples/gamma.hdf5')
 
 
 def test_apply_regression():
@@ -122,6 +132,9 @@ def test_train_separator():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
+        mtime_g = os.path.getmtime('examples/gamma.hdf5')
+        mtime_p = os.path.getmtime('examples/proton.hdf5')
+
         result = runner.invoke(
             main,
             [
@@ -137,6 +150,8 @@ def test_train_separator():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+        assert mtime_g == os.path.getmtime('examples/gamma.hdf5')
+        assert mtime_p == os.path.getmtime('examples/proton.hdf5')
 
 
 def test_apply_separator():
@@ -183,6 +198,7 @@ def test_train_disp():
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
+        mtime = os.path.getmtime('examples/gamma_diffuse.hdf5')
         runner = CliRunner()
         result = runner.invoke(
             train,
@@ -198,6 +214,7 @@ def test_train_disp():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+        assert mtime == os.path.getmtime('examples/gamma_diffuse.hdf5')
 
 
 def test_apply_disp():
@@ -250,6 +267,8 @@ def test_to_dl3():
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
         runner = CliRunner()
+
+        mtime = os.path.getmtime('examples/crab.hdf5')
 
         result = runner.invoke(
             train_disp,
@@ -337,19 +356,23 @@ def test_to_dl3():
         with h5py.File(output) as f:
             assert f.attrs['sample_fraction'] == 1000 / 1851297
 
+        assert mtime == os.path.getmtime('examples/crab.hdf5')
+
 
 def test_split_data_executable():
     from aict_tools.scripts.split_data import main as split
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
-        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
+        infile = os.path.join(d, 'gamma.hdf5')
+        shutil.copy('examples/gamma.hdf5', infile)
+        mtime = os.path.getmtime(infile)
 
         runner = CliRunner()
         result = runner.invoke(
             split,
             [
-                os.path.join(d, 'gamma.hdf5'),
+                infile,
                 os.path.join(d, 'signal'),
                 '-ntest',  # no spaces here. maybe a bug in click?
                 '-f0.75',
@@ -375,19 +398,23 @@ def test_split_data_executable():
         with h5py.File(train_path, 'r') as f:
             assert f.attrs['sample_fraction'] == 0.25
 
+        assert mtime == os.path.getmtime(infile)
+
 
 def test_split_data_executable_chunked():
     from aict_tools.scripts.split_data import main as split
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
-        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
+        infile = os.path.join(d, 'gamma.hdf5')
+        shutil.copy('examples/gamma.hdf5', infile)
+        mtime = os.path.getmtime(infile)
 
         runner = CliRunner()
         result = runner.invoke(
             split,
             [
-                os.path.join(d, 'gamma.hdf5'),
+                infile,
                 os.path.join(d, 'signal'),
                 '-ntest',  # no spaces here. maybe a bug in click?
                 '-f0.75',
@@ -413,3 +440,5 @@ def test_split_data_executable_chunked():
 
         with h5py.File(train_path, 'r') as f:
             assert f.attrs['sample_fraction'] == 0.25
+
+        assert mtime == os.path.getmtime(infile)
