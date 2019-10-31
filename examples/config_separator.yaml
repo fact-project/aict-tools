@@ -21,9 +21,8 @@ separator:
   # define the number of cross validations to perform
   n_cross_validations : 5
 
-  # Define the name of the category you want to find. The default is 'gamma'.
-  # It will be written as <class_name>_prediction into the file when applying the model.
-  class_name: gamma
+  # Define the name of the output column for the positive class.
+  output_name: gamma_prediction
 
   # Define the name of the column that contains the name of the telescope in case you're working
   # with mulitple telescopes and telescope types
