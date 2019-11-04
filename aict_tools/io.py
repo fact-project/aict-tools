@@ -485,7 +485,7 @@ def set_sample_fraction(path, fraction):
 
 
 def copy_runs_group(inpath, outpath):
-    with h5py.File(inpath, mode='r') as infile, h5py.File(outpath) as outfile:
+    with h5py.File(inpath, mode='r') as infile, h5py.File(outpath, 'r+') as outfile:
         for key in ('runs', 'corsika_runs'):
             if key in infile:
                 log.info('Copying group "{}"'.format(key))
