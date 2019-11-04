@@ -11,7 +11,7 @@ with open('aict_tools/__init__.py', 'r') as f:
 
 extras_require = {
     'pmml': ['sklearn2pmml'],
-    'onnx': ['skl2onnx', 'onnxmltools'],
+    'onnx': ['skl2onnx', 'onnxmltools', 'onnxruntime~=1.0'],
 }
 extras_require['all'] = list({dep for deps in extras_require.values() for dep in deps})
 
