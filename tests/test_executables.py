@@ -4,6 +4,7 @@ from click.testing import CliRunner
 import shutil
 from traceback import print_exception
 import h5py
+from pytest import importorskip
 
 
 class DateNotModified:
@@ -450,3 +451,89 @@ def test_split_data_executable_chunked():
 
             with h5py.File(train_path, 'r') as f:
                 assert f.attrs['sample_fraction'] == 0.25
+
+
+def test_apply_regression_pmml():
+    importorskip('jpmml_evaluator')
+    importorskip('sklearn2pmml')
+
+    from aict_tools.scripts.train_energy_regressor import main as train
+    from aict_tools.scripts.apply_energy_regressor import main as apply
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        runner = CliRunner()
+
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
+
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_energy.yaml',
+                os.path.join(d, 'gamma.hdf5'),
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'test.pmml'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            apply,
+            [
+                'examples/config_energy.yaml',
+                os.path.join(d, 'gamma.hdf5'),
+                os.path.join(d, 'test.pmml'),
+                '--yes',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+
+        assert result.exit_code == 0
+
+
+def test_apply_separator_pmml():
+    from aict_tools.scripts.train_separation_model import main as train
+    from aict_tools.scripts.apply_separation_model import main as apply_model
+    import h5py
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
+
+        runner = CliRunner()
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_separator.yaml',
+                'examples/gamma.hdf5',
+                'examples/proton.hdf5',
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'test.pmml'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            apply_model,
+            [
+                'examples/config_separator.yaml',
+                os.path.join(d, 'gamma.hdf5'),
+                os.path.join(d, 'test.pmml'),
+                '--yes',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        with h5py.File(os.path.join(d, 'gamma.hdf5'), 'r') as f:
+            assert 'gammaness' in f['events']

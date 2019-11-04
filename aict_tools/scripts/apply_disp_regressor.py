@@ -1,7 +1,5 @@
 import click
 import numpy as np
-import joblib
-import h5py
 from tqdm import tqdm
 
 from ..io import (
@@ -9,6 +7,7 @@ from ..io import (
     read_telescope_data_chunked,
     get_column_names_in_file,
     remove_column_from_file,
+    load_model,
 )
 from ..apply import predict_disp
 from ..configuration import AICTConfig
@@ -76,8 +75,8 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
                  + "Use e.g. `fact_calculate_theta` from https://github.com/fact-project/pyfact.")
 
     log.info('Loading model')
-    disp_model = joblib.load(disp_model_path)
-    sign_model = joblib.load(sign_model_path)
+    disp_model = load_model(disp_model_path)
+    sign_model = load_model(sign_model_path)
     log.info('Done')
 
     if n_jobs:

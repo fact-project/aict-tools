@@ -1,6 +1,5 @@
 import click
 import numpy as np
-import joblib
 from tqdm import tqdm
 import pandas as pd
 from functools import partial
@@ -21,7 +20,12 @@ from fact.instrument import camera_distance_mm_to_deg
 
 from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
-from ..io import read_telescope_data_chunked, copy_runs_group, set_sample_fraction
+from ..io import (
+    read_telescope_data_chunked,
+    copy_runs_group,
+    set_sample_fraction,
+    load_model,
+)
 from ..configuration import AICTConfig
 from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
@@ -256,10 +260,10 @@ def main(
         open(output, 'w').close()
 
     log.info('Loading model')
-    separator_model = joblib.load(separator_model_path)
-    energy_model = joblib.load(energy_model_path)
-    disp_model = joblib.load(disp_model_path)
-    sign_model = joblib.load(sign_model_path)
+    separator_model = load_model(separator_model_path)
+    energy_model = load_model(energy_model_path)
+    disp_model = load_model(disp_model_path)
+    sign_model = load_model(sign_model_path)
     log.info('Done')
 
     if n_jobs:

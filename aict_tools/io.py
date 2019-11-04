@@ -17,6 +17,7 @@ __all__ = [
     'read_telescope_data',
     'read_telescope_data_chunked',
     'save_model',
+    'load_model',
 ]
 
 
@@ -424,6 +425,18 @@ def save_model(model, feature_names, model_path, label_text='label'):
 
     # Always store the pickle dump,just in case
     joblib.dump(model, pickle_path, compress=4)
+
+
+def load_model(model_path):
+    name, ext = os.path.splitext(model_path)
+    if ext == '.onnx':
+        raise NotImplementedError('Using onnx models is not yet supported')
+
+    if ext == '.pmml':
+        from .pmml import PMMLModel
+        return PMMLModel(model_path)
+
+    return joblib.load(model_path)
 
 
 def append_column_to_hdf5(path, array, table_name, new_column_name):

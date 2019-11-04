@@ -46,41 +46,42 @@ def test_pickle():
         assert np.all(clf.predict(X_clf) == clf_load.predict(X_clf))
 
 
-def test_pmml():
+def test_pmml_classifier():
     importorskip('sklearn2pmml')
-    jpmml_evaluator = importorskip('jpmml_evaluator')
-    from jpmml_evaluator.pyjnius import jnius_configure_classpath, PyJNIusBackend
+    importorskip('jpmml_evaluator')
+    from aict_tools.pmml import PMMLModel
     from aict_tools.io import save_model
-
-    jnius_configure_classpath()
-    backend = PyJNIusBackend()
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as tmpdir:
         model_path = os.path.join(tmpdir, 'model.pmml')
         save_model(clf, feature_names, model_path, label_text='classifier')
 
-        evaluator = jpmml_evaluator.make_evaluator(backend, model_path).verify()
+        model = PMMLModel(model_path)
         # order seems to be changing
-        assert sorted([i.getName() for i in evaluator.getInputFields()]) == feature_names
+        assert model.feature_names == feature_names
 
-        df = evaluator.evaluateAll(pd.DataFrame(dict(zip(feature_names, X_clf.T))))
-        assert np.all(np.isclose(df['probability(1)'], clf.predict_proba(X_clf)[:, 1]))
+        proba = model.predict_proba(X_clf)
+        assert np.allclose(proba[:, 1], clf.predict_proba(X_clf)[:, 1])
 
         # make sure pickle is also saved
         clf_load = joblib.load(model_path.replace('.pmml', '.pkl'))
         assert clf_load.feature_names == feature_names
         assert np.all(clf.predict(X_clf) == clf_load.predict(X_clf))
 
+
+def test_pmml_regressor():
+    importorskip('sklearn2pmml')
+    importorskip('jpmml_evaluator')
+    from aict_tools.pmml import PMMLModel
+    from aict_tools.io import save_model
+
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as tmpdir:
         model_path = os.path.join(tmpdir, 'model.pmml')
         save_model(reg, feature_names, model_path, label_text='regressor')
 
-        evaluator = jpmml_evaluator.make_evaluator(backend, model_path).verify()
-        # order seems to be changing
-        assert sorted([i.getName() for i in evaluator.getInputFields()]) == feature_names
-
-        df = evaluator.evaluateAll(pd.DataFrame(dict(zip(feature_names, X_reg.T))))
-        assert np.all(np.isclose(df['regressor'], reg.predict(X_reg)))
+        model = PMMLModel(model_path)
+        assert model.feature_names == feature_names
+        assert np.allclose(model.predict(X_reg), reg.predict(X_reg))
 
         # make sure pickle is also saved
         reg_load = joblib.load(model_path.replace('.pmml', '.pkl'))
