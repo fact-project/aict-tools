@@ -89,19 +89,22 @@ def test_pmml_regressor():
         assert np.all(reg.predict(X_reg) == reg_load.predict(X_reg))
 
 
-def test_onnx():
+def test_onnx_regressor():
     importorskip('skl2onnx')
-    onnxruntime = importorskip('onnxruntime')
+    importorskip('onnxruntime')
     from aict_tools.io import save_model
+    from aict_tools.onnx import ONNXModel
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as tmpdir:
         model_path = os.path.join(tmpdir, 'model.onnx')
         save_model(clf, feature_names, model_path, label_text='classifier')
 
-        session = onnxruntime.InferenceSession(model_path)
-        input_name = session.get_inputs()[0].name
+        model = ONNXModel(model_path)
+        assert model.meta['model_author'] == 'aict-tools'
+        assert model.meta['feature_names'].split(',') == feature_names
+        assert model.feature_names == feature_names
 
-        probas_onnx = session.run(None, {input_name: X_clf})[0]
+        probas_onnx = model.predict_proba(X_clf)
         probas_skl = clf.predict_proba(X_clf)
 
         assert np.all(np.isclose(probas_onnx, probas_skl, rtol=1e-2, atol=1e-4))
@@ -111,17 +114,23 @@ def test_onnx():
         assert clf_load.feature_names == feature_names
         assert np.all(clf.predict(X_clf) == clf_load.predict(X_clf))
 
+
+def test_onnx_classifier():
+    importorskip('skl2onnx')
+    importorskip('onnxruntime')
+    from aict_tools.io import save_model
+    from aict_tools.onnx import ONNXModel
+
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as tmpdir:
         model_path = os.path.join(tmpdir, 'model.onnx')
         save_model(reg, feature_names, model_path, label_text='regressor')
 
-        session = onnxruntime.InferenceSession(model_path)
-        props = session.get_modelmeta().custom_metadata_map
-        assert props['model_author'] == 'aict-tools'
-        assert props['feature_names'].split(',') == feature_names
-        input_name = session.get_inputs()[0].name
+        model = ONNXModel(model_path)
+        assert model.meta['model_author'] == 'aict-tools'
+        assert model.meta['feature_names'].split(',') == feature_names
+        assert model.feature_names == feature_names
 
-        pred_onnx = session.run(None, {input_name: X_reg})[0][:, 0]
+        pred_onnx = reg.predict(X_reg)
         pred_skl = reg.predict(X_reg)
 
         assert np.all(np.isclose(pred_onnx, pred_skl))

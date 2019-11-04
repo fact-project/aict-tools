@@ -19,12 +19,8 @@ from ..logging import setup_logging
 @click.argument('background_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
 @click.argument('model_path', type=click.Path(exists=False, dir_okay=False))
-@click.option(
-    '-l', '--label-text', default='gamma_prediction',
-    show_default=True, help='Name for the output'
-)
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, signal_path, background_path, predictions_path, model_path, label_text, verbose):
+def main(configuration_path, signal_path, background_path, predictions_path, model_path, verbose):
     '''
     Train a classifier on signal and background monte carlo data and write the model
     to MODEL_PATH in pmml or pickle format.
@@ -43,10 +39,11 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log = setup_logging(verbose=verbose)
 
     check_extension(predictions_path)
-    check_extension(model_path, allowed_extensions=['.pmml', '.pkl'])
+    check_extension(model_path, allowed_extensions=['.pmml', '.pkl', '.onnx'])
 
     config = AICTConfig.from_yaml(configuration_path)
     model_config = config.separator
+    label_text = model_config.output_name
 
     log.info('Loading signal data')
     df_signal = read_telescope_data(
@@ -138,7 +135,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         log.info('Training model on complete dataset')
         classifier.fit(X, y)
 
-    log.info('Pickling model to {} ...'.format(model_path))
+    log.info('Saving model to {} ...'.format(model_path))
     save_model(
         classifier,
         model_path=model_path,

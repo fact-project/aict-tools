@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import click
+from sklearn.base import is_classifier
 
 from fact.io import read_h5py, write_data
 
@@ -405,18 +406,20 @@ def save_model(model, feature_names, model_path, label_text='label'):
             initial_types=[('input', FloatTensorType((None, len(feature_names))))],
             doc_string='Model created by aict-tools to estimate {}'.format(label_text),
         )
-        metadata = dict(
-            model_author='aict-tools',
-            aict_tools_version=__version__,
-            feature_names=','.join(feature_names),
-        )
-        for key, value in metadata.items():
-            onnx.metadata_props.append(StringStringEntryProto(key=key, value=value))
 
         # this makes sure we only get the scores and that they are numpy arrays and not
         # a list of dicts
         if hasattr(model, 'predict_proba'):
             onnx = select_model_inputs_outputs(onnx, ['probabilities'])
+
+        metadata = dict(
+            model_author='aict-tools',
+            aict_tools_version=__version__,
+            feature_names=','.join(feature_names),
+            model_type='classifier' if is_classifier(model) else 'regressor',
+        )
+        for key, value in metadata.items():
+            onnx.metadata_props.append(StringStringEntryProto(key=key, value=value))
 
         with open(model_path, 'wb') as f:
             f.write(onnx.SerializeToString())
@@ -430,7 +433,8 @@ def save_model(model, feature_names, model_path, label_text='label'):
 def load_model(model_path):
     name, ext = os.path.splitext(model_path)
     if ext == '.onnx':
-        raise NotImplementedError('Using onnx models is not yet supported')
+        from .onnx import ONNXModel
+        return ONNXModel(model_path)
 
     if ext == '.pmml':
         from .pmml import PMMLModel

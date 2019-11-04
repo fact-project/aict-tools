@@ -497,6 +497,9 @@ def test_apply_regression_pmml():
 
 
 def test_apply_separator_pmml():
+    importorskip('jpmml_evaluator')
+    importorskip('sklearn2pmml')
+
     from aict_tools.scripts.train_separation_model import main as train
     from aict_tools.scripts.apply_separation_model import main as apply_model
     import h5py
@@ -526,6 +529,94 @@ def test_apply_separator_pmml():
                 'examples/config_separator.yaml',
                 os.path.join(d, 'gamma.hdf5'),
                 os.path.join(d, 'test.pmml'),
+                '--yes',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        with h5py.File(os.path.join(d, 'gamma.hdf5'), 'r') as f:
+            assert 'gammaness' in f['events']
+
+
+def test_apply_regression_onnx():
+    importorskip('onnxruntime')
+    importorskip('skl2onnx')
+
+    from aict_tools.scripts.train_energy_regressor import main as train
+    from aict_tools.scripts.apply_energy_regressor import main as apply
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        runner = CliRunner()
+
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
+
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_energy.yaml',
+                os.path.join(d, 'gamma.hdf5'),
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'test.onnx'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            apply,
+            [
+                'examples/config_energy.yaml',
+                os.path.join(d, 'gamma.hdf5'),
+                os.path.join(d, 'test.onnx'),
+                '--yes',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+
+        assert result.exit_code == 0
+
+
+def test_apply_separator_onnx():
+    importorskip('onnxruntime')
+    importorskip('skl2onnx')
+    from aict_tools.scripts.train_separation_model import main as train
+    from aict_tools.scripts.apply_separation_model import main as apply_model
+    import h5py
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
+
+        runner = CliRunner()
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_separator.yaml',
+                'examples/gamma.hdf5',
+                'examples/proton.hdf5',
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'test.onnx'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            apply_model,
+            [
+                'examples/config_separator.yaml',
+                os.path.join(d, 'gamma.hdf5'),
+                os.path.join(d, 'test.onnx'),
                 '--yes',
             ]
         )
