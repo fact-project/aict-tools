@@ -10,7 +10,10 @@ with open('aict_tools/__init__.py', 'r') as f:
     version = re.search(r'__version__ = \'(\d+[.]\d+[.]\d+)\'', f.read()).groups()[0]
 
 extras_require = {
-    'pmml': ['sklearn2pmml'],
+    'pmml': [
+        'sklearn2pmml',
+        'jpmml_evaluator @ https://github.com/jpmml/jpmml-evaluator-python/archive/0.2.2.tar.gz',
+    ],
     'onnx': ['skl2onnx', 'onnxmltools', 'onnxruntime~=1.0'],
 }
 extras_require['all'] = list({dep for deps in extras_require.values() for dep in deps})
