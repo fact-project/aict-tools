@@ -83,7 +83,6 @@ class AICTConfig:
         'energy',
         'separator',
         'has_multiple_telescopes',
-        'class_name',
     )
 
     @classmethod
@@ -112,7 +111,6 @@ class AICTConfig:
 
         self.seed = config.get('seed', 0)
         np.random.seed(self.seed)
-        self.class_name = config.get('class_name', 'gamma')
 
         self.disp = self.energy = self.separator = None
         if 'disp' in config:
@@ -206,6 +204,7 @@ class EnergyConfig:
         'columns_to_read_train',
         'columns_to_read_apply',
         'target_column',
+        'output_name',
         'log_target',
     ]
 
@@ -221,6 +220,7 @@ class EnergyConfig:
         self.target_column = model_config.get(
             'target_column', 'corsika_event_header_total_energy'
         )
+        self.output_name = model_config.get('output_name', 'gamma_energy_prediction')
         self.log_target = model_config.get('log_target', False)
 
         gen_config = model_config.get('feature_generation')
@@ -253,6 +253,7 @@ class SeparatorConfig:
         'columns_to_read_train',
         'columns_to_read_apply',
         'calibrate_classifier',
+        'output_name',
     ]
 
     def __init__(self, config):
@@ -265,6 +266,7 @@ class SeparatorConfig:
         k = 'n_cross_validations'
         setattr(self, k, model_config.get(k, config.get(k, 5)))
         self.calibrate_classifier = model_config.get('calibrate_classifier', False)
+        self.output_name = model_config.get('output_name', 'gamma_prediction')
 
         gen_config = model_config.get('feature_generation')
         source_features = find_used_source_features(self.features, gen_config)

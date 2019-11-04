@@ -15,7 +15,7 @@ before_install:
 install:
   - pip install --upgrade pip
   - pip install Cython
-  - pip install onnxruntime https://github.com/jpmml/jpmml-evaluator-python/archive/master.tar.gz
+  - pip install 'onnxruntime<1.0' https://github.com/jpmml/jpmml-evaluator-python/archive/master.tar.gz
   - pip install .[all]
 
 script:

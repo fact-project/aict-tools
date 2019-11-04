@@ -47,9 +47,8 @@ energy:
   target_column: corsika_event_header_total_energy
 
 
-  # Define the name of the variable you want estimate by regression. The default is 'energy'.
-  # It will be written as <class_name>_prediction into the file when applying the model.
-  class_name: gamma_energy
+  # Define the name of the variable you want estimate by regression.
+  output_name: gamma_energy_prediction
 
   features:
     - size
@@ -90,9 +89,8 @@ separator:
   n_background: 500
   n_signal: 500
 
-  # Define the name of the category you want to find. The default is 'gamma'.
-  # It will be written as <class_name>_prediction into the file when applying the model.
-  class_name: gamma
+  # Define the name for the output column for prediction score of the signal class
+  output_name: gamma_prediction
 
   features:
     - size
