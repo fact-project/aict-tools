@@ -401,7 +401,7 @@ def save_model(model, feature_names, model_path, label_text='label'):
         onnx = convert_sklearn(
             model,
             name=label_text,
-            initial_types=[('input', FloatTensorType((1, len(feature_names))))],
+            initial_types=[('input', FloatTensorType((None, len(feature_names))))],
             doc_string='Model created by aict-tools to estimate {}'.format(label_text),
         )
         metadata = dict(
