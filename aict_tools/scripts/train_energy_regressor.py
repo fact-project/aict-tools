@@ -109,7 +109,7 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
         regressor,
         feature_names=list(df_train.columns),
         model_path=model_path,
-        label_text='estimated_energy',
+        label_text=model_config.output_name,
     )
 
 
