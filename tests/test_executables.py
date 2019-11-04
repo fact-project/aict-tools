@@ -199,7 +199,7 @@ def test_apply_separator():
             print_exception(*result.exc_info)
         assert result.exit_code == 0
 
-        with h5py.File(os.path.join(d, 'gamma.hdf5')) as f:
+        with h5py.File(os.path.join(d, 'gamma.hdf5'), 'r') as f:
             assert 'gammaness' in f['events']
 
 
@@ -367,7 +367,7 @@ def test_to_dl3():
                 print_exception(*result.exc_info)
             assert result.exit_code == 0
 
-            with h5py.File(output) as f:
+            with h5py.File(output, 'r') as f:
                 assert f.attrs['sample_fraction'] == 1000 / 1851297
 
 
