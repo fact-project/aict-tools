@@ -28,18 +28,18 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
     MODEL_PATH: Path to the pickled model.
 
     The program adds the following columns to the inputfile:
-        <class_name>_prediction: the output of model.predict_proba for the
+        `output_name`: the output of model.predict_proba for the
         class name given in the config file.
 
-    If the class name is not given in the config file, the default value of "gamma"
-    will be used.
+    If `output_name` is not given in the config file,
+    the default value of "gamma_prediction" will be used.
     '''
     log = setup_logging(verbose=verbose)
 
     config = AICTConfig.from_yaml(configuration_path)
     model_config = config.separator
 
-    prediction_column_name = config.class_name + '_prediction'
+    prediction_column_name = model_config.output_name
     drop_prediction_column(
         data_path, group_name=config.telescope_events_key,
         column_name=prediction_column_name, yes=yes

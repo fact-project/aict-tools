@@ -163,6 +163,7 @@ def test_train_separator():
 def test_apply_separator():
     from aict_tools.scripts.train_separation_model import main as train
     from aict_tools.scripts.apply_separation_model import main as apply_model
+    import h5py
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         shutil.copy('examples/gamma.hdf5', os.path.join(d, 'gamma.hdf5'))
@@ -197,6 +198,9 @@ def test_apply_separator():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+
+        with h5py.File(os.path.join(d, 'gamma.hdf5'), 'r') as f:
+            assert 'gammaness' in f['events']
 
 
 def test_train_disp():
@@ -363,7 +367,7 @@ def test_to_dl3():
                 print_exception(*result.exc_info)
             assert result.exit_code == 0
 
-            with h5py.File(output) as f:
+            with h5py.File(output, 'r') as f:
                 assert f.attrs['sample_fraction'] == 1000 / 1851297
 
 
