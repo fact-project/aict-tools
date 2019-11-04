@@ -408,7 +408,8 @@ def save_model(model, feature_names, model_path, label_text='label'):
         )
 
         # this makes sure we only get the scores and that they are numpy arrays and not
-        # a list of dicts
+        # a list of dicts.
+        # must come before setting metadata as it clears the metadata_props
         if hasattr(model, 'predict_proba'):
             onnx = select_model_inputs_outputs(onnx, ['probabilities'])
 
