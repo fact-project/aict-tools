@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import h5py
 import click
+from sklearn.base import is_classifier
 
 from fact.io import read_h5py, write_data
 
@@ -17,6 +18,7 @@ __all__ = [
     'read_telescope_data',
     'read_telescope_data_chunked',
     'save_model',
+    'load_model',
 ]
 
 
@@ -404,18 +406,21 @@ def save_model(model, feature_names, model_path, label_text='label'):
             initial_types=[('input', FloatTensorType((None, len(feature_names))))],
             doc_string='Model created by aict-tools to estimate {}'.format(label_text),
         )
+
+        # this makes sure we only get the scores and that they are numpy arrays and not
+        # a list of dicts.
+        # must come before setting metadata as it clears the metadata_props
+        if hasattr(model, 'predict_proba'):
+            onnx = select_model_inputs_outputs(onnx, ['probabilities'])
+
         metadata = dict(
             model_author='aict-tools',
             aict_tools_version=__version__,
             feature_names=','.join(feature_names),
+            model_type='classifier' if is_classifier(model) else 'regressor',
         )
         for key, value in metadata.items():
             onnx.metadata_props.append(StringStringEntryProto(key=key, value=value))
-
-        # this makes sure we only get the scores and that they are numpy arrays and not
-        # a list of dicts
-        if hasattr(model, 'predict_proba'):
-            onnx = select_model_inputs_outputs(onnx, ['probabilities'])
 
         with open(model_path, 'wb') as f:
             f.write(onnx.SerializeToString())
@@ -424,6 +429,19 @@ def save_model(model, feature_names, model_path, label_text='label'):
 
     # Always store the pickle dump,just in case
     joblib.dump(model, pickle_path, compress=4)
+
+
+def load_model(model_path):
+    name, ext = os.path.splitext(model_path)
+    if ext == '.onnx':
+        from .onnx import ONNXModel
+        return ONNXModel(model_path)
+
+    if ext == '.pmml':
+        from .pmml import PMMLModel
+        return PMMLModel(model_path)
+
+    return joblib.load(model_path)
 
 
 def append_column_to_hdf5(path, array, table_name, new_column_name):
@@ -467,7 +485,7 @@ def set_sample_fraction(path, fraction):
 
 
 def copy_runs_group(inpath, outpath):
-    with h5py.File(inpath, mode='r') as infile, h5py.File(outpath) as outfile:
+    with h5py.File(inpath, mode='r') as infile, h5py.File(outpath, 'r+') as outfile:
         for key in ('runs', 'corsika_runs'):
             if key in infile:
                 log.info('Copying group "{}"'.format(key))

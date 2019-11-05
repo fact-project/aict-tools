@@ -1,10 +1,14 @@
 import click
-import joblib
 from tqdm import tqdm
 import pandas as pd
 
 from ..apply import predict_separator
-from ..io import append_column_to_hdf5, read_telescope_data_chunked, drop_prediction_column
+from ..io import (
+    append_column_to_hdf5,
+    read_telescope_data_chunked,
+    drop_prediction_column,
+    load_model,
+)
 from ..configuration import AICTConfig
 from ..logging import setup_logging
 
@@ -51,7 +55,7 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
         )
 
     log.debug('Loading model')
-    model = joblib.load(model_path)
+    model = load_model(model_path)
     log.debug('Loaded model')
 
     df_generator = read_telescope_data_chunked(
