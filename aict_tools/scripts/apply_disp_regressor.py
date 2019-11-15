@@ -92,7 +92,8 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
     for df_data, start, stop in tqdm(df_generator):
 
         disp = predict_disp(
-            df_data[model_config.features], disp_model, sign_model
+            df_data[model_config.features], disp_model, sign_model,
+            log_target=model_config.log_target,
         )
 
         source_x = df_data.cog_x + disp * np.cos(df_data.delta)

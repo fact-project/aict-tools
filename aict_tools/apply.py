@@ -56,12 +56,15 @@ def predict_energy(df, model, log_target=False):
     return energy_prediction
 
 
-def predict_disp(df, abs_model, sign_model):
+def predict_disp(df, abs_model, sign_model, log_target=False):
     df_features = convert_to_float32(df)
     valid = check_valid_rows(df_features)
 
     disp_abs = abs_model.predict(df_features.loc[valid].values)
     disp_sign = sign_model.predict(df_features.loc[valid].values)
+
+    if log_target:
+        disp_abs = np.exp(disp_abs)
 
     disp_prediction = np.full(len(df_features), np.nan)
     disp_prediction[valid] = disp_abs * disp_sign

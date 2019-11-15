@@ -312,7 +312,8 @@ def main(
 
         df_disp = feature_generation(df, config.disp.feature_generation)
         disp = predict_disp(
-            df_disp[config.disp.features], disp_model, sign_model
+            df_disp[config.disp.features], disp_model, sign_model,
+            log_target=config.disp.log_target,
         )
 
         prediction_x = df.cog_x + disp * np.cos(df.delta)
