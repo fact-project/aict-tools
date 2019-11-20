@@ -90,6 +90,9 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     target_disp = df['true_disp'].loc[df_train.index]
     target_sign = df['true_sign'].loc[df_train.index]
 
+    if model_config.log_target is True:
+        target_disp = np.log(target_disp)
+
     log.info('Starting {} fold cross validation... '.format(
         model_config.n_cross_validations
     ))
@@ -113,6 +116,10 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
         disp_regressor.fit(cv_x_train, cv_disp_train)
         cv_disp_prediction = disp_regressor.predict(cv_x_test)
+
+        if model_config.log_target is True:
+            cv_disp_test = np.exp(cv_disp_test)
+            cv_disp_prediction = np.exp(cv_disp_prediction)
 
         sign_classifier.fit(cv_x_train, cv_sign_train)
         cv_sign_prediction = sign_classifier.predict(cv_x_test)
