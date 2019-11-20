@@ -140,6 +140,7 @@ class DispConfig:
         'cog_x_column',
         'cog_y_column',
         'delta_column',
+        'project_disp',
     ]
 
     def __init__(self, config):
@@ -147,6 +148,7 @@ class DispConfig:
 
         self.disp_regressor = load_regressor(model_config['disp_regressor'])
         self.sign_classifier = load_classifier(model_config['sign_classifier'])
+        self.project_disp = model_config.get('project_disp', False)
 
         self.n_signal = model_config.get('n_signal', None)
         k = 'n_cross_validations'
