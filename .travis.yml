@@ -45,5 +45,6 @@ deploy:
 addons:
   apt:
     packages:
+      - libhdf5-dev
       - libhdf5-serial-dev
       - openjdk-8-jdk
