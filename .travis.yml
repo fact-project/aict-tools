@@ -1,20 +1,30 @@
 language: python
 
+
+env:
+  global:
+    - MPLBACKEND=agg
+    - JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    - JDK_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+
 matrix:
   include:
     - python: '3.6'
+      env:
+        - EXTRAS="all"
     - python: '3.7'
+      env:
+        - EXTRAS="all"
+    - python: '3.8'
+      env:
+        - EXTRAS="pmml" # no 3.8 support for onnx yet 
 
 before_install:
-  - find /usr/lib/jvm -name libjvm.so
-  - export MPLBACKEND=agg
-  - export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-  - export JDK_HOME=/usr/lib/jvm/java-8-openjdk-amd64
-
-install:
   - pip install --upgrade pip
   - pip install Cython
-  - pip install .[all]
+
+install:
+  - pip install .[$EXTRAS]
 
 script:
   - python setup.py test

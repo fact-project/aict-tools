@@ -116,7 +116,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         }))
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
-    log.info('Mean AUC ROC : {}'.format(np.array(aucs).mean()))
+    aucs = np.array(aucs)
+    log.info('Cross-validation ROC-AUCs: {}'.format(aucs))
+    log.info('Mean AUC ROC : {:.3f} ± {:.3f}'.format(aucs.mean(), aucs.std()))
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
     log.info('Writing predictions from cross validation')
