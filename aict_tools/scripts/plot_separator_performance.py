@@ -1,7 +1,7 @@
 import click
 import logging
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib
 import joblib
 from ..configuration import AICTConfig
 import fact.io
@@ -12,6 +12,11 @@ from ..plotting import (
     plot_precision_recall,
     plot_feature_importances,
 )
+
+if matplotlib.get_backend() == 'pgf':
+    from matplotlib.backends.backend_pgf import PdfPages
+else:
+    from matplotlib.backends.backend_pdf import PdfPages
 
 
 @click.command()
@@ -42,7 +47,6 @@ def main(configuration_path, performance_path, model_path, output, key):
     ax = figures[-1].add_subplot(1, 1, 1)
     plot_roc(df, model, ax=ax)
 
-
     # Plot hists of probas
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
@@ -61,7 +65,6 @@ def main(configuration_path, performance_path, model_path, output, key):
         ax = figures[-1].add_subplot(1, 1, 1)
 
         features = model_config.features
-
         plot_feature_importances(model, features, ax=ax)
 
     if output is None:
