@@ -1,8 +1,10 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn import metrics
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+
+from sklearn import metrics
 from sklearn.calibration import CalibratedClassifierCV
 
 
@@ -185,6 +187,9 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
     ax = ax or plt.gca()
 
     ypos = np.arange(1, len(feature_names[:max_features]) + 1)
+
+    if plt.rcParams['text.usetex'] or matplotlib.get_backend() == 'pgf':
+        feature_names = [f.replace('_', r'\_') for f in feature_names]
     feature_names = np.array(feature_names)
 
     if isinstance(model, CalibratedClassifierCV):
@@ -219,7 +224,6 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
             ypos,
             feature_importances[idx]
         )
-
 
     ax.set_ylim(ypos[0] - 0.5, ypos[-1] + 0.5)
     ax.set_yticks(ypos)
