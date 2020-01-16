@@ -73,7 +73,7 @@ def plot_bias_resolution(performace_df, bins=10, ax=None):
     binned['resolution'] = grouped['rel_error'].std()
 
     for key in ('bias', 'resolution', 'resolution_quantiles'):
-        if matplotlib.get_backend() == 'pgf':
+        if matplotlib.get_backend() == 'pgf' or plt.rcParams['text.usetex']:
             label = key.replace('_', r'\_')
         else:
             label = key
