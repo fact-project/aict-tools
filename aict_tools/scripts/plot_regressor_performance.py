@@ -1,16 +1,21 @@
 import click
 import logging
+import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib.backends.backend_pdf import PdfPages
 import joblib
-from ..configuration import AICTConfig
 import fact.io
 
+from ..configuration import AICTConfig
 from ..plotting import (
     plot_regressor_confusion,
     plot_bias_resolution,
     plot_feature_importances,
 )
+
+if matplotlib.get_backend() == 'pgf':
+    from matplotlib.backends.backend_pgf import PdfPages
+else:
+    from matplotlib.backends.backend_pdf import PdfPages
 
 
 @click.command()
