@@ -70,10 +70,12 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         zd_pointing=df[model_config.pointing_zd_column],
     )
 
+    log.info('Using projected disp: {}'.format(model_config.project_disp))
     df['true_disp'], df['true_sign'] = calc_true_disp(
         source_x, source_y,
         df[model_config.cog_x_column], df[model_config.cog_y_column],
         df[model_config.delta_column],
+        project_disp=model_config.project_disp,
     )
 
     # generate features if given in config

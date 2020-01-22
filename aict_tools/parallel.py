@@ -1,8 +1,9 @@
 from multiprocessing import Pool, cpu_count
 import numpy as np
+from functools import partial
 
 
-def parallelize_array_computation(func, *arrays, n_jobs=-1):
+def parallelize_array_computation(func, *arrays, n_jobs=-1, **kwargs):
     '''
     Chunk arrays into n_jobs blocks and compute func using a multiprocessing.Pool
     '''
@@ -23,6 +24,7 @@ def parallelize_array_computation(func, *arrays, n_jobs=-1):
         end = start + block_size
         blocks.append([a[start:end] for a in arrays])
 
+    func = partial(func, **kwargs)
     with Pool(n_jobs) as pool:
         result = pool.starmap(func, blocks)
 

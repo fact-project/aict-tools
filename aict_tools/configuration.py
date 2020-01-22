@@ -153,6 +153,7 @@ class DispConfig:
         'cog_y_column',
         'delta_column',
         'log_target',
+        'project_disp',
     ]
 
     def __init__(self, config):
@@ -160,6 +161,7 @@ class DispConfig:
 
         self.disp_regressor = load_regressor(model_config['disp_regressor'])
         self.sign_classifier = load_classifier(model_config['sign_classifier'])
+        self.project_disp = model_config.get('project_disp', False)
         self.log_target = model_config.get('log_target', False)
 
         self.n_signal = model_config.get('n_signal', None)

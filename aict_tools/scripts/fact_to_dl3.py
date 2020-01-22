@@ -142,6 +142,7 @@ def calc_source_features_sim(
     cog_x,
     cog_y,
     delta,
+    project_disp=False
 ):
     result = calc_source_features_common(
         prediction_x,
@@ -162,6 +163,7 @@ def calc_source_features_sim(
         source_x, source_y,
         cog_x, cog_y,
         delta,
+        project_disp=project_disp,
     )
     result['true_disp'] = true_disp * true_sign
 
@@ -363,6 +365,7 @@ def main(
                 df['cog_x'].values,
                 df['cog_y'].values,
                 df['delta'].values,
+                project_disp=config.disp.project_disp,
                 n_jobs=n_jobs,
             )
 
