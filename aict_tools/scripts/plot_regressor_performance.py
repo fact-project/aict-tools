@@ -70,4 +70,5 @@ def main(configuration_path, performance_path, model_path, output, key):
     else:
         with PdfPages(output) as pdf:
             for fig in figures:
+                fig.tight_layout(pad=0)
                 pdf.savefig(fig)
