@@ -82,14 +82,28 @@ def predict_separator(df, model):
     return score
 
 
-def create_mask_h5py(infile, selection_config, n_events, key='events', start=None, end=None):
+def create_mask_h5py(
+    infile,
+    selection_config,
+    n_events,
+    key='events',
+    start=None,
+    end=None,
+):
     start = start or 0
     end = min(n_events, end) if end else n_events
 
     n_selected = end - start
     mask = np.ones(n_selected, dtype=bool)
 
-    for name, (operator, value) in selection_config.items():
+    # legacy support for dict of column_name -> [op, val]
+    if isinstance(selection_config, dict):
+        selection_config = [{k: v} for k, v in selection_config.items()]
+
+    for c in selection_config:
+        if len(c) > 1:
+            raise ValueError('Expected dict with single entry column: [operator, value].')
+        name, (operator, value) = list(c.items())[0]
 
         before = mask.sum()
         mask = np.logical_and(
@@ -104,13 +118,13 @@ def create_mask_h5py(infile, selection_config, n_events, key='events', start=Non
 
 
 def apply_cuts_h5py_chunked(
-        input_path,
-        output_path,
-        selection_config,
-        key='events',
-        chunksize=100000,
-        progress=True,
-    ):
+    input_path,
+    output_path,
+    selection_config,
+    key='events',
+    chunksize=100000,
+    progress=True,
+):
     '''
     Apply cuts defined in selection config to input_path and write result to
     outputpath. Apply cuts to chunksize events at a time.
@@ -134,7 +148,9 @@ def apply_cuts_h5py_chunked(
             for name, dataset in infile[key].items():
                 if chunk == 0:
                     if dataset.ndim == 1:
-                        group.create_dataset(name, data=dataset[start:end][mask], maxshape=(None, ))
+                        group.create_dataset(
+                            name, data=dataset[start:end][mask], maxshape=(None, )
+                        )
                     elif dataset.ndim == 2:
                         group.create_dataset(
                             name, data=dataset[start:end, :][mask, :], maxshape=(None, 2)
