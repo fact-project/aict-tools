@@ -2,23 +2,21 @@
 seed: 0
 
 # Quality cuts from Fabian Temme's phd thesis
+# this should be a list of column_name: [operator, value]
+# all cuts are combined with logical AND
 selection:
-    num_pixel_in_shower:
-      - '>='  # needs to be in quotes because > and ! are special character in yaml
-      - 10
-    num_islands:
-      - <=
-      - 8
-    width:
-      - <=
-      - 30
-    leakage1:
-      - <
-      - 0.6
-    leakage2:
-      - lt # string representation also possible
-      - 0.85
-    length:
-      - lt
-      - 70
-    
+  - num_pixel_in_shower:
+    - '>='  # needs to be in quotes because > and ! are special character in yaml
+    - 10
+  # more concise
+  - num_islands: [<=, 8]
+  - width: [<=, 30]
+  - leakage1:
+    - <
+    - 0.6
+  - leakage2:
+    - lt # string representation also possible
+    - 0.85
+  - length:
+    - lt
+    - 70
