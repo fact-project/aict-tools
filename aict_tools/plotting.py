@@ -1,8 +1,10 @@
-import matplotlib.pyplot as plt
 import numpy as np
-from sklearn import metrics
 import pandas as pd
+import matplotlib
+import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+
+from sklearn import metrics
 from sklearn.calibration import CalibratedClassifierCV
 
 
@@ -71,12 +73,16 @@ def plot_bias_resolution(performace_df, bins=10, ax=None):
     binned['resolution'] = grouped['rel_error'].std()
 
     for key in ('bias', 'resolution', 'resolution_quantiles'):
+        if matplotlib.get_backend() == 'pgf' or plt.rcParams['text.usetex']:
+            label = key.replace('_', r'\_')
+        else:
+            label = key
 
         ax.errorbar(
             binned['center'],
             binned[key],
             xerr=0.5 * binned['width'],
-            label=key,
+            label=label,
             linestyle='',
         )
     ax.legend()
@@ -185,6 +191,9 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
     ax = ax or plt.gca()
 
     ypos = np.arange(1, len(feature_names[:max_features]) + 1)
+
+    if plt.rcParams['text.usetex'] or matplotlib.get_backend() == 'pgf':
+        feature_names = [f.replace('_', r'\_') for f in feature_names]
     feature_names = np.array(feature_names)
 
     if isinstance(model, CalibratedClassifierCV):
@@ -219,7 +228,6 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
             ypos,
             feature_importances[idx]
         )
-
 
     ax.set_ylim(ypos[0] - 0.5, ypos[-1] + 0.5)
     ax.set_yticks(ypos)

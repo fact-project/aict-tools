@@ -24,32 +24,44 @@ sklearn_modules = {
 
 
 log = logging.getLogger(__name__)
+yaml = YAML(typ='safe')
 
 
-FeatureGenerationConfig = namedtuple(
+_feature_gen_config = namedtuple(
     'FeatureGenerationConfig',
-    ['needed_columns', 'features']
+    ['needed_columns', 'features'],
 )
 
-yaml = YAML(typ='safe')
+
+class FeatureGenerationConfig(_feature_gen_config):
+    '''
+    Stores the needed features and the expressions for the
+    feature generation
+    '''
+
+    def __new__(cls, needed_columns, features):
+        if features is None:
+            log.warning('Feature generation config present but no features defined.')
+            features = {}
+        return super().__new__(cls, needed_columns, features)
+
+
+def print_models(filter_func=is_classifier):
+    for name, module in sklearn_modules.items():
+        for cls_name in dir(module):
+            cls = getattr(module, cls_name)
+            if filter_func(cls):
+                logging.info(name + '.' + cls.__name__)
 
 
 def print_supported_classifiers():
     logging.info('Supported Classifiers:')
-    for name, module in sklearn_modules.items():
-        for cls_name in dir(module):
-            cls = getattr(module, cls_name)
-            if is_classifier(cls):
-                logging.info(name + '.' + cls.__name__)
+    print_models(is_classifier)
 
 
 def print_supported_regressors():
     logging.info('Supported Regressors:')
-    for name, module in sklearn_modules.items():
-        for cls_name in dir(module):
-            cls = getattr(module, cls_name)
-            if is_regressor(cls):
-                logging.info(name + '.' + cls.__name__)
+    print_models(is_regressor)
 
 
 def load_regressor(config):
@@ -164,8 +176,8 @@ class DispConfig:
             raise ValueError('Source dependent features used: {}'.format(source_features))
 
         if gen_config:
-            self.features.extend(gen_config['features'].keys())
             self.feature_generation = FeatureGenerationConfig(**gen_config)
+            self.features.extend(self.feature_generation.features.keys())
         else:
             self.feature_generation = None
         self.features.sort()
@@ -232,8 +244,8 @@ class EnergyConfig:
         if len(source_features):
             raise ValueError('Source dependent features used: {}'.format(source_features))
         if gen_config:
-            self.features.extend(gen_config['features'].keys())
             self.feature_generation = FeatureGenerationConfig(**gen_config)
+            self.features.extend(self.feature_generation.features.keys())
         else:
             self.feature_generation = None
         self.features.sort()
@@ -277,8 +289,8 @@ class SeparatorConfig:
         if len(source_features):
             raise ValueError('Source dependent features used: {}'.format(source_features))
         if gen_config:
-            self.features.extend(gen_config['features'].keys())
             self.feature_generation = FeatureGenerationConfig(**gen_config)
+            self.features.extend(self.feature_generation.features.keys())
         else:
             self.feature_generation = None
         self.features.sort()
