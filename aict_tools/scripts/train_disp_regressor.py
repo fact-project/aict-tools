@@ -63,12 +63,19 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     )
     log.info('Total number of events: {}'.format(len(df)))
 
-    source_x, source_y = horizontal_to_camera(
-        az=df[model_config.source_az_column],
-        zd=df[model_config.source_zd_column],
-        az_pointing=df[model_config.pointing_az_column],
-        zd_pointing=df[model_config.pointing_zd_column],
-    )
+    # config key preliminary, was used in a different context (mean of energy or gamma/hadron model)
+    if config.has_multiple_telescopes == True: 
+        from ..cta_helpers import horizontal_to_camera_cta_simtel
+        source_x, source_y = horizontal_to_camera_cta_simtel(df)
+        # cta preprocessing uses deg instead of rad
+        df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
+    else:
+        source_x, source_y = horizontal_to_camera(
+            az=df[model_config.source_az_column],
+            zd=df[model_config.source_zd_column],
+            az_pointing=df[model_config.pointing_az_column],
+            zd_pointing=df[model_config.pointing_zd_column],
+        )
 
     log.info('Using projected disp: {}'.format(model_config.project_disp))
     df['true_disp'], df['true_sign'] = calc_true_disp(
