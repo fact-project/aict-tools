@@ -64,12 +64,17 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     log.info('Total number of events: {}'.format(len(df)))
 
     # config key preliminary, was used in a different context (mean of energy or gamma/hadron model)
-    if config.has_multiple_telescopes == True: 
+    if config.coordinate_transformation == 'CTA: 
         from ..cta_helpers import horizontal_to_camera_cta_simtel
-        source_x, source_y = horizontal_to_camera_cta_simtel(df)
+        source_x, source_y = horizontal_to_camera_cta_simtel(
+            az=df[model_config.source_az_column],
+            zd=df[model_config.source_zd_column],
+            az_pointing=df[model_config.pointing_az_column],
+            zd_pointing=df[model_config.pointing_zd_column],
+            focal_length=df[model_config.focal_length_column])
         # cta preprocessing uses deg instead of rad
         df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
-    else:
+    elif config.coordinate_transformation == 'FACT:
         source_x, source_y = horizontal_to_camera(
             az=df[model_config.source_az_column],
             zd=df[model_config.source_zd_column],

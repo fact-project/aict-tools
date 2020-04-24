@@ -104,6 +104,7 @@ class AICTConfig:
 
     def __init__(self, config):
         self.has_multiple_telescopes = config.get('multiple_telescopes', False)
+        self.coordinate_transformation = config.get('coordinate_transformation', 'FACT')
         self.runs_key = config.get('runs_key', 'runs')
 
         if self.has_multiple_telescopes:
@@ -187,6 +188,7 @@ class DispConfig:
 
         self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
         self.pointing_zd_column = model_config.get('pointing_zd_column', 'pointing_position_zd')
+        self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
         self.delta_column = model_config.get('delta_column', 'delta')
