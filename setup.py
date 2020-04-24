@@ -15,6 +15,7 @@ extras_require = {
         'jpmml_evaluator @ https://github.com/jpmml/jpmml-evaluator-python/archive/0.2.2.tar.gz',
     ],
     'onnx': ['skl2onnx', 'onnxmltools', 'onnxruntime~=1.0'],
+    'ctapipe': ['ctapipe'],
 }
 extras_require['all'] = list({dep for deps in extras_require.values() for dep in deps})
 
