@@ -95,6 +95,7 @@ class AICTConfig:
         'energy',
         'separator',
         'has_multiple_telescopes',
+        'coordinate_transformation',
     )
 
     @classmethod
@@ -150,6 +151,7 @@ class DispConfig:
         'source_zd_column',
         'pointing_az_column',
         'pointing_zd_column',
+        'focal_length_column',
         'cog_x_column',
         'cog_y_column',
         'delta_column',
