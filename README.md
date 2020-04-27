@@ -39,9 +39,20 @@ If you want to serialize models to these formats, install this using:
 ```
 $ pip install aict-tools[pmml] # for pmml support
 $ pip install aict-tools[onnx] # for onnx support
-$ pip install aict-tools[all]  # for both
 ```
 
+In the case of working with CTA data, you will also need to have ctapipe installed.
+If this is not already the case, you can install it using:
+
+```
+$ pip install aict-tools[cta]
+```
+
+To install all optional dependencies, use:
+
+```
+$ pip install aict-tools[all]  # for both
+```
 
 Alternatively you can clone the repo, `cd` into the folder and do the usual `pip install .` dance.
 
@@ -104,6 +115,9 @@ Training requires simulated diffuse gamma-ray events.
 * `aict_apply_disp_regressor`
 
 An example configuration can be found in [examples/config_source.yaml](examples/config_source.yaml).
+Currently supported experiments: 
+* FACT
+* CTA
 
 **Note: By applying the disp regressor, `Theta` wil be deleted from the feature set.** 
 Theta has to be calculated from the source prediction e.g. by using `fact_calculate_theta` from pyfact.

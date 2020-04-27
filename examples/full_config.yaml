@@ -4,6 +4,8 @@ seed: 0
 # define th number of cross validations to perform
 n_cross_validations: 5
 
+coordinate_transformations: FACT
+
 # Define the name of the column that contains the name of the telescope in case you're working
 # with mulitple telescopes and telescope types
 #telescope_type_key: telescope:name

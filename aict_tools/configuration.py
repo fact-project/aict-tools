@@ -105,7 +105,7 @@ class AICTConfig:
 
     def __init__(self, config):
         self.has_multiple_telescopes = config.get('multiple_telescopes', False)
-        self.coordinate_transformation = config.get('coordinate_transformation', 'FACT')
+        self.coordinate_transformation = config.get('coordinate_transformation', None)
         self.runs_key = config.get('runs_key', 'runs')
 
         if self.has_multiple_telescopes:

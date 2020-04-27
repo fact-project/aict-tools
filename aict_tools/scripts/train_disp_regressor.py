@@ -81,6 +81,11 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             az_pointing=df[model_config.pointing_az_column],
             zd_pointing=df[model_config.pointing_zd_column],
         )
+    else:
+        raise Exception(
+            '''The value of config.coordinate_transformation does
+            not match any of the expected values. Should be 
+            CTA or FACT, but is %s.''', config.coordinate_transformation)
 
     log.info('Using projected disp: {}'.format(model_config.project_disp))
     df['true_disp'], df['true_sign'] = calc_true_disp(
