@@ -45,13 +45,13 @@ In the case of working with CTA data, you will also need to have ctapipe install
 If this is not already the case, you can install it using:
 
 ```
-$ pip install aict-tools[cta]
+$ pip install aict-tools[cta] # for DISP use on CTA data
 ```
 
 To install all optional dependencies, use:
 
 ```
-$ pip install aict-tools[all]  # for both
+$ pip install aict-tools[all]  # for all
 ```
 
 Alternatively you can clone the repo, `cd` into the folder and do the usual `pip install .` dance.
