@@ -95,7 +95,6 @@ class AICTConfig:
         'energy',
         'separator',
         'has_multiple_telescopes',
-        'coordinate_transformation',
     )
 
     @classmethod
@@ -156,6 +155,7 @@ class DispConfig:
         'delta_column',
         'log_target',
         'project_disp',
+        'coordinate_transformation',
     ]
 
     def __init__(self, config):
