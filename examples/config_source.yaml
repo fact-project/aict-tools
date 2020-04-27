@@ -4,7 +4,6 @@ seed: 0
 # define th number of cross validations to perform
 n_cross_validations : 5
 
-coordinate_transformation: FACT
 
 disp:
   disp_regressor : |
@@ -23,6 +22,7 @@ disp:
         max_depth=20,
     )
 
+  coordinate_transformation: FACT
   # columns containing coordinates of the source and of the pointing
   source_azimuth_column: source_position_az
   source_zenith_column: source_position_zd

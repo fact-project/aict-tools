@@ -105,7 +105,6 @@ class AICTConfig:
 
     def __init__(self, config):
         self.has_multiple_telescopes = config.get('multiple_telescopes', False)
-        self.coordinate_transformation = config.get('coordinate_transformation', None)
         self.runs_key = config.get('runs_key', 'runs')
 
         if self.has_multiple_telescopes:
@@ -162,6 +161,7 @@ class DispConfig:
     def __init__(self, config):
         model_config = config['disp']
 
+        self.coordinate_transformation = model_config['coordinate_transformation']
         self.disp_regressor = load_regressor(model_config['disp_regressor'])
         self.sign_classifier = load_classifier(model_config['sign_classifier'])
         self.project_disp = model_config.get('project_disp', False)
