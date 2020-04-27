@@ -8,18 +8,18 @@ def horizontal_to_camera_cta_simtel(zd, az, zd_pointing, az_pointing, focal_leng
 
         altaz = AltAz()
         source_altaz = SkyCoord(
-            az=az*u.deg,
-            alt=zd*u.deg,
+            az=u.Quantity(az, u.deg, copy=False),
+            alt=u.Quantity(zd, u.deg, copy=False),
             frame=altaz,
         )
         
         tel_pointing = SkyCoord(
-            alt=zd_pointing*u.deg,
-            az=az_pointing*u.deg,
+            alt=u.Quantity(zd_pointing, u.deg, copy=False),
+            az=u.Quantity(az_pointing, u.deg, copy=False),
             frame=altaz,
         )
         camera_frame = CameraFrame(
-            focal_length=focal_length*u.m,
+            focal_length=u.Quantity(focal_length, u.m, copy=False),
             telescope_pointing=tel_pointing,
         )
         
