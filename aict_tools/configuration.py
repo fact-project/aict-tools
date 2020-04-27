@@ -163,9 +163,8 @@ class DispConfig:
 
         self.coordinate_transformation = model_config['coordinate_transformation']
         if self.coordinate_transformation not in ['CTA', 'FACT']:
-            raise Exception(
-                '''Value of coordinate_transformation needs to be set
-                to CTA or FACT''')
+            raise ValueError(
+                'Value of coordinate_transformation needs to be set to CTA or FACT')
         self.disp_regressor = load_regressor(model_config['disp_regressor'])
         self.sign_classifier = load_classifier(model_config['sign_classifier'])
         self.project_disp = model_config.get('project_disp', False)
