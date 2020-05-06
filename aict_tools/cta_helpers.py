@@ -4,9 +4,7 @@ try:
     from astropy.coordinates import SkyCoord, AltAz
     from ctapipe.coordinates import CameraFrame
 except ImportError:
-    raise ImportError(
-            'This functionality requires ctapipe to be installed'
-)
+    raise ImportError('This functionality requires ctapipe to be installed')
 
 
 def horizontal_to_camera_cta_simtel(zd, az, zd_pointing, az_pointing, focal_length):
