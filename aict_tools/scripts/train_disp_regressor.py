@@ -63,16 +63,19 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     )
     log.info('Total number of events: {}'.format(len(df)))
 
-    log.info('Using coordinate transformations for %s',
-            model_config.coordinate_transformation)
-    if model_config.coordinate_transformation == 'CTA': 
+    log.info(
+        'Using coordinate transformations for %s',
+        model_config.coordinate_transformation
+    )
+    if model_config.coordinate_transformation == 'CTA':
         from ..cta_helpers import horizontal_to_camera_cta_simtel
         source_x, source_y = horizontal_to_camera_cta_simtel(
             az=df[model_config.source_az_column],
             zd=df[model_config.source_zd_column],
             az_pointing=df[model_config.pointing_az_column],
             zd_pointing=df[model_config.pointing_zd_column],
-            focal_length=df[model_config.focal_length_column])
+            focal_length=df[model_config.focal_length_column],
+        )
         # cta preprocessing uses deg instead of rad
         df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
     elif model_config.coordinate_transformation == 'FACT':
@@ -82,7 +85,6 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             az_pointing=df[model_config.pointing_az_column],
             zd_pointing=df[model_config.pointing_zd_column],
         )
-
 
     log.info('Using projected disp: {}'.format(model_config.project_disp))
     df['true_disp'], df['true_sign'] = calc_true_disp(

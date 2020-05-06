@@ -217,6 +217,9 @@ class DispConfig:
             self.source_az_column,
             self.source_zd_column,
         })
+        if self.coordinate_transformation == 'CTA':
+            cols.add(self.focal_length_column)
+
         self.columns_to_read_train = list(cols)
 
 
