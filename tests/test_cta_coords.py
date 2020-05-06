@@ -13,6 +13,7 @@ def test_horizontal_to_camera():
             df.az,
             df.alt_pointing,
             df.az_pointing,
-            df.focal_length)
+            df.focal_length
+    )
     assert_allclose(expected_x, transformed_x)
     assert_allclose(expected_y, transformed_y)

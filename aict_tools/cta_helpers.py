@@ -5,7 +5,8 @@ try:
     from ctapipe.coordinates import CameraFrame
 except ImportError:
     raise ImportError(
-            'This functionality requires ctapipe to be installed')
+            'This functionality requires ctapipe to be installed'
+)
 
 
 def horizontal_to_camera_cta_simtel(zd, az, zd_pointing, az_pointing, focal_length):
