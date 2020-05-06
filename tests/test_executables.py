@@ -227,6 +227,30 @@ def test_train_disp():
             assert result.exit_code == 0
 
 
+def test_train_disp_cta():
+    from aict_tools.scripts.train_disp_regressor import main as train
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+
+        with DateNotModified('examples/gamma_diffuse_cta.hdf5'):
+            runner = CliRunner()
+            result = runner.invoke(
+                train,
+                [
+                    'examples/config_source_cta.yaml',
+                    'examples/gamma_diffuse_cta.hdf5',
+                    os.path.join(d, 'test.hdf5'),
+                    os.path.join(d, 'disp.pkl'),
+                    os.path.join(d, 'sign.pkl'),
+                ]
+            )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
+
+
+
 def test_apply_disp():
     from aict_tools.scripts.train_disp_regressor import main as train
     from aict_tools.scripts.apply_disp_regressor import main as apply_model
@@ -266,6 +290,48 @@ def test_apply_disp():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+
+
+def test_apply_disp_cta():
+    from aict_tools.scripts.train_disp_regressor import main as train
+    from aict_tools.scripts.apply_disp_regressor import main as apply_model
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+
+        shutil.copy('examples/gamma_cta.hdf5', os.path.join(d, 'gamma_cta.hdf5'))
+
+        runner = CliRunner()
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_source_cta.yaml',
+                'examples/gamma_diffuse_cta.hdf5',
+                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+        result = runner.invoke(
+            apply_model,
+            [
+                'examples/config_source_cta.yaml',
+                os.path.join(d, 'gamma_cta.hdf5'),
+                os.path.join(d, 'disp.pkl'),
+                os.path.join(d, 'sign.pkl'),
+                '--yes',
+            ]
+        )
+
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
 
 
 def test_to_dl3():
