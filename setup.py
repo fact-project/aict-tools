@@ -12,7 +12,7 @@ with open('aict_tools/__init__.py', 'r') as f:
 extras_require = {
     'pmml': [
         'sklearn2pmml',
-        'jpmml_evaluator @ https://github.com/jpmml/jpmml-evaluator-python/archive/0.2.2.tar.gz',
+        'jpmml_evaluator>=0.2.2',
     ],
     'onnx': ['skl2onnx', 'onnxmltools', 'onnxruntime~=1.0'],
 }
