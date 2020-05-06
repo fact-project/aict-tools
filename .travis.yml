@@ -17,14 +17,14 @@ matrix:
         - EXTRAS="all"
     - python: '3.8'
       env:
-        - EXTRAS="pmml" # no 3.8 support for onnx yet 
+        - EXTRAS="pmml, cta" # no 3.8 support for onnx yet 
 
 before_install:
   - pip install --upgrade pip
   - pip install Cython
 
 install:
-  - pip install .[$EXTRAS]
+  - pip install ".[$EXTRAS]"
 
 script:
   - python setup.py test

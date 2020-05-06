@@ -149,16 +149,25 @@ class DispConfig:
         'source_zd_column',
         'pointing_az_column',
         'pointing_zd_column',
+        'focal_length_column',
         'cog_x_column',
         'cog_y_column',
         'delta_column',
         'log_target',
         'project_disp',
+        'coordinate_transformation',
     ]
 
     def __init__(self, config):
         model_config = config['disp']
 
+        self.coordinate_transformation = model_config.get('coordinate_transformation')
+        if self.coordinate_transformation not in ['CTA', 'FACT']:
+            raise ValueError(
+                'Value of coordinate_transformation not set to CTA or FACT: {}'.format(
+                    self.coordinate_transformation
+                )
+            )
         self.disp_regressor = load_regressor(model_config['disp_regressor'])
         self.sign_classifier = load_classifier(model_config['sign_classifier'])
         self.project_disp = model_config.get('project_disp', False)
@@ -187,6 +196,7 @@ class DispConfig:
 
         self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
         self.pointing_zd_column = model_config.get('pointing_zd_column', 'pointing_position_zd')
+        self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
         self.delta_column = model_config.get('delta_column', 'delta')
@@ -207,6 +217,9 @@ class DispConfig:
             self.source_az_column,
             self.source_zd_column,
         })
+        if self.coordinate_transformation == 'CTA':
+            cols.add(self.focal_length_column)
+
         self.columns_to_read_train = list(cols)
 
 
