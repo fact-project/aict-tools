@@ -24,10 +24,10 @@ disp:
 
   coordinate_transformation: FACT
   # columns containing coordinates of the source and of the pointing
-  source_azimuth_column: source_position_az
-  source_zenith_column: source_position_zd
-  pointing_azimuth_column: pointing_position_az
-  pointing_zenith_column: pointing_position_zd
+  source_az_column: source_position_az
+  source_zd_column: source_position_zd
+  pointing_az_column: pointing_position_az
+  pointing_zd_column: pointing_position_zd
 
 
   # randomly sample the data if you dont want to use the whole set

@@ -1,0 +1,61 @@
+# seed for the random number generators, to make things reproducible
+seed: 0
+
+# define th number of cross validations to perform
+n_cross_validations : 5
+
+# telescope_type_key: telescope_type_name
+telescope_events_key: telescope_events
+array_events_key: array_events
+runs_key: runs
+
+
+multiple_telescopes: True
+
+
+disp:
+  disp_regressor : |
+    ensemble.RandomForestRegressor(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  sign_classifier: |
+    ensemble.RandomForestClassifier(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  coordinate_transformation: CTA
+
+  source_az_column: mc_az
+  source_zd_column: mc_alt ### altitude -> offset
+  pointing_az_column: pointing_azimuth
+  pointing_zd_column: pointing_altitude ###offset 90°
+  cog_x_column: x  ## added
+  cog_y_column: y  ## added
+  delta_column: psi ##????
+  array_event_column: array_event_id
+
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal : 500
+
+  features:
+    - num_pixel_in_shower
+    - intensity
+    - width
+    - length
+    - psi
+    - phi
+    - r
+    - kurtosis
+    - skewness
+    - slope
+    - intercept
+    - deviation
+    - focal_length
