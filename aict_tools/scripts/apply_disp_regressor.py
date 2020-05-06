@@ -96,8 +96,8 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
             log_target=model_config.log_target,
         )
 
-        source_x = df_data.cog_x + disp * np.cos(df_data.delta)
-        source_y = df_data.cog_y + disp * np.sin(df_data.delta)
+        source_x = df_data[model_config.cog_x_column] + disp * np.cos(df_data[model_config.delta_column])
+        source_y = df_data[model_config.cog_y_column] + disp * np.sin(df_data[model_config.delta_column])
 
         key = config.telescope_events_key
         append_column_to_hdf5(data_path, source_x, key, 'source_x_prediction')
