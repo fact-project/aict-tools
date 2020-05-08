@@ -37,25 +37,20 @@ def check_valid_rows(df):
 
 def calc_true_disp(source_x, source_y, cog_x, cog_y, delta, project_disp=False):
     ''' Calculate the training variables for the disp regressor '''
-    if project_disp is False:
-        true_disp = euclidean_distance(
-            source_x, source_y,
-            cog_x, cog_y
-        )
-
-        true_delta = np.arctan2(
-            cog_y - source_y,
-            cog_x - source_x,
-        )
-        true_sign = np.sign(np.abs(delta - true_delta) - np.pi / 2)
-
-        return true_disp, true_sign
-
     delta_x = source_x - cog_x
     delta_y = source_y - cog_y
 
-    # in the projected case, true disp is the coordiante of the source
-    # on the long axis
+    # in the projected case,
+    # true disp is the coordiante of the source on the long axis
     true_disp = np.cos(delta) * delta_x + np.sin(delta) * delta_y
+    sign_disp = np.sign(true_disp)
 
-    return np.abs(true_disp), np.sign(true_disp)
+    if project_disp is False:
+        abs_disp = euclidean_distance(
+            source_x, source_y,
+            cog_x, cog_y
+        )
+    else:
+        abs_disp = np.abs(true_disp)
+
+    return abs_disp, sign_disp
