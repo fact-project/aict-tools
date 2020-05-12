@@ -36,26 +36,43 @@ def check_valid_rows(df):
 
 
 def calc_true_disp(source_x, source_y, cog_x, cog_y, delta, project_disp=False):
-    ''' Calculate the training variables for the disp regressor '''
-    if project_disp is False:
-        true_disp = euclidean_distance(
-            source_x, source_y,
-            cog_x, cog_y
-        )
+    '''
+    Calculate the training variables for the disp regressor
 
-        true_delta = np.arctan2(
-            cog_y - source_y,
-            cog_x - source_x,
-        )
-        true_sign = np.sign(np.abs(delta - true_delta) - np.pi / 2)
+    Parameters
+    ----------
+    source_x: ndarray
+        x coordinate of the source in camera coordinate frame
+    source_y: ndarray
+        y coordinate of the source in camera coordinate frame
+    cog_x: ndarray
+        x coordinate of the shower cog in camera coordinate frame
+    cog_y: ndarray
+        y coordinate of the shower cog in camera coordinate frame
+    project_disp: bool
+        If true, disp is the projection of the source position onto
+        the main shower axis. If False, disp is simply the distance
+        of the source to the cog.
 
-        return true_disp, true_sign
-
+    Returns
+    -------
+    abs_disp: absolute value of disp, either projected or not
+    sign_disp: sign of disp
+    '''
     delta_x = source_x - cog_x
     delta_y = source_y - cog_y
 
-    # in the projected case, true disp is the coordiante of the source
-    # on the long axis
+    # in the projected case,
+    # true disp is the coordinate of the source on the long axis
     true_disp = np.cos(delta) * delta_x + np.sin(delta) * delta_y
+    sign_disp = np.sign(true_disp)
 
-    return np.abs(true_disp), np.sign(true_disp)
+    if project_disp is False:
+        abs_disp = euclidean_distance(
+            source_x, source_y,
+            cog_x, cog_y
+        )
+    else:
+        abs_disp = np.abs(true_disp)
+
+    return abs_disp, sign_disp
