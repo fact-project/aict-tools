@@ -147,8 +147,10 @@ class DispConfig:
         'columns_to_read_train',
         'source_az_column',
         'source_zd_column',
+        'source_alt_column',
         'pointing_az_column',
         'pointing_zd_column',
+        'pointing_alt_column',
         'focal_length_column',
         'cog_x_column',
         'cog_y_column',
@@ -192,10 +194,26 @@ class DispConfig:
         self.features.sort()
 
         self.source_az_column = model_config.get('source_az_column', 'source_position_az')
-        self.source_zd_column = model_config.get('source_zd_column', 'source_position_zd')
+        self.source_zd_column = model_config.get('source_zd_column', None)
+        self.source_alt_column = model_config.get('source_alt_column', None)
+        if (self.source_zd_column is None) is (self.source_alt_column is None):
+            raise ValueError(
+                    'Need to specify exactly one of'
+                    'source_zd_column or source_alt_column.'
+                    'source_zd_column: {}, source_alt_column: {}'.format(
+                        self.source_zd_column, self.source_alt_column)
+                    )
 
         self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
-        self.pointing_zd_column = model_config.get('pointing_zd_column', 'pointing_position_zd')
+        self.pointing_zd_column = model_config.get('pointing_zd_column', None)
+        self.pointing_alt_column = model_config.get('pointing_alt_column', None)
+        if (self.source_zd_column is None) is (self.source_alt_column is None):
+            raise ValueError(
+                    'Need to specify exactly one of'
+                    'source_zd_column or source_alt_column.'
+                    'source_zd_column: {}, source_alt_column: {}'.format(
+                        self.source_zd_column, self.source_alt_column)
+                    )
         self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
@@ -214,8 +232,10 @@ class DispConfig:
         cols.update({
             self.pointing_az_column,
             self.pointing_zd_column,
+            self.pointing_alt_column,
             self.source_az_column,
             self.source_zd_column,
+            self.source_alt_column,
         })
         if self.coordinate_transformation == 'CTA':
             cols.add(self.focal_length_column)
