@@ -237,6 +237,7 @@ class DispConfig:
             self.source_zd_column,
             self.source_alt_column,
         })
+        cols.discard(None)
         if self.coordinate_transformation == 'CTA':
             cols.add(self.focal_length_column)
 
