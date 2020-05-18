@@ -207,12 +207,12 @@ class DispConfig:
         self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
         self.pointing_zd_column = model_config.get('pointing_zd_column', None)
         self.pointing_alt_column = model_config.get('pointing_alt_column', None)
-        if (self.source_zd_column is None) is (self.source_alt_column is None):
+        if (self.pointing_zd_column is None) is (self.pointing_alt_column is None):
             raise ValueError(
                     'Need to specify exactly one of'
-                    'source_zd_column or source_alt_column.'
-                    'source_zd_column: {}, source_alt_column: {}'.format(
-                        self.source_zd_column, self.source_alt_column)
+                    'pointing_zd_column or pointing_alt_column.'
+                    'pointing_zd_column: {}, pointing_alt_column: {}'.format(
+                        self.pointing_zd_column, self.pointing_alt_column)
                     )
         self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
