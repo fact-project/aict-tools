@@ -138,7 +138,6 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             cv_disp_prediction = np.exp(cv_disp_prediction)
 
         sign_classifier.fit(cv_x_train, cv_sign_train)
-        cv_sign_probabilities = sign_classifier.predict_proba(cv_x_test)[:, 1]
         cv_sign_score = 2 * sign_classifier.predict_proba(cv_x_test)[:, 1] -1
         cv_sign_prediction = np.where(cv_sign_score < 0, -1.0, 1.0)
 
@@ -151,7 +150,6 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             'sign': cv_sign_test,
             'sign_prediction': cv_sign_prediction,
             'sign_score': cv_sign_score,
-            'sign_probabilities': cv_sign_probabilities,
             'cv_fold': fold
         }))
 
