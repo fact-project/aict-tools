@@ -80,7 +80,7 @@ def main(configuration_path, performance_path, data_path, sign_model_path, disp_
     # Plot ROC
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    plot_roc(df, sign_model, ax=ax, label_column='sign', score_column='sign_score') #sign_probabilities
+    plot_roc(df, sign_model, ax=ax, label_column='sign', score_column='sign_score')
 
     # Plot hists of probas
     figures.append(plt.figure())
