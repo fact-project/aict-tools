@@ -240,10 +240,11 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
         ax.set_title('The {} most important features'.format(max_features))
     ax.figure.tight_layout()
 
+
 def plot_true_delta_delta(data_df, model_config, ax=None):
-    
+
     df = data_df.copy()
-        
+
     if model_config.coordinate_transformation == 'CTA':
         from .cta_helpers import horizontal_to_camera_cta_simtel
         source_x, source_y = horizontal_to_camera_cta_simtel(
@@ -253,6 +254,7 @@ def plot_true_delta_delta(data_df, model_config, ax=None):
             zd_pointing=df[model_config.pointing_zd_column],
             focal_length=df[model_config.focal_length_column],
         )
+        df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
     elif model_config.coordinate_transformation == 'FACT':
         from fact.coordinates.utils import horizontal_to_camera
         source_x, source_y = horizontal_to_camera(
@@ -262,12 +264,12 @@ def plot_true_delta_delta(data_df, model_config, ax=None):
             zd_pointing=df[model_config.pointing_zd_column],
         )
 
-    true_delta = np.arctan2(source_y - df[model_config.cog_y_column], source_x - df[model_config.cog_x_column])
-    
-    # cta preprocessing uses deg instead of rad
-    df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
+    true_delta = np.arctan2(
+        source_y - df[model_config.cog_y_column],
+        source_x - df[model_config.cog_x_column],
+    )
 
-    ax.hist(true_delta - df[model_config.delta_column], bins = 100, histtype='step')
+    ax.hist(true_delta - df[model_config.delta_column], bins=100, histtype='step')
     ax.figure.tight_layout()
     ax.set_xlabel(r'$\delta_{true}\,-\,\delta$')
     return ax
