@@ -73,8 +73,8 @@ def main(configuration_path, performance_path, data_path, sign_model_path, disp_
         df, log_xy=False, ax=ax,
         label_column='disp', prediction_column='disp_prediction'
     )
-    ax.set_xlabel(r'$|disp|_{\mathrm{MC}} \,\, / \,\, ' + camera_unit)
-    ax.set_ylabel(r'$|disp|_{\mathrm{Est}} \,\, / \,\, ' + camera_unit)
+    ax.set_xlabel(r'$|disp|_{\mathrm{MC}} \,\, / \,\, ' + camera_unit + '$')
+    ax.set_ylabel(r'$|disp|_{\mathrm{Est}} \,\, / \,\, ' + camera_unit + '$')
 
     # Plot confusion
     figures.append(plt.figure())
@@ -84,8 +84,8 @@ def main(configuration_path, performance_path, data_path, sign_model_path, disp_
         df, log_xy=False, log_z=False,
         ax=ax, label_column='disp', prediction_column='disp_prediction',
     )
-    ax.set_xlabel(r'$|disp|_{\mathrm{MC}} \,\, / \,\, ' + camera_unit)
-    ax.set_ylabel(r'$|disp|_{\mathrm{Est}} \,\, / \,\, ' + camera_unit)
+    ax.set_xlabel(r'$|disp|_{\mathrm{MC}} \,\, / \,\, ' + camera_unit + '$')
+    ax.set_ylabel(r'$|disp|_{\mathrm{Est}} \,\, / \,\, ' + camera_unit + '$')
 
     # Plot ROC
     figures.append(plt.figure())
