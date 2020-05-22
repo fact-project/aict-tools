@@ -24,12 +24,12 @@ else:
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('performance_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('sign_model_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('disp_model_path', type=click.Path(exists=True, dir_okay=False))
+@click.argument('sign_model_path', type=click.Path(exists=True, dir_okay=False))
 @click.option('-o', '--output', type=click.Path(exists=False, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for hdf5 for performance_path', default='data')
 @click.option('-k_data', '--key_data', help='HDF5 key for hdf5 for data_path', default='events')
-def main(configuration_path, performance_path, data_path, sign_model_path, disp_model_path, output, key, key_data):
+def main(configuration_path, performance_path, data_path, disp_model_path, sign_model_path, output, key, key_data):
     ''' Createsome performance evaluation plots for the disp model'''
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
@@ -57,11 +57,11 @@ def main(configuration_path, performance_path, data_path, sign_model_path, disp_
     log.info('Loading original data')
     df_data = fact.io.read_data(data_path, key=key_data, columns=columns)
 
-    log.info('Loading sign model')
-    sign_model = joblib.load(sign_model_path)
-
     log.info('Loading disp model')
     disp_model = joblib.load(disp_model_path)
+
+    log.info('Loading sign model')
+    sign_model = joblib.load(sign_model_path)
 
     figures = []
 
