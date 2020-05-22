@@ -8,12 +8,13 @@ from sklearn import metrics
 from sklearn.calibration import CalibratedClassifierCV
 
 
-def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None):
+def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None, label_column='label', prediction_column='label_prediction'):
 
     ax = ax or plt.gca()
 
-    label = performace_df.label.copy()
-    prediction = performace_df.label_prediction.copy()
+    label = performace_df[label_column].copy()
+
+    prediction = performace_df[prediction_column].copy()
 
     if log_xy is True:
         label = np.log10(label)
@@ -45,20 +46,20 @@ def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None):
     return ax
 
 
-def plot_bias_resolution(performace_df, bins=10, ax=None):
+def plot_bias_resolution(performace_df, bins=10, ax=None, label_column='label', prediction_column='label_prediction'):
     df = performace_df.copy()
 
     ax = ax or plt.gca()
 
     if np.isscalar(bins):
         bins = np.logspace(
-            np.log10(df.label.min()),
-            np.log10(df.label.max()),
+            np.log10(df[label_column].min()),
+            np.log10(df[label_column].max()),
             bins + 1
         )
 
-    df['bin'] = np.digitize(df.label, bins)
-    df['rel_error'] = (df.label_prediction - df.label) / df.label
+    df['bin'] = np.digitize(df[label_column], bins)
+    df['rel_error'] = (df[prediction_column] - df[label_column]) / df[label_column]
 
     binned = pd.DataFrame(index=np.arange(1, len(bins)))
     binned['center'] = 0.5 * (bins[:-1] + bins[1:])
@@ -87,11 +88,12 @@ def plot_bias_resolution(performace_df, bins=10, ax=None):
         )
     ax.legend()
     ax.set_xscale('log')
+    ax.set_xlabel(r'$\log_{10}(E_{\mathrm{true}} \,\, / \,\, \mathrm{GeV})$')
 
     return ax
 
 
-def plot_roc(performace_df, model, ax=None):
+def plot_roc(performace_df, model, ax=None, label_column='label', score_column='probabilities'):
 
     ax = ax or plt.gca()
 
@@ -102,12 +104,12 @@ def plot_roc(performace_df, model, ax=None):
 
     roc_aucs = []
 
-    mean_fpr, mean_tpr, _ = metrics.roc_curve(performace_df['label'], performace_df['probabilities'])
+    mean_fpr, mean_tpr, _ = metrics.roc_curve(performace_df[label_column], performace_df[score_column])
     for it, df in performace_df.groupby('cv_fold'):
 
-        fpr, tpr, _ = metrics.roc_curve(df['label'], df['probabilities'])
+        fpr, tpr, _ = metrics.roc_curve(df[label_column], df[score_column])
 
-        roc_aucs.append(metrics.roc_auc_score(df['label'], df['probabilities']))
+        roc_aucs.append(metrics.roc_auc_score(df[label_column], df[score_column]))
 
         ax.plot(
             fpr, tpr,
@@ -130,7 +132,7 @@ def plot_roc(performace_df, model, ax=None):
     return ax
 
 
-def plot_probabilities(performace_df, model, ax=None, classnames=('Proton', 'Gamma')):
+def plot_probabilities(performace_df, model, ax=None, xlabel='score', classnames={0:'Proton', 1:'Gamma'}, label_column='label', score_column='probabilities'):
 
     ax = ax or plt.gca()
 
@@ -138,16 +140,17 @@ def plot_probabilities(performace_df, model, ax=None, classnames=('Proton', 'Gam
         model = model.base_estimator
 
     n_bins = (model.n_estimators + 1) if hasattr(model, 'n_estimators') else 100
-    bin_edges = np.linspace(0, 1, n_bins + 1)
+    bin_edges = np.linspace(performace_df[score_column].min(), performace_df[score_column].max(), n_bins + 1)
 
-    for label, df in performace_df.groupby('label'):
+
+    for label, df in performace_df.groupby(label_column):
         ax.hist(
-            df.probabilities,
+            df[score_column],
             bins=bin_edges, label=classnames[label], histtype='step',
         )
 
+    ax.set_xlabel(xlabel)
     ax.legend()
-    ax.set_xlabel('{} confidence'.format(classnames[1]))
     ax.figure.tight_layout()
 
 
@@ -236,3 +239,37 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
     if len(feature_names) > max_features:
         ax.set_title('The {} most important features'.format(max_features))
     ax.figure.tight_layout()
+
+
+def plot_true_delta_delta(data_df, model_config, ax=None):
+
+    df = data_df.copy()
+
+    if model_config.coordinate_transformation == 'CTA':
+        from .cta_helpers import horizontal_to_camera_cta_simtel
+        source_x, source_y = horizontal_to_camera_cta_simtel(
+            az=df[model_config.source_az_column],
+            zd=df[model_config.source_zd_column],
+            az_pointing=df[model_config.pointing_az_column],
+            zd_pointing=df[model_config.pointing_zd_column],
+            focal_length=df[model_config.focal_length_column],
+        )
+        df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
+    elif model_config.coordinate_transformation == 'FACT':
+        from fact.coordinates.utils import horizontal_to_camera
+        source_x, source_y = horizontal_to_camera(
+            az=df[model_config.source_az_column],
+            zd=df[model_config.source_zd_column],
+            az_pointing=df[model_config.pointing_az_column],
+            zd_pointing=df[model_config.pointing_zd_column],
+        )
+
+    true_delta = np.arctan2(
+        source_y - df[model_config.cog_y_column],
+        source_x - df[model_config.cog_x_column],
+    )
+
+    ax.hist(true_delta - df[model_config.delta_column], bins=100, histtype='step')
+    ax.figure.tight_layout()
+    ax.set_xlabel(r'$\delta_{true}\,-\,\delta$')
+    return ax
