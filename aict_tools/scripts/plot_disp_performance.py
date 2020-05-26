@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import joblib
 import fact.io
 
+from ..preprocessing import sanitize_angle_units
 from ..configuration import AICTConfig
 from ..plotting import (
     plot_roc,
@@ -30,7 +31,7 @@ else:
 @click.option('-k', '--key', help='HDF5 key for hdf5 for performance_path', default='data')
 @click.option('-k_data', '--key_data', help='HDF5 key for hdf5 for data_path', default='events')
 def main(configuration_path, performance_path, data_path, disp_model_path, sign_model_path, output, key, key_data):
-    ''' Createsome performance evaluation plots for the disp model'''
+    ''' Create some performance evaluation plots for the disp model'''
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
 
@@ -62,6 +63,8 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
 
     log.info('Loading sign model')
     sign_model = joblib.load(sign_model_path)
+
+    df_data = sanitize_angle_units(df, model_config)
 
     figures = []
 

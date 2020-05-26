@@ -254,7 +254,6 @@ def plot_true_delta_delta(data_df, model_config, ax=None):
             zd_pointing=df[model_config.pointing_zd_column],
             focal_length=df[model_config.focal_length_column],
         )
-        df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
     elif model_config.coordinate_transformation == 'FACT':
         from fact.coordinates.utils import horizontal_to_camera
         source_x, source_y = horizontal_to_camera(
