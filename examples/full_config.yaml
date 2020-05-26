@@ -4,6 +4,7 @@ seed: 0
 # define th number of cross validations to perform
 n_cross_validations: 5
 
+energy_unit: GeV
 
 # Define the name of the column that contains the name of the telescope in case you're working
 # with mulitple telescopes and telescope types
@@ -126,10 +127,14 @@ disp:
 
   coordinate_transformation: FACT
   # columns containing coordinates of the source and of the pointing
-  source_azimuth_column: source_position_az
   source_zenith_column: source_position_zd
+  source_zenith_unit: rad
+  source_azimuth_column: source_position_az
+  source_azimuth_unit: rad 
   pointing_azimuth_column: pointing_position_az
+  pointing_azimuth_unit: rad
   pointing_zenith_column: pointing_position_zd
+  pointing_zenith_unit: rad
 
   # randomly sample the data if you dont want to use the whole set
   n_signal : 500

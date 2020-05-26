@@ -1,3 +1,4 @@
+import astropy.units as u
 from ruamel.yaml import YAML
 from collections import namedtuple
 from .features import find_used_source_features
@@ -95,6 +96,7 @@ class AICTConfig:
         'energy',
         'separator',
         'has_multiple_telescopes',
+        'energy_unit',
     )
 
     @classmethod
@@ -121,6 +123,7 @@ class AICTConfig:
             self.array_events_key = None
             self.array_event_id_column = None
 
+        self.energy_unit = u.Unit(config.get('energy_unit', 'GeV'))
         self.seed = config.get('seed', 0)
         np.random.seed(self.seed)
 
@@ -146,9 +149,13 @@ class DispConfig:
         'columns_to_read_apply',
         'columns_to_read_train',
         'source_az_column',
+        'source_az_unit',
         'source_zd_column',
+        'source_zd_unit',
         'pointing_az_column',
+        'pointing_az_unit',
         'pointing_zd_column',
+        'pointing_zd_unit',
         'focal_length_column',
         'cog_x_column',
         'cog_y_column',
@@ -193,9 +200,14 @@ class DispConfig:
 
         self.source_az_column = model_config.get('source_az_column', 'source_position_az')
         self.source_zd_column = model_config.get('source_zd_column', 'source_position_zd')
+        self.source_az_unit = u.Unit(model_config.get('source_az_unit', 'deg'))
+        self.source_zd_unit = u.Unit(model_config.get('source_zd_unit', 'deg'))
 
         self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
         self.pointing_zd_column = model_config.get('pointing_zd_column', 'pointing_position_zd')
+        self.pointing_az_unit = u.Unit(model_config.get('pointing_zd_unit', 'deg'))
+        self.pointing_zd_unit = u.Unit(model_config.get('pointing_zd_unit', 'deg'))
+
         self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
