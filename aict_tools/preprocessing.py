@@ -1,5 +1,6 @@
 import numpy as np
 import logging
+import astropy.units as u
 
 
 log = logging.getLogger(__name__)
@@ -76,3 +77,36 @@ def calc_true_disp(source_x, source_y, cog_x, cog_y, delta, project_disp=False):
         abs_disp = np.abs(true_disp)
 
     return abs_disp, sign_disp
+
+
+def sanitize_angle_units(df, model_config):
+    '''
+    Transforms the coordinates to the desired units.
+    This is done in order to avoid deg <-> rad units as
+    have occured frequently when working with CTA data.
+
+    Parameters:
+    -----------
+    df: pd.DataFrame
+        The dataframe containing the values
+    model_config: .configuration.DISPConfig
+        Config for the DISP model. Contains the
+        information about the units of the provided values.
+
+    Returns:
+    --------
+    df: The DataFrame with converted values.
+    '''
+    coordinate_units = (
+        (model_config.delta_column, model_config.delta_unit, 'rad'),
+        (model_config.source_az_column, model_config.source_az_unit, 'deg'),
+        (model_config.source_zd_column, model_config.source_zd_unit, 'deg'),
+        (model_config.pointing_az_column, model_config.pointing_az_unit, 'deg'),
+        (model_config.pointing_zd_column, model_config.pointing_zd_unit, 'deg'),
+    )
+    for column, unit, expected_unit in coordinate_units:
+        if unit != expected_unit:
+            converted_values = u.Quantity(df[column], unit).to(expected_unit).value
+            df[column] = converted_values
+
+    return df
