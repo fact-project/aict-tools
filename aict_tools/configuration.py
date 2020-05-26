@@ -160,6 +160,7 @@ class DispConfig:
         'cog_x_column',
         'cog_y_column',
         'delta_column',
+        'delta_unit',
         'log_target',
         'project_disp',
         'coordinate_transformation',
@@ -212,6 +213,7 @@ class DispConfig:
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
         self.delta_column = model_config.get('delta_column', 'delta')
+        self.delta_unit = u.Unit(model_config.get('delta_unit', 'deg'))
 
         cols = {
             self.cog_x_column,
