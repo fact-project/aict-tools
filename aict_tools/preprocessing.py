@@ -99,6 +99,7 @@ def sanitize_angle_units(df, model_config):
     '''
     coordinate_units = (
         (model_config.delta_column, model_config.delta_unit, 'rad'),
+        (model_config.focal_length_column, model_config.focal_length_unit, 'm'),
         (model_config.source_az_column, model_config.source_az_unit, 'deg'),
         (model_config.source_zd_column, model_config.source_zd_unit, 'deg'),
         (model_config.pointing_az_column, model_config.pointing_az_unit, 'deg'),
@@ -106,7 +107,10 @@ def sanitize_angle_units(df, model_config):
     )
     for column, unit, expected_unit in coordinate_units:
         if unit != expected_unit:
-            converted_values = u.Quantity(df[column], unit).to(expected_unit).value
+            converted_values = u.Quantity(
+                    df[column].to_numpy(),
+                    unit,
+                    copy=False).to_value(expected_unit)
             df[column] = converted_values
 
     return df

@@ -157,6 +157,7 @@ class DispConfig:
         'pointing_zd_column',
         'pointing_zd_unit',
         'focal_length_column',
+        'focal_length_unit',
         'cog_x_column',
         'cog_y_column',
         'delta_column',
@@ -210,6 +211,8 @@ class DispConfig:
         self.pointing_zd_unit = u.Unit(model_config.get('pointing_zd_unit', 'deg'))
 
         self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
+        self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
+
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
         self.delta_column = model_config.get('delta_column', 'delta')
