@@ -110,7 +110,8 @@ def sanitize_angle_units(df, model_config):
             converted_values = u.Quantity(
                     df[column].to_numpy(),
                     unit,
-                    copy=False).to_value(expected_unit)
+                    copy=False,
+                ).to_value(expected_unit)
             df[column] = converted_values
 
     return df
