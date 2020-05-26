@@ -8,7 +8,15 @@ from sklearn import metrics
 from sklearn.calibration import CalibratedClassifierCV
 
 
-def plot_regressor_confusion(performance_df, log_xy=True, log_z=True, ax=None, label_column='label', prediction_column='label_prediction'):
+def plot_regressor_confusion(
+        performance_df,
+        log_xy=True,
+        log_z=True,
+        ax=None,
+        label_column='label',
+        prediction_column='label_prediction',
+        energy_unit='GeV'
+        ):
 
     ax = ax or plt.gca()
 
@@ -37,16 +45,27 @@ def plot_regressor_confusion(performance_df, log_xy=True, log_z=True, ax=None, l
     ax.figure.colorbar(img, ax=ax)
 
     if log_xy is True:
-        ax.set_xlabel(r'$\log_{10}(E_{\mathrm{MC}} \,\, / \,\, \mathrm{GeV})$')
-        ax.set_ylabel(r'$\log_{10}(E_{\mathrm{Est}} \,\, / \,\, \mathrm{GeV})$')
+        ax.set_xlabel(
+                rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$')
+        ax.set_ylabel(
+                rf'$\log_{10}(E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$')
     else:
-        ax.set_xlabel(r'$E_{\mathrm{MC}} \,\, / \,\, \mathrm{GeV}$')
-        ax.set_ylabel(r'$E_{\mathrm{Est}} \,\, / \,\, \mathrm{GeV}$')
+        ax.set_xlabel(
+                rf'$E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$')
+        ax.set_ylabel(
+                rf'$E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$')
 
     return ax
 
 
-def plot_bias_resolution(performance_df, bins=10, ax=None, label_column='label', prediction_column='label_prediction'):
+def plot_bias_resolution(
+        performance_df,
+        bins=10,
+        ax=None,
+        label_column='label',
+        prediction_column='label_prediction',
+        energy_unit='GeV'
+        ):
     df = performance_df.copy()
 
     ax = ax or plt.gca()
@@ -88,12 +107,19 @@ def plot_bias_resolution(performance_df, bins=10, ax=None, label_column='label',
         )
     ax.legend()
     ax.set_xscale('log')
-    ax.set_xlabel(r'$\log_{10}(E_{\mathrm{true}} \,\, / \,\, \mathrm{GeV})$')
+    ax.set_xlabel(
+            rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$')
 
     return ax
 
 
-def plot_roc(performance_df, model, ax=None, label_column='label', score_column='probabilities'):
+def plot_roc(
+        performance_df,
+        model,
+        ax=None,
+        label_column='label',
+        score_column='probabilities'
+        ):
 
     ax = ax or plt.gca()
 
@@ -104,7 +130,8 @@ def plot_roc(performance_df, model, ax=None, label_column='label', score_column=
 
     roc_aucs = []
 
-    mean_fpr, mean_tpr, _ = metrics.roc_curve(performance_df[label_column], performance_df[score_column])
+    mean_fpr, mean_tpr, _ = metrics.roc_curve(
+            performance_df[label_column], performance_df[score_column])
     for it, df in performance_df.groupby('cv_fold'):
 
         fpr, tpr, _ = metrics.roc_curve(df[label_column], df[score_column])
@@ -132,7 +159,15 @@ def plot_roc(performance_df, model, ax=None, label_column='label', score_column=
     return ax
 
 
-def plot_probabilities(performance_df, model, ax=None, xlabel='score', classnames={0:'Proton', 1:'Gamma'}, label_column='label', score_column='probabilities'):
+def plot_probabilities(
+        performance_df,
+        model,
+        ax=None,
+        xlabel='score',
+        classnames={0: 'Proton', 1: 'Gamma'},
+        label_column='label',
+        score_column='probabilities'
+        ):
 
     ax = ax or plt.gca()
 
@@ -140,8 +175,11 @@ def plot_probabilities(performance_df, model, ax=None, xlabel='score', classname
         model = model.base_estimator
 
     n_bins = (model.n_estimators + 1) if hasattr(model, 'n_estimators') else 100
-    bin_edges = np.linspace(performance_df[score_column].min(), performance_df[score_column].max(), n_bins + 1)
-
+    bin_edges = np.linspace(
+            performance_df[score_column].min(),
+            performance_df[score_column].max(),
+            n_bins + 1
+        )
 
     for label, df in performance_df.groupby(label_column):
         ax.hist(
