@@ -329,9 +329,7 @@ def plot_energy_dependent_disp_metrics(df, true_energy_column, energy_unit='GeV'
 
     ax1.errorbar(
         binned.e_center, binned.accuracy, xerr=binned.e_width / 2, ls='',
-        label='All Events',
     )
-    ax1.legend(loc='lower center', bbox_to_anchor=[0.5, 1.025], ncol=2)
     ax1.set_ylabel(r'Accuracy for $\mathrm{sgn} \mathtt{disp}$')
 
     ax2.errorbar(binned.e_center, binned.r2_score, xerr=binned.e_width / 2, ls='')
