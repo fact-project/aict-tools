@@ -8,13 +8,13 @@ from sklearn import metrics
 from sklearn.calibration import CalibratedClassifierCV
 
 
-def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None, label_column='label', prediction_column='label_prediction'):
+def plot_regressor_confusion(performance_df, log_xy=True, log_z=True, ax=None, label_column='label', prediction_column='label_prediction'):
 
     ax = ax or plt.gca()
 
-    label = performace_df[label_column].copy()
+    label = performance_df[label_column].copy()
 
-    prediction = performace_df[prediction_column].copy()
+    prediction = performance_df[prediction_column].copy()
 
     if log_xy is True:
         label = np.log10(label)
@@ -46,8 +46,8 @@ def plot_regressor_confusion(performace_df, log_xy=True, log_z=True, ax=None, la
     return ax
 
 
-def plot_bias_resolution(performace_df, bins=10, ax=None, label_column='label', prediction_column='label_prediction'):
-    df = performace_df.copy()
+def plot_bias_resolution(performance_df, bins=10, ax=None, label_column='label', prediction_column='label_prediction'):
+    df = performance_df.copy()
 
     ax = ax or plt.gca()
 
@@ -93,7 +93,7 @@ def plot_bias_resolution(performace_df, bins=10, ax=None, label_column='label', 
     return ax
 
 
-def plot_roc(performace_df, model, ax=None, label_column='label', score_column='probabilities'):
+def plot_roc(performance_df, model, ax=None, label_column='label', score_column='probabilities'):
 
     ax = ax or plt.gca()
 
@@ -104,8 +104,8 @@ def plot_roc(performace_df, model, ax=None, label_column='label', score_column='
 
     roc_aucs = []
 
-    mean_fpr, mean_tpr, _ = metrics.roc_curve(performace_df[label_column], performace_df[score_column])
-    for it, df in performace_df.groupby('cv_fold'):
+    mean_fpr, mean_tpr, _ = metrics.roc_curve(performance_df[label_column], performance_df[score_column])
+    for it, df in performance_df.groupby('cv_fold'):
 
         fpr, tpr, _ = metrics.roc_curve(df[label_column], df[score_column])
 
@@ -132,7 +132,7 @@ def plot_roc(performace_df, model, ax=None, label_column='label', score_column='
     return ax
 
 
-def plot_probabilities(performace_df, model, ax=None, xlabel='score', classnames={0:'Proton', 1:'Gamma'}, label_column='label', score_column='probabilities'):
+def plot_probabilities(performance_df, model, ax=None, xlabel='score', classnames={0:'Proton', 1:'Gamma'}, label_column='label', score_column='probabilities'):
 
     ax = ax or plt.gca()
 
@@ -140,10 +140,10 @@ def plot_probabilities(performace_df, model, ax=None, xlabel='score', classnames
         model = model.base_estimator
 
     n_bins = (model.n_estimators + 1) if hasattr(model, 'n_estimators') else 100
-    bin_edges = np.linspace(performace_df[score_column].min(), performace_df[score_column].max(), n_bins + 1)
+    bin_edges = np.linspace(performance_df[score_column].min(), performance_df[score_column].max(), n_bins + 1)
 
 
-    for label, df in performace_df.groupby(label_column):
+    for label, df in performance_df.groupby(label_column):
         ax.hist(
             df[score_column],
             bins=bin_edges, label=classnames[label], histtype='step',
@@ -154,7 +154,7 @@ def plot_probabilities(performace_df, model, ax=None, xlabel='score', classnames
     ax.figure.tight_layout()
 
 
-def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
+def plot_precision_recall(performance_df, model, ax=None, beta=0.1):
 
     ax = ax or plt.gca()
 
@@ -173,8 +173,8 @@ def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
     ax.axhline(1, color='lightgray')
     for threshold in thresholds:
 
-        prediction = (performace_df.probabilities.values >= threshold).astype('int')
-        label = performace_df.label.values
+        prediction = (performance_df.probabilities.values >= threshold).astype('int')
+        label = performance_df.label.values
 
         precision.append(metrics.precision_score(label, prediction))
         recall.append(metrics.recall_score(label, prediction))
