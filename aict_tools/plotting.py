@@ -16,7 +16,7 @@ def plot_regressor_confusion(
         label_column='label',
         prediction_column='label_prediction',
         energy_unit='GeV'
-        ):
+):
 
     ax = ax or plt.gca()
 
@@ -46,14 +46,18 @@ def plot_regressor_confusion(
 
     if log_xy is True:
         ax.set_xlabel(
-                rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$')
+                rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
+        )
         ax.set_ylabel(
-                rf'$\log_{10}(E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$')
+                rf'$\log_{10}(E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
+        )
     else:
         ax.set_xlabel(
-                rf'$E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$')
+                rf'$E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$'
+        )
         ax.set_ylabel(
-                rf'$E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$')
+                rf'$E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$'
+        )
 
     return ax
 
@@ -65,7 +69,7 @@ def plot_bias_resolution(
         label_column='label',
         prediction_column='label_prediction',
         energy_unit='GeV'
-        ):
+):
     df = performance_df.copy()
 
     ax = ax or plt.gca()
@@ -108,7 +112,8 @@ def plot_bias_resolution(
     ax.legend()
     ax.set_xscale('log')
     ax.set_xlabel(
-            rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$')
+            rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
+    )
 
     return ax
 
@@ -119,7 +124,7 @@ def plot_roc(
         ax=None,
         label_column='label',
         score_column='probabilities'
-        ):
+):
 
     ax = ax or plt.gca()
 
@@ -167,7 +172,7 @@ def plot_probabilities(
         classnames={0: 'Proton', 1: 'Gamma'},
         label_column='label',
         score_column='probabilities'
-        ):
+):
 
     ax = ax or plt.gca()
 
@@ -179,7 +184,7 @@ def plot_probabilities(
             performance_df[score_column].min(),
             performance_df[score_column].max(),
             n_bins + 1
-        )
+    )
 
     for label, df in performance_df.groupby(label_column):
         ax.hist(
