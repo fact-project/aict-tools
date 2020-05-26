@@ -8,7 +8,7 @@ import fact.io
 from ..configuration import AICTConfig
 from ..plotting import (
     plot_roc,
-    plot_probabilities,
+    plot_scores,
     plot_regressor_confusion,
     plot_feature_importances,
     plot_true_delta_delta
@@ -95,7 +95,7 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     # Plot hists of probas
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    plot_probabilities(
+    plot_scores(
         df, sign_model, ax=ax,
         classnames={-1.0: r'$-$', 1.0: r'$+$'},
         label_column='sign', score_column='sign_score',

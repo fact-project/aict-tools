@@ -93,7 +93,7 @@ def plot_bias_resolution(performace_df, bins=10, ax=None, label_column='label', 
     return ax
 
 
-def plot_roc(performace_df, model, ax=None, label_column='label', score_column='probabilities'):
+def plot_roc(performace_df, model, ax=None, label_column='label', score_column='scores'):
 
     ax = ax or plt.gca()
 
@@ -132,7 +132,15 @@ def plot_roc(performace_df, model, ax=None, label_column='label', score_column='
     return ax
 
 
-def plot_probabilities(performace_df, model, ax=None, xlabel='score', classnames={0:'Proton', 1:'Gamma'}, label_column='label', score_column='probabilities'):
+def plot_scores(
+    performace_df,
+    model,
+    ax=None,
+    xlabel='score',
+    classnames={0: 'Proton', 1: 'Gamma'},
+    label_column='label',
+    score_column='score',
+):
 
     ax = ax or plt.gca()
 
@@ -140,8 +148,11 @@ def plot_probabilities(performace_df, model, ax=None, xlabel='score', classnames
         model = model.base_estimator
 
     n_bins = (model.n_estimators + 1) if hasattr(model, 'n_estimators') else 100
-    bin_edges = np.linspace(performace_df[score_column].min(), performace_df[score_column].max(), n_bins + 1)
-
+    bin_edges = np.linspace(
+        performace_df[score_column].min(),
+        performace_df[score_column].max(),
+        n_bins + 1,
+    )
 
     for label, df in performace_df.groupby(label_column):
         ax.hist(
@@ -154,7 +165,7 @@ def plot_probabilities(performace_df, model, ax=None, xlabel='score', classnames
     ax.figure.tight_layout()
 
 
-def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
+def plot_precision_recall(performace_df, model, score_column='score', ax=None, beta=0.1):
 
     ax = ax or plt.gca()
 
@@ -171,9 +182,10 @@ def plot_precision_recall(performace_df, model, ax=None, beta=0.1):
     ax.axvline(1, color='lightgray')
     ax.axhline(0, color='lightgray')
     ax.axhline(1, color='lightgray')
+
     for threshold in thresholds:
 
-        prediction = (performace_df.probabilities.values >= threshold).astype('int')
+        prediction = (performace_df[score_column] >= threshold).astype('int')
         label = performace_df.label.values
 
         precision.append(metrics.precision_score(label, prediction))

@@ -63,15 +63,17 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     df_background['label_text'] = 'background'
     df_background['label'] = 0
 
-    df_full = pd.concat([df_background, df_signal], ignore_index=True)
+    df = pd.concat([df_background, df_signal], ignore_index=True)
 
-    df_training = convert_to_float32(df_full[model_config.features])
-    log.debug('Total training events: {}'.format(len(df_training)))
+    df_train = convert_to_float32(df[model_config.features])
+    log.debug('Total training events: {}'.format(len(df_train)))
 
-    df_training.dropna(how='any', inplace=True)
-    log.debug('Training events after dropping nans: {}'.format(len(df_training)))
+    df_train.dropna(how='any', inplace=True)
+    log.debug('Training events after dropping nans: {}'.format(len(df_train)))
 
-    label = df_full.loc[df_training.index, 'label']
+    label = df.loc[df_train.index, 'label']
+    if config.true_energy_column is not None:
+        true_energy = df[config.true_energy_column].loc[df_train.index]
 
     n_gammas = len(label[label == 1])
     n_protons = len(label[label == 0])
@@ -84,7 +86,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     cv_predictions = []
 
     # iterate over test and training sets
-    X = df_training.values
+    X = df_train.values
     y = label.values
     n_cross_validations = model_config.n_cross_validations
     classifier = model_config.model
@@ -106,14 +108,15 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         classifier.fit(xtrain, ytrain)
 
         y_probas = classifier.predict_proba(xtest)[:, 1]
-        y_prediction = classifier.predict(xtest)
 
-        cv_predictions.append(pd.DataFrame({
+        cv_df = pd.DataFrame({
             'label': ytest,
-            'label_prediction': y_prediction,
-            'probabilities': y_probas,
+            model_config.output_name: y_probas,
             'cv_fold': fold,
-        }))
+        })
+        if config.true_energy_column is not None:
+            cv_df['true_energy'] = true_energy[test]
+        cv_predictions.append(cv_df)
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 
     aucs = np.array(aucs)
@@ -142,7 +145,7 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
         classifier,
         model_path=model_path,
         label_text=label_text,
-        feature_names=list(df_training.columns)
+        feature_names=list(df_train.columns)
     )
 
 
