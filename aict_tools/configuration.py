@@ -96,7 +96,6 @@ class AICTConfig:
         'energy',
         'separator',
         'has_multiple_telescopes',
-        'energy_unit',
     )
 
     @classmethod
@@ -123,7 +122,6 @@ class AICTConfig:
             self.array_events_key = None
             self.array_event_id_column = None
 
-        self.energy_unit = u.Unit(config.get('energy_unit', 'GeV'))
         self.seed = config.get('seed', 0)
         np.random.seed(self.seed)
 
