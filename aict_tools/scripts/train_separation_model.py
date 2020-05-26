@@ -72,8 +72,13 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
     log.debug('Training events after dropping nans: {}'.format(len(df_train)))
 
     label = df.loc[df_train.index, 'label']
+
+    # load optional columns if available to be able to make performance plots
+    # vs true energy / size
     if config.true_energy_column is not None:
-        true_energy = df[config.true_energy_column].loc[df_train.index]
+        true_energy = df.loc[df_train.index, config.true_energy_column].to_numpy()
+    if config.size_column is not None:
+        size = df.loc[df_train.index, config.size_column].to_numpy()
 
     n_gammas = len(label[label == 1])
     n_protons = len(label[label == 0])
@@ -115,7 +120,9 @@ def main(configuration_path, signal_path, background_path, predictions_path, mod
             'cv_fold': fold,
         })
         if config.true_energy_column is not None:
-            cv_df['true_energy'] = true_energy[test]
+            cv_df[config.true_energy_column] = true_energy[test]
+        if config.size_column is not None:
+            cv_df[config.size_column] = size[test]
         cv_predictions.append(cv_df)
         aucs.append(metrics.roc_auc_score(ytest, y_probas))
 

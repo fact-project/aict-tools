@@ -105,8 +105,13 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     target_disp = df['true_disp'].loc[df_train.index]
     target_sign = df['true_sign'].loc[df_train.index]
+
+    # load optional columns if available to be able to make performance plots
+    # vs true energy / size
     if config.true_energy_column is not None:
-        true_energy = df[config.true_energy_column].loc[df_train.index]
+        true_energy = df.loc[df_train.index, config.true_energy_column].to_numpy()
+    if config.size_column is not None:
+        size = df.loc[df_train.index, config.size_column].to_numpy()
 
     if model_config.log_target is True:
         target_disp = np.log(target_disp)
@@ -158,7 +163,9 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             'cv_fold': fold,
         })
         if config.true_energy_column is not None:
-            cv_df['true_energy'] = true_energy[test]
+            cv_df[config.true_energy_column] = true_energy[test]
+        if config.size_column is not None:
+            cv_df[config.size_column] = size[test]
         cv_predictions.append(cv_df)
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
