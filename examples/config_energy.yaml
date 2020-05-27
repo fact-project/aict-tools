@@ -1,5 +1,6 @@
 # seed for the random number generators, to make things reproducible
 seed: 0
+true_energy_column: corsika_event_header_total_energy
 
 energy:
   #the classifier to use

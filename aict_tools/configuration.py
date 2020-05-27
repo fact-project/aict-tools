@@ -95,6 +95,8 @@ class AICTConfig:
         'energy',
         'separator',
         'has_multiple_telescopes',
+        'true_energy_column',
+        'size_column',
     )
 
     @classmethod
@@ -105,6 +107,8 @@ class AICTConfig:
     def __init__(self, config):
         self.has_multiple_telescopes = config.get('multiple_telescopes', False)
         self.runs_key = config.get('runs_key', 'runs')
+        self.true_energy_column = config.get('true_energy_column')
+        self.size_column = config.get('size')
 
         if self.has_multiple_telescopes:
             self.telescope_events_key = config.get('telescope_events_key', 'events')
@@ -220,6 +224,10 @@ class DispConfig:
         if self.coordinate_transformation == 'CTA':
             cols.add(self.focal_length_column)
 
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
+
         self.columns_to_read_train = list(cols)
 
 
@@ -266,7 +274,12 @@ class EnergyConfig:
         cols = set(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
+
         self.columns_to_read_apply = list(cols)
+
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
         cols.add(self.target_column)
         self.columns_to_read_train = list(cols)
 
@@ -311,5 +324,9 @@ class SeparatorConfig:
         cols = set(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-        self.columns_to_read_train = list(cols)
+
         self.columns_to_read_apply = list(cols)
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
+        self.columns_to_read_train = list(cols)

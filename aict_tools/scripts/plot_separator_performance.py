@@ -8,7 +8,7 @@ import fact.io
 
 from ..plotting import (
     plot_roc,
-    plot_probabilities,
+    plot_scores,
     plot_precision_recall,
     plot_feature_importances,
 )
@@ -45,19 +45,24 @@ def main(configuration_path, performance_path, model_path, output, key):
     # Plot rocs
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    plot_roc(df, model, ax=ax)
+    plot_roc(df, model, score_column=model_config.output_name, ax=ax)
 
     # Plot hists of probas
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
 
-    plot_probabilities(df, model, ax=ax, xlabel=model_config.output_name)
+    plot_scores(
+        df, model,
+        score_column=model_config.output_name,
+        ax=ax,
+        xlabel=model_config.output_name,
+    )
 
     # Plot hists of probas
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
 
-    plot_precision_recall(df, model, ax=ax)
+    plot_precision_recall(df, model, ax=ax, score_column=model_config.output_name)
 
     # Plot feature importances
     if hasattr(model, 'feature_importances_'):
