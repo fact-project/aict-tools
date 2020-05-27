@@ -41,6 +41,7 @@ def test_full():
     c = AICTConfig.from_yaml('examples/full_config.yaml')
 
     assert c.energy is not None
+    assert c.energy_unit is not None
     assert c.disp is not None
     assert c.separator is not None
 

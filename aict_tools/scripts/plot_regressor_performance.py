@@ -35,26 +35,44 @@ def main(configuration_path, performance_path, model_path, output, key):
     log.info('Loading model')
     model = joblib.load(model_path)
 
-    model_config = AICTConfig.from_yaml(configuration_path).energy
+    config = AICTConfig.from_yaml(configuration_path)
+    model_config = config.energy
+    energy_unit = config.energy_unit
+
     figures = []
 
     # Plot confusion
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
     ax.set_title('Reconstructed vs. True Energy (log color scale)')
-    plot_regressor_confusion(df, ax=ax)
+    plot_regressor_confusion(
+        df, ax=ax,
+        label_column=model_config.target_column,
+        prediction_column=model_config.output_name,
+        energy_unit=energy_unit,
+    )
 
     # Plot confusion
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
     ax.set_title('Reconstructed vs. True Energy (linear color scale)')
-    plot_regressor_confusion(df, log_z=False, ax=ax)
+    plot_regressor_confusion(
+        df, log_z=False, ax=ax,
+        label_column=model_config.target_column,
+        prediction_column=model_config.output_name,
+        energy_unit=energy_unit,
+    )
 
     # Plot bias/resolution
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
     ax.set_title('Bias and Resolution')
-    plot_bias_resolution(df, bins=15, ax=ax)
+    plot_bias_resolution(
+        df, bins=15, ax=ax,
+        label_column=model_config.target_column,
+        prediction_column=model_config.output_name,
+        energy_unit=energy_unit,
+    )
 
     if hasattr(model, 'feature_importances_'):
         # Plot feature importances

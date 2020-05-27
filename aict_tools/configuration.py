@@ -1,3 +1,4 @@
+import astropy.units as u
 from ruamel.yaml import YAML
 from collections import namedtuple
 from .features import find_used_source_features
@@ -95,6 +96,9 @@ class AICTConfig:
         'energy',
         'separator',
         'has_multiple_telescopes',
+        'energy_unit',
+        'true_energy_column',
+        'size_column',
     )
 
     @classmethod
@@ -105,6 +109,8 @@ class AICTConfig:
     def __init__(self, config):
         self.has_multiple_telescopes = config.get('multiple_telescopes', False)
         self.runs_key = config.get('runs_key', 'runs')
+        self.true_energy_column = config.get('true_energy_column')
+        self.size_column = config.get('size')
 
         if self.has_multiple_telescopes:
             self.telescope_events_key = config.get('telescope_events_key', 'events')
@@ -121,6 +127,7 @@ class AICTConfig:
             self.array_events_key = None
             self.array_event_id_column = None
 
+        self.energy_unit = u.Unit(config.get('energy_unit', 'GeV'))
         self.seed = config.get('seed', 0)
         np.random.seed(self.seed)
 
@@ -146,15 +153,23 @@ class DispConfig:
         'columns_to_read_apply',
         'columns_to_read_train',
         'source_az_column',
+        'source_az_unit',
         'source_zd_column',
+        'source_zd_unit',
         'source_alt_column',
+        'source_alt_unit',
         'pointing_az_column',
+        'pointing_az_unit',
         'pointing_zd_column',
+        'pointing_zd_unit',
         'pointing_alt_column',
+        'pointing_alt_unit',
         'focal_length_column',
+        'focal_length_unit',
         'cog_x_column',
         'cog_y_column',
         'delta_column',
+        'delta_unit',
         'log_target',
         'project_disp',
         'coordinate_transformation',
@@ -203,6 +218,9 @@ class DispConfig:
                     'source_zd_column: {}, source_alt_column: {}'.format(
                         self.source_zd_column, self.source_alt_column)
                     )
+        self.source_az_unit = u.Unit(model_config.get('source_az_unit', 'deg'))
+        self.source_zd_unit = u.Unit(model_config.get('source_zd_unit', 'deg'))
+        self.source_alt_unit = u.Unit(model_config.get('source_alt_unit', 'deg'))
 
         self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
         self.pointing_zd_column = model_config.get('pointing_zd_column', None)
@@ -214,10 +232,17 @@ class DispConfig:
                     'pointing_zd_column: {}, pointing_alt_column: {}'.format(
                         self.pointing_zd_column, self.pointing_alt_column)
                     )
+        self.pointing_az_unit = u.Unit(model_config.get('pointing_zd_unit', 'deg'))
+        self.pointing_zd_unit = u.Unit(model_config.get('pointing_zd_unit', 'deg'))
+        self.pointing_alt_unit = u.Unit(model_config.get('pointing_alt_unit', 'deg'))
+
         self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
+        self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
+
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
         self.delta_column = model_config.get('delta_column', 'delta')
+        self.delta_unit = u.Unit(model_config.get('delta_unit', 'deg'))
 
         cols = {
             self.cog_x_column,
@@ -240,6 +265,10 @@ class DispConfig:
         cols.discard(None)
         if self.coordinate_transformation == 'CTA':
             cols.add(self.focal_length_column)
+
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
 
         self.columns_to_read_train = list(cols)
 
@@ -287,7 +316,12 @@ class EnergyConfig:
         cols = set(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
+
         self.columns_to_read_apply = list(cols)
+
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
         cols.add(self.target_column)
         self.columns_to_read_train = list(cols)
 
@@ -332,5 +366,9 @@ class SeparatorConfig:
         cols = set(model_config['features'])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-        self.columns_to_read_train = list(cols)
+
         self.columns_to_read_apply = list(cols)
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
+        self.columns_to_read_train = list(cols)

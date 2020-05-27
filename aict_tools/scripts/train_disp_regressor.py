@@ -8,7 +8,7 @@ import numpy as np
 from fact.io import write_data
 from fact.coordinates.utils import horizontal_to_camera
 from ..io import save_model, read_telescope_data
-from ..preprocessing import convert_to_float32, calc_true_disp
+from ..preprocessing import convert_to_float32, calc_true_disp, convert_units
 from ..feature_generation import feature_generation
 from ..configuration import AICTConfig
 from ..logging import setup_logging
@@ -67,6 +67,9 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         'Using coordinate transformations for %s',
         model_config.coordinate_transformation
     )
+
+    df = convert_units(df, model_config)
+
     if model_config.coordinate_transformation == 'CTA':
         from ..cta_helpers import horizontal_to_camera_cta_simtel
         source_x, source_y = horizontal_to_camera_cta_simtel(
@@ -78,8 +81,6 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
                 else (90-df[model_config.pointing_alt_column]),
             focal_length=df[model_config.focal_length_column],
         )
-        # cta preprocessing uses deg instead of rad
-        df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
     elif model_config.coordinate_transformation == 'FACT':
 
         source_x, source_y = horizontal_to_camera(
@@ -110,6 +111,13 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     target_disp = df['true_disp'].loc[df_train.index]
     target_sign = df['true_sign'].loc[df_train.index]
+
+    # load optional columns if available to be able to make performance plots
+    # vs true energy / size
+    if config.true_energy_column is not None:
+        true_energy = df.loc[df_train.index, config.true_energy_column].to_numpy()
+    if config.size_column is not None:
+        size = df.loc[df_train.index, config.size_column].to_numpy()
 
     if model_config.log_target is True:
         target_disp = np.log(target_disp)
@@ -143,20 +151,28 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             cv_disp_prediction = np.exp(cv_disp_prediction)
 
         sign_classifier.fit(cv_x_train, cv_sign_train)
-        cv_sign_score = 2 * sign_classifier.predict_proba(cv_x_test)[:, 1] -1
+        # scale proba for positive sign to [-1, 1], so it's a nice score for the sign
+        # where values close to -1 mean high confidence for - and values close to 1 mean
+        # high confidence for +
+        cv_sign_score = 2 * sign_classifier.predict_proba(cv_x_test)[:, 1] - 1
         cv_sign_prediction = np.where(cv_sign_score < 0, -1.0, 1.0)
 
         scores_disp.append(metrics.r2_score(cv_disp_test, cv_disp_prediction))
         scores_sign.append(metrics.accuracy_score(cv_sign_test, cv_sign_prediction))
 
-        cv_predictions.append(pd.DataFrame({
+        cv_df = pd.DataFrame({
             'disp': cv_disp_test,
             'disp_prediction': cv_disp_prediction,
             'sign': cv_sign_test,
             'sign_prediction': cv_sign_prediction,
             'sign_score': cv_sign_score,
-            'cv_fold': fold
-        }))
+            'cv_fold': fold,
+        })
+        if config.true_energy_column is not None:
+            cv_df[config.true_energy_column] = true_energy[test]
+        if config.size_column is not None:
+            cv_df[config.size_column] = size[test]
+        cv_predictions.append(cv_df)
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
 
