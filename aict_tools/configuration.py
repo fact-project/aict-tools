@@ -220,7 +220,7 @@ class DispConfig:
         self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
         self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
         self.delta_column = model_config.get('delta_column', 'delta')
-        self.delta_unit = u.Unit(model_config.get('delta_unit', 'deg'))
+        self.delta_unit = u.Unit(model_config.get('delta_unit', 'rad'))
 
         cols = {
             self.cog_x_column,
