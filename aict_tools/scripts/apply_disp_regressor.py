@@ -28,8 +28,8 @@ from ..logging import setup_logging
 )
 def main(configuration_path, data_path, disp_model_path, sign_model_path, chunksize, n_jobs, yes, verbose):
     '''
-    Apply given model to data. Two columns are added to the file, energy_prediction
-    and energy_prediction_std
+    Apply given model to data. Three columns are added to the file, source_x_prediction, source_y_prediction
+    and disp_prediction
 
     CONFIGURATION_PATH: Path to the config yaml file
     DATA_PATH: path to the FACT data in a h5py hdf5 file, e.g. erna_gather_fits output

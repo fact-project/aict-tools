@@ -9,10 +9,11 @@ from ..preprocessing import sanitize_angle_units
 from ..configuration import AICTConfig
 from ..plotting import (
     plot_roc,
-    plot_probabilities,
+    plot_scores,
     plot_regressor_confusion,
     plot_feature_importances,
-    plot_true_delta_delta
+    plot_true_delta_delta,
+    plot_energy_dependent_disp_metrics,
 )
 
 if matplotlib.get_backend() == 'pgf':
@@ -35,7 +36,8 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger()
 
-    model_config = AICTConfig.from_yaml(configuration_path).disp
+    config = AICTConfig.from_yaml(configuration_path)
+    model_config = config.disp
 
     log.info('Loading perfomance data')
     df = fact.io.read_data(performance_path, key=key)
@@ -98,7 +100,7 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     # Plot hists of probas
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    plot_probabilities(
+    plot_scores(
         df, sign_model, ax=ax,
         classnames={-1.0: r'$-$', 1.0: r'$+$'},
         label_column='sign', score_column='sign_score',
@@ -127,6 +129,10 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
     plot_true_delta_delta(df_data, model_config, ax)
+
+    if config.true_energy_column in df.columns:
+        fig = plot_energy_dependent_disp_metrics(df, config.true_energy_column)
+        figures.append(fig)
 
     if output is None:
         plt.show()

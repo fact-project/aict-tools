@@ -123,7 +123,7 @@ def plot_roc(
         model,
         ax=None,
         label_column='label',
-        score_column='probabilities'
+        score_column='scores',
 ):
 
     ax = ax or plt.gca()
@@ -164,14 +164,14 @@ def plot_roc(
     return ax
 
 
-def plot_probabilities(
-        performance_df,
-        model,
-        ax=None,
-        xlabel='score',
-        classnames={0: 'Proton', 1: 'Gamma'},
-        label_column='label',
-        score_column='probabilities'
+def plot_scores(
+    performance_df,
+    model,
+    ax=None,
+    xlabel='score',
+    classnames={0: 'Proton', 1: 'Gamma'},
+    label_column='label',
+    score_column='score',
 ):
 
     ax = ax or plt.gca()
@@ -185,7 +185,6 @@ def plot_probabilities(
             performance_df[score_column].max(),
             n_bins + 1
     )
-
     for label, df in performance_df.groupby(label_column):
         ax.hist(
             df[score_column],
@@ -197,7 +196,7 @@ def plot_probabilities(
     ax.figure.tight_layout()
 
 
-def plot_precision_recall(performance_df, model, ax=None, beta=0.1):
+def plot_precision_recall(performance_df, model, score_column='score', ax=None, beta=0.1):
 
     ax = ax or plt.gca()
 
@@ -214,9 +213,10 @@ def plot_precision_recall(performance_df, model, ax=None, beta=0.1):
     ax.axvline(1, color='lightgray')
     ax.axhline(0, color='lightgray')
     ax.axhline(1, color='lightgray')
+
     for threshold in thresholds:
 
-        prediction = (performance_df.probabilities.values >= threshold).astype('int')
+        prediction = (performance_df[score_column] >= threshold).astype('int')
         label = performance_df.label.values
 
         precision.append(metrics.precision_score(label, prediction))
@@ -315,3 +315,59 @@ def plot_true_delta_delta(data_df, model_config, ax=None):
     ax.figure.tight_layout()
     ax.set_xlabel(r'$\delta_{true}\,-\,\delta$')
     return ax
+
+
+def plot_energy_dependent_disp_metrics(df, true_energy_column, energy_unit='GeV', fig=None):
+
+    df = df.copy()
+    edges = 10**np.arange(
+        np.log10(df[true_energy_column].min()),
+        np.log10(df[true_energy_column].max()),
+        0.2
+    )
+    df['bin_idx'] = np.digitize(df['corsika_event_header_total_energy'], edges)
+
+    def accuracy(group):
+        return metrics.accuracy_score(
+            group.sign,
+            group.sign_prediction,
+        )
+
+    def r2(group):
+        return metrics.r2_score(
+            np.abs(group.disp),
+            group.disp_prediction,
+        )
+
+    # discard under and overflow
+    df = df[(df['bin_idx'] != 0) & (df['bin_idx'] != len(edges))]
+
+    binned = pd.DataFrame({
+        'e_center': 0.5 * (edges[1:] + edges[:-1]),
+        'e_low': edges[:-1],
+        'e_high': edges[1:],
+        'e_width': np.diff(edges),
+    }, index=pd.Series(np.arange(1, len(edges)), name='bin_idx'))
+
+    binned['accuracy'] = df.groupby('bin_idx').apply(accuracy)
+    binned['r2_score'] = df.groupby('bin_idx').apply(r2)
+
+    fig = fig or plt.figure()
+
+    ax1 = fig.add_subplot(2, 1, 1)
+    ax2 = fig.add_subplot(2, 1, 2, sharex=ax1)
+
+    ax1.errorbar(
+        binned.e_center, binned.accuracy, xerr=binned.e_width / 2, ls='',
+    )
+    ax1.set_ylabel(r'Accuracy for $\mathrm{sgn} \mathtt{disp}$')
+
+    ax2.errorbar(binned.e_center, binned.r2_score, xerr=binned.e_width / 2, ls='')
+    ax2.set_ylabel(r'$r^2$ score for $|\mathtt{disp}|$')
+
+    ax2.set_xlabel(
+        r'$E_{\mathrm{true}} \,\,/\,\,' + rf' \mathrm{{{energy_unit}}}$'
+    )
+    ax2.set_xscale('log')
+
+    return fig

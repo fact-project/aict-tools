@@ -79,11 +79,12 @@ def main(configuration_path, signal_path, predictions_path, model_path, verbose)
 
         scores.append(metrics.r2_score(cv_y_test, cv_y_prediction))
 
-        cv_predictions.append(pd.DataFrame({
-            'label': cv_y_test,
-            'label_prediction': cv_y_prediction,
-            'cv_fold': fold
-        }))
+        cv_df = pd.DataFrame({
+            model_config.target_column: cv_y_test,
+            model_config.output_name: cv_y_prediction,
+            'cv_fold': fold,
+        })
+        cv_predictions.append(cv_df)
 
     predictions_df = pd.concat(cv_predictions, ignore_index=True)
 

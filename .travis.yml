@@ -6,6 +6,7 @@ env:
     - MPLBACKEND=agg
     - JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
     - JDK_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+    - PYTEST_ADDOPTS='--color=yes'
 
 matrix:
   include:
