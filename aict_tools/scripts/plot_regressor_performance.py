@@ -35,7 +35,10 @@ def main(configuration_path, performance_path, model_path, output, key):
     log.info('Loading model')
     model = joblib.load(model_path)
 
-    model_config = AICTConfig.from_yaml(configuration_path).energy
+    config = AICTConfig.from_yaml(configuration_path)
+    model_config = config.energy
+    energy_unit = config.energy_unit
+
     figures = []
 
     # Plot confusion
@@ -46,6 +49,7 @@ def main(configuration_path, performance_path, model_path, output, key):
         df, ax=ax,
         label_column=model_config.target_column,
         prediction_column=model_config.output_name,
+        energy_unit=energy_unit,
     )
 
     # Plot confusion
@@ -56,6 +60,7 @@ def main(configuration_path, performance_path, model_path, output, key):
         df, log_z=False, ax=ax,
         label_column=model_config.target_column,
         prediction_column=model_config.output_name,
+        energy_unit=energy_unit,
     )
 
     # Plot bias/resolution
@@ -66,6 +71,7 @@ def main(configuration_path, performance_path, model_path, output, key):
         df, bins=15, ax=ax,
         label_column=model_config.target_column,
         prediction_column=model_config.output_name,
+        energy_unit=energy_unit,
     )
 
     if hasattr(model, 'feature_importances_'):

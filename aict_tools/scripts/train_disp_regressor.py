@@ -8,7 +8,7 @@ import numpy as np
 from fact.io import write_data
 from fact.coordinates.utils import horizontal_to_camera
 from ..io import save_model, read_telescope_data
-from ..preprocessing import convert_to_float32, calc_true_disp
+from ..preprocessing import convert_to_float32, calc_true_disp, convert_units
 from ..feature_generation import feature_generation
 from ..configuration import AICTConfig
 from ..logging import setup_logging
@@ -67,6 +67,9 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         'Using coordinate transformations for %s',
         model_config.coordinate_transformation
     )
+
+    df = convert_units(df, model_config)
+
     if model_config.coordinate_transformation == 'CTA':
         from ..cta_helpers import horizontal_to_camera_cta_simtel
         source_x, source_y = horizontal_to_camera_cta_simtel(
@@ -76,8 +79,6 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             zd_pointing=df[model_config.pointing_zd_column],
             focal_length=df[model_config.focal_length_column],
         )
-        # cta preprocessing uses deg instead of rad
-        df[model_config.delta_column] = np.deg2rad(df[model_config.delta_column])
     elif model_config.coordinate_transformation == 'FACT':
         source_x, source_y = horizontal_to_camera(
             az=df[model_config.source_az_column],

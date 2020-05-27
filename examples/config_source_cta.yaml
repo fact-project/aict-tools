@@ -38,7 +38,8 @@ disp:
   pointing_zd_column: pointing_altitude ###offset 90°
   cog_x_column: x  ## added
   cog_y_column: y  ## added
-  delta_column: psi ##????
+  delta_column: psi
+  delta_unit: deg ## cta preprocessing yields deg, we need to convert to rad
   array_event_column: array_event_id
 
 
