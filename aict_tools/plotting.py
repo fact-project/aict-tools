@@ -136,7 +136,9 @@ def plot_roc(
     roc_aucs = []
 
     mean_fpr, mean_tpr, _ = metrics.roc_curve(
-            performance_df[label_column], performance_df[score_column])
+        performance_df[label_column],
+        performance_df[score_column],
+    )
     for it, df in performance_df.groupby('cv_fold'):
 
         fpr, tpr, _ = metrics.roc_curve(df[label_column], df[score_column])
