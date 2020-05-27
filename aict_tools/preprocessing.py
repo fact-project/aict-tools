@@ -104,12 +104,11 @@ def convert_units(df, model_config):
         (model_config.pointing_zd_column, model_config.pointing_zd_unit, 'deg'),
     )
     for column, unit, expected_unit in coordinate_units:
-        if unit != expected_unit:
-            converted_values = u.Quantity(
-                    df[column].to_numpy(),
-                    unit,
-                    copy=False,
+        if column in df.columns and unit != expected_unit:
+            df[column] = u.Quantity(
+                df[column].to_numpy(),
+                unit,
+                copy=False,
             ).to_value(expected_unit)
-            df[column] = converted_values
 
     return df
