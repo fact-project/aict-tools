@@ -183,9 +183,9 @@ def plot_scores(
 
     n_bins = (model.n_estimators + 1) if hasattr(model, 'n_estimators') else 100
     bin_edges = np.linspace(
-            performance_df[score_column].min(),
-            performance_df[score_column].max(),
-            n_bins + 1
+        performance_df[score_column].min(),
+        performance_df[score_column].max(),
+        n_bins + 1,
     )
     for label, df in performance_df.groupby(label_column):
         ax.hist(
