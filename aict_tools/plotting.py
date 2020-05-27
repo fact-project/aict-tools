@@ -327,7 +327,7 @@ def plot_energy_dependent_disp_metrics(df, true_energy_column, energy_unit='GeV'
         np.log10(df[true_energy_column].max()),
         0.2
     )
-    df['bin_idx'] = np.digitize(df['corsika_event_header_total_energy'], edges)
+    df['bin_idx'] = np.digitize(df[true_energy_column], edges)
 
     def accuracy(group):
         return metrics.accuracy_score(
