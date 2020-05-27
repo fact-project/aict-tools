@@ -79,11 +79,9 @@ def calc_true_disp(source_x, source_y, cog_x, cog_y, delta, project_disp=False):
     return abs_disp, sign_disp
 
 
-def sanitize_angle_units(df, model_config):
+def convert_units(df, model_config):
     '''
-    Transforms the coordinates to the desired units.
-    This is done in order to avoid deg <-> rad units as
-    have occured frequently when working with CTA data.
+    Transforms the columns to the desired units.
 
     Parameters:
     -----------

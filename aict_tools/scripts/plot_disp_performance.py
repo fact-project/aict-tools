@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import joblib
 import fact.io
 
-from ..preprocessing import sanitize_angle_units
+from ..preprocessing import convert_units
 from ..configuration import AICTConfig
 from ..plotting import (
     plot_roc,
@@ -66,7 +66,7 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     log.info('Loading sign model')
     sign_model = joblib.load(sign_model_path)
 
-    df_data = sanitize_angle_units(df, model_config)
+    df_data = convert_units(df, model_config)
 
     figures = []
 

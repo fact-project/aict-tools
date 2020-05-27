@@ -8,7 +8,7 @@ import numpy as np
 from fact.io import write_data
 from fact.coordinates.utils import horizontal_to_camera
 from ..io import save_model, read_telescope_data
-from ..preprocessing import convert_to_float32, calc_true_disp, sanitize_angle_units
+from ..preprocessing import convert_to_float32, calc_true_disp, convert_units
 from ..feature_generation import feature_generation
 from ..configuration import AICTConfig
 from ..logging import setup_logging
@@ -68,7 +68,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         model_config.coordinate_transformation
     )
 
-    df = sanitize_angle_units(df, model_config)
+    df = convert_units(df, model_config)
 
     if model_config.coordinate_transformation == 'CTA':
         from ..cta_helpers import horizontal_to_camera_cta_simtel
