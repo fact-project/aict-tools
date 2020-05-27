@@ -66,7 +66,7 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     log.info('Loading sign model')
     sign_model = joblib.load(sign_model_path)
 
-    df_data = convert_units(df, model_config)
+    df_data = convert_units(df_data, model_config)
 
     figures = []
 
