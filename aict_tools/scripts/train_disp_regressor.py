@@ -143,7 +143,8 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             cv_disp_prediction = np.exp(cv_disp_prediction)
 
         sign_classifier.fit(cv_x_train, cv_sign_train)
-        cv_sign_prediction = sign_classifier.predict(cv_x_test)
+        cv_sign_score = 2 * sign_classifier.predict_proba(cv_x_test)[:, 1] -1
+        cv_sign_prediction = np.where(cv_sign_score < 0, -1.0, 1.0)
 
         scores_disp.append(metrics.r2_score(cv_disp_test, cv_disp_prediction))
         scores_sign.append(metrics.accuracy_score(cv_sign_test, cv_sign_prediction))
@@ -153,6 +154,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
             'disp_prediction': cv_disp_prediction,
             'sign': cv_sign_test,
             'sign_prediction': cv_sign_prediction,
+            'sign_score': cv_sign_score,
             'cv_fold': fold
         }))
 
