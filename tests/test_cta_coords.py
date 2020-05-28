@@ -9,9 +9,9 @@ def test_horizontal_to_camera():
     expected_x = df.x
     expected_y = df.y
     transformed_x, transformed_y = horizontal_to_camera_cta_simtel(
-            zd=df.zd,
+            alt=90-df.zd,
             az=df.az,
-            zd_pointing=df.zd_pointing,
+            alt_pointing=90-df.zd_pointing,
             az_pointing=df.az_pointing,
             focal_length=df.focal_length,
     )

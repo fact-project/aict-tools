@@ -156,10 +156,14 @@ class DispConfig:
         'source_az_unit',
         'source_zd_column',
         'source_zd_unit',
+        'source_alt_column',
+        'source_alt_unit',
         'pointing_az_column',
         'pointing_az_unit',
         'pointing_zd_column',
         'pointing_zd_unit',
+        'pointing_alt_column',
+        'pointing_alt_unit',
         'focal_length_column',
         'focal_length_unit',
         'cog_x_column',
@@ -205,14 +209,32 @@ class DispConfig:
         self.features.sort()
 
         self.source_az_column = model_config.get('source_az_column', 'source_position_az')
-        self.source_zd_column = model_config.get('source_zd_column', 'source_position_zd')
+        self.source_zd_column = model_config.get('source_zd_column', None)
+        self.source_alt_column = model_config.get('source_alt_column', None)
+        if (self.source_zd_column is None) is (self.source_alt_column is None):
+            raise ValueError(
+                    'Need to specify exactly one of'
+                    'source_zd_column or source_alt_column.'
+                    'source_zd_column: {}, source_alt_column: {}'.format(
+                        self.source_zd_column, self.source_alt_column)
+                    )
         self.source_az_unit = u.Unit(model_config.get('source_az_unit', 'deg'))
         self.source_zd_unit = u.Unit(model_config.get('source_zd_unit', 'deg'))
+        self.source_alt_unit = u.Unit(model_config.get('source_alt_unit', 'deg'))
 
         self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
-        self.pointing_zd_column = model_config.get('pointing_zd_column', 'pointing_position_zd')
+        self.pointing_zd_column = model_config.get('pointing_zd_column', None)
+        self.pointing_alt_column = model_config.get('pointing_alt_column', None)
+        if (self.pointing_zd_column is None) is (self.pointing_alt_column is None):
+            raise ValueError(
+                    'Need to specify exactly one of'
+                    'pointing_zd_column or pointing_alt_column.'
+                    'pointing_zd_column: {}, pointing_alt_column: {}'.format(
+                        self.pointing_zd_column, self.pointing_alt_column)
+                    )
         self.pointing_az_unit = u.Unit(model_config.get('pointing_zd_unit', 'deg'))
         self.pointing_zd_unit = u.Unit(model_config.get('pointing_zd_unit', 'deg'))
+        self.pointing_alt_unit = u.Unit(model_config.get('pointing_alt_unit', 'deg'))
 
         self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
         self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
@@ -235,9 +257,12 @@ class DispConfig:
         cols.update({
             self.pointing_az_column,
             self.pointing_zd_column,
+            self.pointing_alt_column,
             self.source_az_column,
             self.source_zd_column,
+            self.source_alt_column,
         })
+        cols.discard(None)
         if self.coordinate_transformation == 'CTA':
             cols.add(self.focal_length_column)
 

@@ -127,14 +127,15 @@ disp:
 
   coordinate_transformation: FACT
   # columns containing coordinates of the source and of the pointing
-  source_zenith_column: source_position_zd
-  source_zenith_unit: rad
-  source_azimuth_column: source_position_az
-  source_azimuth_unit: rad 
-  pointing_azimuth_column: pointing_position_az
-  pointing_azimuth_unit: rad
-  pointing_zenith_column: pointing_position_zd
-  pointing_zenith_unit: rad
+  source_az_column: source_position_az
+  source_zd_column: source_position_zd
+  source_az_unit: deg
+  source_zd_unit: deg
+
+  pointing_az_column: pointing_position_az
+  pointing_zd_column: pointing_position_zd
+  pointing_az_unit: deg
+  pointing_zd_unit: deg
 
   # randomly sample the data if you dont want to use the whole set
   n_signal : 500

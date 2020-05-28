@@ -205,6 +205,29 @@ def test_apply_separator(temp_dir, separator_model):
         assert 'gammaness' in f['events']
 
 
+def test_train_disp_altitude():
+    from aict_tools.scripts.train_disp_regressor import main as train
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+
+        with DateNotModified('examples/gamma_diffuse_altitude.hdf5'):
+            runner = CliRunner()
+            result = runner.invoke(
+                train,
+                [
+                    'examples/config_source_altitude.yaml',
+                    'examples/gamma_diffuse_altitude.hdf5',
+                    os.path.join(d, 'test.hdf5'),
+                    os.path.join(d, 'disp.pkl'),
+                    os.path.join(d, 'sign.pkl'),
+                ]
+            )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
+
+
 def test_train_disp_cta():
     from aict_tools.scripts.train_disp_regressor import main as train
 
@@ -290,7 +313,6 @@ def test_apply_disp_cta():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
-
 
 
 def test_to_dl3():

@@ -52,3 +52,14 @@ def test_source():
 
     with raises(ValueError):
         AICTConfig.from_yaml('tests/config_source.yaml')
+
+
+def test_altitude():
+
+    from aict_tools.configuration import AICTConfig
+
+    zd_config = AICTConfig.from_yaml('examples/config_source.yaml')
+    assert 'source_position_zd' in zd_config.disp.columns_to_read_train
+
+    alt_config = AICTConfig.from_yaml('examples/config_source_altitude.yaml')
+    assert 'source_position_alt' in alt_config.disp.columns_to_read_train
