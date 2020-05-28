@@ -15,7 +15,9 @@ def test_dict_config():
     with tempfile.NamedTemporaryFile(prefix='test_aict_', suffix='.hdf5') as f:
         to_h5py(df, f.name, key='events')
 
-        mask = create_mask_h5py(h5py.File(f.name), n_events=len(df), selection_config=config)
+        mask = create_mask_h5py(
+            h5py.File(f.name, 'r'), n_events=len(df), selection_config=config
+        )
         assert all(mask == [False, False, False, True])
 
 
@@ -27,5 +29,7 @@ def test_multiple_config():
     with tempfile.NamedTemporaryFile(prefix='test_aict_', suffix='.hdf5') as f:
         to_h5py(df, f.name, key='events')
 
-        mask = create_mask_h5py(h5py.File(f.name), n_events=len(df), selection_config=config)
+        mask = create_mask_h5py(
+            h5py.File(f.name, 'r'), n_events=len(df), selection_config=config
+        )
         assert all(mask == [False, True, False, True])

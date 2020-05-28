@@ -32,7 +32,7 @@ def cta_config():
 
 def test_read_default_columns(hdf5_file):
     from aict_tools.io import read_data, get_column_names_in_file
-    from pandas.util.testing import assert_frame_equal
+    from pandas.testing import assert_frame_equal
 
     path, table_name, config = hdf5_file
 
@@ -46,7 +46,7 @@ def test_read_default_columns(hdf5_file):
 def test_read_default_columns_chunked(hdf5_file):
     from aict_tools.io import read_telescope_data, read_telescope_data_chunked
     import pandas as pd
-    from pandas.util.testing import assert_frame_equal
+    from pandas.testing import assert_frame_equal
 
     path, table_name, config = hdf5_file
 
@@ -61,7 +61,7 @@ def test_read_default_columns_chunked(hdf5_file):
 def test_read_chunks(hdf5_file):
     from aict_tools.io import read_telescope_data_chunked, read_telescope_data
     import pandas as pd
-    from pandas.util.testing import assert_frame_equal
+    from pandas.testing import assert_frame_equal
 
     path, table_name, config = hdf5_file
     cols = ['width', 'length', ]
@@ -86,7 +86,7 @@ def test_read_chunks(hdf5_file):
 def test_read_chunks_cta(cta_file, cta_config, chunk_size):
     from aict_tools.io import read_telescope_data, read_telescope_data_chunked
     import pandas as pd
-    from pandas.util.testing import assert_frame_equal
+    from pandas.testing import assert_frame_equal
 
     columns = ['width', 'num_triggered_telescopes', 'telescope_id']
 
