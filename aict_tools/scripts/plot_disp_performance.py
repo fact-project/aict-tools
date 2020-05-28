@@ -42,15 +42,8 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     log.info('Loading perfomance data')
     df = fact.io.read_data(performance_path, key=key)
 
-    columns = [
-        model_config.source_az_column,
-        model_config.source_zd_column,
-        model_config.pointing_az_column,
-        model_config.pointing_zd_column,
-        model_config.cog_y_column,
-        model_config.cog_x_column,
-        model_config.delta_column
-    ]
+    columns = model_config.columns_to_read_train
+    
     if model_config.coordinate_transformation == 'CTA':
         columns.append(model_config.focal_length_column)
         camera_unit = r'\mathrm{m}'
