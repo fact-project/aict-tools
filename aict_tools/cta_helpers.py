@@ -2,13 +2,14 @@ import warnings
 try:
     import astropy.units as u
     from astropy.coordinates import SkyCoord, AltAz
-    from ctapipe.coordinates import CameraFrame
+    from ctapipe.coordinates import CameraFrame, MissingFrameAttributeWarning
 except ImportError:
     raise ImportError('This functionality requires ctapipe to be installed')
 
 
 def horizontal_to_camera_cta_simtel(alt, az, alt_pointing, az_pointing, focal_length):
     with warnings.catch_warnings():
+        warnings.simplefilter('ignore', MissingFrameAttributeWarning)
 
         altaz = AltAz()
         source_altaz = SkyCoord(
