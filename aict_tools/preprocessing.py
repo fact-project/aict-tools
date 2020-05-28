@@ -1,6 +1,7 @@
 import numpy as np
 import logging
 import astropy.units as u
+from fact.coordinates.utils import horizontal_to_camera as horizontal_to_camera_fact
 
 
 log = logging.getLogger(__name__)
@@ -112,3 +113,67 @@ def convert_units(df, model_config):
             ).to_value(expected_unit)
 
     return df
+
+
+def get_alt(df, model_config):
+    '''
+    Return altitude for source and pointing from the df.
+    Transforms from zenith distance to altitude if zd is given
+    '''
+    if model_config.source_zd_column:
+        source_alt = 90 - df[model_config.source_zd_column]
+    else:
+        source_alt = df[model_config.source_alt_column]
+
+    if model_config.pointing_zd_column:
+        pointing_alt = 90 - df[model_config.pointing_zd_column]
+    else:
+        pointing_alt = df[model_config.pointing_alt_column]
+
+    return source_alt, pointing_alt
+
+
+def get_zd(df, model_config):
+    '''
+    Return altitude for source and pointing from the df.
+    Transforms from zenith distance to altitude if zd is given
+    '''
+    if model_config.source_alt_column:
+        source_zd = 90 - df[model_config.source_alt_column]
+    else:
+        source_zd = df[model_config.source_zd_column]
+
+    if model_config.pointing_alt_column:
+        pointing_zd = 90 - df[model_config.pointing_alt_column]
+    else:
+        pointing_zd = df[model_config.pointing_zd_column]
+
+    return source_zd, pointing_zd
+
+
+def horizontal_to_camera(df, model_config):
+    if model_config.coordinate_transformation == 'CTA':
+        from .cta_helpers import horizontal_to_camera_cta_simtel
+
+        alt_source, alt_pointing = get_alt(df, model_config)
+        source_x, source_y = horizontal_to_camera_cta_simtel(
+            az=df[model_config.source_az_column],
+            alt=alt_source,
+            az_pointing=df[model_config.pointing_az_column],
+            alt_pointing=alt_pointing,
+            focal_length=df[model_config.focal_length_column],
+        )
+
+    elif model_config.coordinate_transformation == 'FACT':
+
+        zd_source, zd_pointing = get_zd(df, model_config)
+        source_x, source_y = horizontal_to_camera_fact(
+            az=df[model_config.source_az_column],
+            zd=zd_source,
+            az_pointing=df[model_config.pointing_az_column],
+            zd_pointing=zd_pointing,
+        )
+    else:
+        raise ValueError('Unsupported value for coordinate_transformation')
+
+    return source_x, source_y

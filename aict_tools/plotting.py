@@ -7,6 +7,8 @@ from matplotlib.colors import LogNorm
 from sklearn import metrics
 from sklearn.calibration import CalibratedClassifierCV
 
+from .preprocessing import horizontal_to_camera
+
 
 def plot_regressor_confusion(
         performance_df,
@@ -289,25 +291,7 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
 def plot_true_delta_delta(data_df, model_config, ax=None):
 
     df = data_df.copy()
-
-    if model_config.coordinate_transformation == 'CTA':
-        from .cta_helpers import horizontal_to_camera_cta_simtel
-        source_x, source_y = horizontal_to_camera_cta_simtel(
-            az=df[model_config.source_az_column],
-            zd=df[model_config.source_zd_column],
-            az_pointing=df[model_config.pointing_az_column],
-            zd_pointing=df[model_config.pointing_zd_column],
-            focal_length=df[model_config.focal_length_column],
-        )
-    elif model_config.coordinate_transformation == 'FACT':
-        from fact.coordinates.utils import horizontal_to_camera
-        source_x, source_y = horizontal_to_camera(
-            az=df[model_config.source_az_column],
-            zd=df[model_config.source_zd_column],
-            az_pointing=df[model_config.pointing_az_column],
-            zd_pointing=df[model_config.pointing_zd_column],
-        )
-
+    source_x, source_y = horizontal_to_camera(df, model_config)
     true_delta = np.arctan2(
         source_y - df[model_config.cog_y_column],
         source_x - df[model_config.cog_x_column],
