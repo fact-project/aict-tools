@@ -101,8 +101,10 @@ def convert_units(df, model_config):
         (model_config.focal_length_column, model_config.focal_length_unit, 'm'),
         (model_config.source_az_column, model_config.source_az_unit, 'deg'),
         (model_config.source_zd_column, model_config.source_zd_unit, 'deg'),
+        (model_config.source_alt_column, model_config.source_alt_unit, 'deg'),
         (model_config.pointing_az_column, model_config.pointing_az_unit, 'deg'),
         (model_config.pointing_zd_column, model_config.pointing_zd_unit, 'deg'),
+        (model_config.pointing_alt_column, model_config.pointing_alt_unit, 'deg'),
     )
     for column, unit, expected_unit in coordinate_units:
         if column in df.columns and unit != expected_unit:
@@ -165,7 +167,6 @@ def horizontal_to_camera(df, model_config):
         )
 
     elif model_config.coordinate_transformation == 'FACT':
-
         zd_source, zd_pointing = get_zd(df, model_config)
         source_x, source_y = horizontal_to_camera_fact(
             az=df[model_config.source_az_column],
