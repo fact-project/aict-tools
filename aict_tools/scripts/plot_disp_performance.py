@@ -43,7 +43,7 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     df = fact.io.read_data(performance_path, key=key)
 
     columns = model_config.columns_to_read_train
-    
+
     if model_config.coordinate_transformation == 'CTA':
         camera_unit = r'\mathrm{m}'
     else:
@@ -123,7 +123,9 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     plot_true_delta_delta(df_data, model_config, ax)
 
     if config.true_energy_column in df.columns:
-        fig = plot_energy_dependent_disp_metrics(df, config.true_energy_column)
+        fig = plot_energy_dependent_disp_metrics(
+            df, config.true_energy_column, energy_unit=config.energy_unit
+        )
         figures.append(fig)
 
     if output is None:

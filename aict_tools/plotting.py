@@ -3,8 +3,10 @@ import pandas as pd
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+import warnings
 
 from sklearn import metrics
+from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.calibration import CalibratedClassifierCV
 
 from .preprocessing import horizontal_to_camera
@@ -97,6 +99,7 @@ def plot_bias_resolution(
     binned['upper_sigma'] = grouped['rel_error'].agg(lambda s: np.percentile(s, 85))
     binned['resolution_quantiles'] = (binned.upper_sigma - binned.lower_sigma) / 2
     binned['resolution'] = grouped['rel_error'].std()
+    binned = binned[grouped.count() > 5]  # at least five events
 
     for key in ('bias', 'resolution', 'resolution_quantiles'):
         if matplotlib.get_backend() == 'pgf' or plt.rcParams['text.usetex']:
@@ -335,8 +338,27 @@ def plot_energy_dependent_disp_metrics(df, true_energy_column, energy_unit='GeV'
         'e_width': np.diff(edges),
     }, index=pd.Series(np.arange(1, len(edges)), name='bin_idx'))
 
-    binned['accuracy'] = df.groupby('bin_idx').apply(accuracy)
-    binned['r2_score'] = df.groupby('bin_idx').apply(r2)
+    r2_scores = pd.DataFrame(index=binned.index)
+    accuracies = pd.DataFrame(index=binned.index)
+    counts = pd.DataFrame(index=binned.index)
+
+    with warnings.catch_warnings():
+        # warns when there are less than 2 events for calculating metrics,
+        # but we throw those away anyways
+        warnings.filterwarnings('ignore', category=UndefinedMetricWarning)
+        for cv_fold, cv in df.groupby('cv_fold'):
+            grouped = cv.groupby('bin_idx')
+            accuracies[cv_fold] = grouped.apply(accuracy)
+            r2_scores[cv_fold] = grouped.apply(r2)
+            counts[cv_fold] = grouped.size()
+
+    binned['r2_score'] = r2_scores.mean(axis=1)
+    binned['r2_std'] = r2_scores.std(axis=1)
+    binned['accuracy'] = accuracies.mean(axis=1)
+    binned['accuracy_std'] = accuracies.std(axis=1)
+    # at least 10 events in each crossval iteration
+    binned['valid'] = (counts > 10).any(axis=1)
+    binned = binned.query('valid')
 
     fig = fig or plt.figure()
 
@@ -344,11 +366,17 @@ def plot_energy_dependent_disp_metrics(df, true_energy_column, energy_unit='GeV'
     ax2 = fig.add_subplot(2, 1, 2, sharex=ax1)
 
     ax1.errorbar(
-        binned.e_center, binned.accuracy, xerr=binned.e_width / 2, ls='',
+        binned.e_center, binned.accuracy,
+        yerr=binned.accuracy_std, xerr=binned.e_width / 2,
+        ls='',
     )
     ax1.set_ylabel(r'Accuracy for $\mathrm{sgn} \mathtt{disp}$')
 
-    ax2.errorbar(binned.e_center, binned.r2_score, xerr=binned.e_width / 2, ls='')
+    ax2.errorbar(
+        binned.e_center, binned.r2_score,
+        yerr=binned.r2_std, xerr=binned.e_width / 2,
+        ls='',
+    )
     ax2.set_ylabel(r'$r^2$ score for $|\mathtt{disp}|$')
 
     ax2.set_xlabel(
