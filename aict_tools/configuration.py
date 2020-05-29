@@ -1,7 +1,6 @@
 import astropy.units as u
 from ruamel.yaml import YAML
 from collections import namedtuple
-from .features import find_used_source_features
 import numpy as np
 from sklearn.base import is_classifier, is_regressor
 import logging
@@ -12,6 +11,8 @@ from sklearn import neighbors
 from sklearn import svm
 from sklearn import tree
 from sklearn import naive_bayes
+
+from .features import find_used_source_features
 
 
 sklearn_modules = {

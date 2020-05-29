@@ -13,8 +13,8 @@ def horizontal_to_camera_cta_simtel(alt, az, alt_pointing, az_pointing, focal_le
 
         altaz = AltAz()
         source_altaz = SkyCoord(
-            az=u.Quantity(az, u.deg, copy=False),
             alt=u.Quantity(alt, u.deg, copy=False),
+            az=u.Quantity(az, u.deg, copy=False),
             frame=altaz,
         )
 
