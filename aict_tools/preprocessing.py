@@ -29,10 +29,8 @@ def check_valid_rows(df):
     nan_counts = nans.sum()
     if (nan_counts > 0).any():
         nan_counts_str = ', '.join(f'{k}: {v}' for k, v in nan_counts.items() if v > 0)
-        log.warning(
-            'Data contains not-predictable events.\n'
-            f'There are nan-values in columns: {nan_counts_str}'
-        )
+        log.warning('Data contains not-predictable events.')
+        log.warning(f'There are nan-values in columns: {nan_counts_str}')
 
     return valid
 
