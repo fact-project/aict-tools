@@ -50,10 +50,10 @@ def plot_regressor_confusion(
 
     if log_xy is True:
         ax.set_xlabel(
-                rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
+                rf'$\log_{{10}}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
         )
         ax.set_ylabel(
-                rf'$\log_{10}(E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
+                rf'$\log_{{10}}(E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
         )
     else:
         ax.set_xlabel(
@@ -99,7 +99,7 @@ def plot_bias_resolution(
     binned['upper_sigma'] = grouped['rel_error'].agg(lambda s: np.percentile(s, 85))
     binned['resolution_quantiles'] = (binned.upper_sigma - binned.lower_sigma) / 2
     binned['resolution'] = grouped['rel_error'].std()
-    binned = binned[grouped.count() > 5]  # at least five events
+    binned = binned[grouped.size() > 100]  # at least fifty events
 
     for key in ('bias', 'resolution', 'resolution_quantiles'):
         if matplotlib.get_backend() == 'pgf' or plt.rcParams['text.usetex']:
@@ -117,7 +117,7 @@ def plot_bias_resolution(
     ax.legend()
     ax.set_xscale('log')
     ax.set_xlabel(
-            rf'$\log_{10}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
+            rf'$\log_{{10}}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$'
     )
 
     return ax
@@ -357,7 +357,7 @@ def plot_energy_dependent_disp_metrics(df, true_energy_column, energy_unit='GeV'
     binned['accuracy'] = accuracies.mean(axis=1)
     binned['accuracy_std'] = accuracies.std(axis=1)
     # at least 10 events in each crossval iteration
-    binned['valid'] = (counts > 10).any(axis=1)
+    binned['valid'] = (counts > 100).any(axis=1)
     binned = binned.query('valid')
 
     fig = fig or plt.figure()
@@ -378,6 +378,7 @@ def plot_energy_dependent_disp_metrics(df, true_energy_column, energy_unit='GeV'
         ls='',
     )
     ax2.set_ylabel(r'$r^2$ score for $|\mathtt{disp}|$')
+    ax2.set_ylim(None, 1)
 
     ax2.set_xlabel(
         r'$E_{\mathrm{true}} \,\,/\,\,' + rf' \mathrm{{{energy_unit}}}$'
