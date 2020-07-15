@@ -22,7 +22,6 @@ disp:
         max_depth=20,
     )
 
-  coordinate_transformation: FACT
   # columns containing coordinates of the source and of the pointing
   source_az_column: source_position_az
   source_alt_column: source_position_alt

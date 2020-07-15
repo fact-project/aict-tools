@@ -1,0 +1,109 @@
+# seed for the random number generators, to make things reproducible
+seed: 0
+
+# define the number of cross validations to perform
+n_cross_validations: 5
+
+# Set the data format. This also sets the targets, pointing, etc to the according cta dl1 columns
+# and makes sure the obs_id, event_id and tel_id are loaded into the dataframe
+data_format: CTA
+telescopes: [tel_001,tel_002, tel_005, tel_018]
+
+# Dummy cuts to ensure this is working
+selection:
+    hillas_intensity:
+      - '>='  # needs to be in quotes because > and ! are special character in yaml
+      - 100
+    morphology_num_islands:
+      - <=
+      - 8
+
+# config for the source regression
+disp:
+  disp_regressor: |
+    ensemble.RandomForestRegressor(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  sign_classifier: |
+    ensemble.RandomForestClassifier(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  # Define the name of the variable you want estimate by regression.
+  # This the name of the group containing the predictions in the CTA case
+  # Prediction columns are named source_x_prediction, source_y_prediction
+  output_name: disp_prediction
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal : 500
+  features:
+    - hillas_x
+    - hillas_y
+    - hillas_intensity
+
+
+energy:
+  regressor: |
+    ensemble.RandomForestRegressor(
+      n_estimators=30,
+      max_features='sqrt',
+      n_jobs=-1,
+      max_depth=12,
+    )
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal: 500
+
+
+  # Define the name of the variable you want estimate by regression.
+  # This the name of the group containing the predictions aswell as the column name in the CTA case
+  output_name: gamma_energy_prediction
+
+  features:
+    - hillas_x
+    - hillas_y
+    - hillas_intensity
+
+  # Generate some features using pd.DataFrame.eval
+  # List all columns that have to be read from the input files
+  # in needed_columns. 
+  # features must be a mapping of feature name -> expression
+  feature_generation:
+    needed_columns:
+      - hillas_width
+      - hillas_length
+    features:
+      area: hillas_width * hillas_length * @pi
+
+ 
+# config for the g/h separation
+separator:
+  #the classifier to use
+  classifier: |
+    ensemble.RandomForestClassifier(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=15,
+        criterion='entropy',
+    )
+
+  # randomly sample the data if you dont want to use the whole set
+  n_background: 500
+  n_signal: 500
+
+  # Define the name of the variable you want estimate by regression.
+  # This the name of the group containing the predictions aswell as the column name in the CTA case
+  output_name: gamma_prediction
+
+  features:
+    - hillas_x
+    - hillas_y
+    - hillas_intensity
