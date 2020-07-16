@@ -114,7 +114,7 @@ class AICTConfig:
         self.true_energy_column = config.get('true_energy_column')
         self.events_key = config.get('events_key', 'events')
         if self.data_format == "CTA":
-            if self.events_key:
+            if config.get('events_key'):
                 log.warning(
                     'You specified an event key for CTA data.'
                     'We assume the file to be in the official dl1 format'
