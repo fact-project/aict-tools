@@ -5,8 +5,8 @@ from tqdm import tqdm
 from ..io import (
     append_column_to_hdf5,
     read_telescope_data_chunked,
-    get_column_names_in_file,
-    remove_column_from_file,
+    drop_prediction_column,
+    drop_prediction_groups,
     load_model,
 )
 from ..apply import predict_disp
@@ -26,10 +26,19 @@ from ..logging import setup_logging
     '-N', '--chunksize', type=int,
     help='If given, only process the given number of events at once',
 )
-def main(configuration_path, data_path, disp_model_path, sign_model_path, chunksize, n_jobs, yes, verbose):
+def main(
+        configuration_path,
+        data_path,
+        disp_model_path,
+        sign_model_path,
+        chunksize,
+        n_jobs,
+        yes,
+        verbose
+):
     '''
-    Apply given model to data. Three columns are added to the file, source_x_prediction, source_y_prediction
-    and disp_prediction
+    Apply given model to data. Three columns are added to the file:
+    source_x_prediction, source_y_prediction and disp_prediction
 
     CONFIGURATION_PATH: Path to the config yaml file
     DATA_PATH: path to the FACT data in a h5py hdf5 file, e.g. erna_gather_fits output
@@ -57,18 +66,29 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
         ])
 
     n_del_cols = 0
-
+    # implement this for cta!
     for column in columns_to_delete:
-        if column in get_column_names_in_file(data_path, config.telescope_events_key):
-            if not yes:
-                click.confirm(
-                    'Dataset "{}" exists in file, overwrite?'.format(column),
-                    abort=True,
-                )
-                yes = True
-            remove_column_from_file(data_path, config.telescope_events_key, column)
-            log.warn("Deleted {} from the feature set.".format(column))
-            n_del_cols += 1
+        if config.data_format == 'CTA':
+            n_del = drop_prediction_groups(
+                data_path,
+                group_name=column,
+                yes=yes
+            )
+        elif config.data_format == 'simple':
+            n_del = drop_prediction_column(
+                data_path,
+                group_name=config.events_key,
+                column_name=column,
+                yes=yes
+            )
+        n_del_cols += n_del
+
+    if config.data_format == 'CTA':
+        drop_prediction_groups(
+            data_path,
+            group_name=model_config.output_name,
+            yes=yes
+        )
 
     if n_del_cols > 0:
         log.warn("Source dependent features need to be calculated from the predicted source possition. "
@@ -99,10 +119,28 @@ def main(configuration_path, data_path, disp_model_path, sign_model_path, chunks
         source_x = df_data[model_config.cog_x_column] + disp * np.cos(df_data[model_config.delta_column])
         source_y = df_data[model_config.cog_y_column] + disp * np.sin(df_data[model_config.delta_column])
 
-        key = config.telescope_events_key
-        append_column_to_hdf5(data_path, source_x, key, 'source_x_prediction')
-        append_column_to_hdf5(data_path, source_y, key, 'source_y_prediction')
-        append_column_to_hdf5(data_path, disp, key, 'disp_prediction')
+        if config.data_format == 'CTA':
+            for tel in df_data['tel_id'].unique():
+                table = f'/dl2/event/telescope/tel_{tel:03d}/{model_config.output_name}'
+                matching = (df_data['tel_id'] == tel)
+
+                d = df_data[['obs_id', 'event_id']].copy()
+                d['source_y_pred'] = source_y
+                d['source_x_pred'] = source_x
+                d['disp_pred'] = disp
+                d.name = model_config.output_name
+                d[matching].to_hdf(
+                    data_path,
+                    table,
+                    mode='a',
+                    format='table',
+                )
+
+        elif config.data_format == 'simple':
+            key = config.events_key
+            append_column_to_hdf5(data_path, source_x, key, 'source_x_prediction')
+            append_column_to_hdf5(data_path, source_y, key, 'source_y_prediction')
+            append_column_to_hdf5(data_path, disp, key, 'disp_prediction')
 
 
 if __name__ == '__main__':
