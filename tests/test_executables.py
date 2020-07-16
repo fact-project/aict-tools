@@ -52,18 +52,50 @@ def test_apply_cuts():
                 assert 'runs' in f
 
 
+def test_apply_cuts_cta():
+    from aict_tools.scripts.apply_cuts import main
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        runner = CliRunner()
+        output_file = os.path.join(d, 'cta_gammas_diffuse.dl1.h5')
+        input_file = 'examples/cta_gammas_diffuse.dl1.h5'
+
+        with DateNotModified(input_file):
+            result = runner.invoke(
+                main,
+                [
+                    'examples/cta_full_config.yaml',
+                    input_file,
+                    output_file,
+                ]
+            )
+
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+
+            assert result.exit_code == 0
+
+            with h5py.File(output_file, 'r') as out, h5py.File(input_file, 'r') as in_:
+                assert 'dl1' in in_
+                assert 'dl1' in out
+                n_in = len(in_.root.dl1.event.telescope.parameters.tel_001)
+                n_out = len(out.root.dl1.event.telescope.parameters.tel_001)
+                assert n_in > n_out
+
+
 def test_train_regressor_cta():
     from aict_tools.scripts.train_energy_regressor import main
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
 
-        with DateNotModified('examples/cta_gammas.h5'):
+        with DateNotModified('examples/cta_gammas_diffuse.dl1.h5'):
             result = runner.invoke(
                 main,
                 [
-                    'examples/cta_config.yaml',
-                    'examples/cta_gammas.h5',
+                    'examples/cta_full_config.yaml',
+                    'examples/cta_gammas_diffuse.dl1.h5',
                     os.path.join(d, 'test.hdf5'),
                     os.path.join(d, 'test.pkl'),
                 ]
@@ -205,6 +237,93 @@ def test_apply_separator(temp_dir, separator_model):
         assert 'gammaness' in f['events']
 
 
+def test_reapply_separator(temp_dir, separator_model):
+    from aict_tools.scripts.apply_separation_model import main as apply_model
+    import h5py
+
+    with h5py.File(os.path.join(temp_dir, 'gamma.hdf5'), 'r') as f:
+        assert 'gammaness' in f['events']
+        n_events = len(f['events'])
+    runner = CliRunner()
+    result = runner.invoke(
+        apply_model,
+        [
+            'examples/config_separator.yaml',
+            os.path.join(temp_dir, 'gamma.hdf5'),
+            separator_model,
+            '--yes',
+        ]
+    )
+
+    if result.exit_code != 0:
+        print(result.output)
+        print_exception(*result.exc_info)
+    assert result.exit_code == 0
+
+    with h5py.File(os.path.join(temp_dir, 'gamma.hdf5'), 'r') as f:
+        assert 'gammaness' in f['events']
+        # make sure previous predictions were dropped and not appended
+        assert len(f['events']) == n_events
+
+
+def test_apply_separator_cta(temp_dir, separator_model):
+    from aict_tools.scripts.apply_separation_model import main as apply_model
+    import h5py
+
+    runner = CliRunner()
+    result = runner.invoke(
+        apply_model,
+        [
+            'examples/cta_full_config.yaml',
+            os.path.join(temp_dir, 'cta_gammas.dl1.h5'),
+            separator_model,
+            '--yes',
+        ]
+    )
+
+    if result.exit_code != 0:
+        print(result.output)
+        print_exception(*result.exc_info)
+    assert result.exit_code == 0
+
+    with h5py.File(os.path.join(temp_dir, 'cta_gammas.dl1.h5'), 'r') as f:
+        assert 'gamma_prediction' in f['dl2']['event']['tel_001']['telescope']
+        assert 'gamma_prediction' in f['dl2']['event']['subarray']
+
+
+def test_reapply_separator_cta(temp_dir, separator_model):
+    from aict_tools.scripts.apply_separation_model import main as apply_model
+    import h5py
+
+    with h5py.File(os.path.join(temp_dir, 'cta_gammas.dl1.h5'), 'r') as f:
+        assert 'gamma_prediction' in f['dl2']['event']['telescope']['tel_001']
+        assert 'gamma_prediction' in f['dl2']['event']['subarray']
+        n_tel = len(f['dl2']['event']['telescope']['tel_001']['gamma_prediction'])
+        n_array = len(f['dl2']['event']['subarray']['gamma_prediction'])
+
+    runner = CliRunner()
+    result = runner.invoke(
+        apply_model,
+        [
+            'examples/cta_full_config.yaml',
+            os.path.join(temp_dir, 'cta_gammas.dl1.h5'),
+            separator_model,
+            '--yes',
+        ]
+    )
+
+    if result.exit_code != 0:
+        print(result.output)
+        print_exception(*result.exc_info)
+    assert result.exit_code == 0
+
+    with h5py.File(os.path.join(temp_dir, 'cta_gammas.dl1.h5'), 'r') as f:
+        assert 'gamma_prediction' in f['dl2']['event']['telescope']['tel_001']
+        assert 'gamma_prediction' in f['dl2']['event']['subarray']
+        assert n_tel == len(f['dl2']['event']['telescope']['tel_001']['gamma_prediction'])
+        assert n_array == len(f['dl2']['event']['subarray']['gamma_prediction'])
+
+
 def test_train_disp_altitude():
     from aict_tools.scripts.train_disp_regressor import main as train
 
@@ -233,13 +352,13 @@ def test_train_disp_cta():
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
-        with DateNotModified('examples/gamma_diffuse_cta.hdf5'):
+        with DateNotModified('examples/cta_gammas_diffuse.dl1.h5'):
             runner = CliRunner()
             result = runner.invoke(
                 train,
                 [
-                    'examples/config_source_cta.yaml',
-                    'examples/gamma_diffuse_cta.hdf5',
+                    'examples/cta_full_config.yaml',
+                    'examples/cta_gammas_diffuse.dl1.h5',
                     os.path.join(d, 'test.hdf5'),
                     os.path.join(d, 'disp.pkl'),
                     os.path.join(d, 'sign.pkl'),
@@ -272,6 +391,8 @@ def test_apply_disp(temp_dir, disp_models):
         print(result.output)
         print_exception(*result.exc_info)
     assert result.exit_code == 0
+    with h5py.File(os.path.join(temp_dir, 'gamma.hdf5'), 'r') as f:
+        assert 'source_x_prediction' in f['events']
 
 
 def test_apply_disp_cta():
@@ -280,14 +401,14 @@ def test_apply_disp_cta():
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
-        shutil.copy('examples/gamma_cta.hdf5', os.path.join(d, 'gamma_cta.hdf5'))
+        shutil.copy('examples/cta_gammas.dl1.h5', os.path.join(d, 'cta_gammas.dl1.h5'))
 
         runner = CliRunner()
         result = runner.invoke(
             train,
             [
-                'examples/config_source_cta.yaml',
-                'examples/gamma_diffuse_cta.hdf5',
+                'examples/cta_full_config.yaml',
+                'examples/cta_gammas_diffuse.dl1.h5',
                 os.path.join(d, 'test.hdf5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
@@ -301,8 +422,8 @@ def test_apply_disp_cta():
         result = runner.invoke(
             apply_model,
             [
-                'examples/config_source_cta.yaml',
-                os.path.join(d, 'gamma_cta.hdf5'),
+                'examples/cta_full_config.yaml',
+                os.path.join(d, 'cta_gammas.dl1.h5'),
                 os.path.join(d, 'disp.pkl'),
                 os.path.join(d, 'sign.pkl'),
                 '--yes',
@@ -313,6 +434,12 @@ def test_apply_disp_cta():
             print(result.output)
             print_exception(*result.exc_info)
         assert result.exit_code == 0
+
+        with h5py.File(os.path.join(temp_dir, 'cta_gammas.dl1.h5'), 'r') as f:
+            assert (
+                'source_x_prediction'
+                in f['dl2']['event']['telescope']['tel_001']['disp_predictions']
+            )
 
 
 def test_to_dl3():
@@ -426,6 +553,47 @@ def test_split_data_executable():
 
         infile = os.path.join(d, 'gamma.hdf5')
         shutil.copy('examples/gamma.hdf5', infile)
+        with DateNotModified(infile):
+
+            runner = CliRunner()
+            result = runner.invoke(
+                split,
+                [
+                    infile,
+                    os.path.join(d, 'signal'),
+                    '-ntest',  # no spaces here. maybe a bug in click?
+                    '-f0.75',
+                    '-ntrain',
+                    '-f0.25',
+                ]
+            )
+            if result.exit_code != 0:
+                print(result.output)
+                print_exception(*result.exc_info)
+            assert result.exit_code == 0
+
+            print(os.listdir(d))
+            test_path = os.path.join(d, 'signal_test.hdf5')
+            assert os.path.isfile(test_path)
+
+            with h5py.File(test_path, 'r') as f:
+                assert f.attrs['sample_fraction'] == 0.75
+
+            train_path = os.path.join(d, 'signal_train.hdf5')
+            assert os.path.isfile(train_path)
+
+            with h5py.File(train_path, 'r') as f:
+                assert f.attrs['sample_fraction'] == 0.25
+
+
+@pytest.mark.xfail(reason='Not implemented. HOw do we want to perform splits?')
+def test_split_data_executable_cta():
+    from aict_tools.scripts.split_data import main as split
+
+    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+
+        infile = os.path.join(d, 'cta_gammas_diffuse.dl1-h5')
+        shutil.copy('examples/cta_gammas_diffuse.dl1.h5', infile)
         with DateNotModified(infile):
 
             runner = CliRunner()
