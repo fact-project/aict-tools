@@ -1,5 +1,6 @@
 from pytest import raises
 
+
 def test_disp():
 
     from aict_tools.configuration import AICTConfig
@@ -63,3 +64,13 @@ def test_altitude():
 
     alt_config = AICTConfig.from_yaml('examples/config_source_altitude.yaml')
     assert 'source_position_alt' in alt_config.disp.columns_to_read_train
+
+
+def test_cta():
+
+    from aict_tools.configuration import AICTConfig
+
+    cta_config = AICTConfig.from_yaml('examples/cta_full_config.yaml')
+    assert cta_config.data_format == 'CTA'
+    assert cta_config.disp.pointing_alt_column == 'altitude'
+    assert cta_config.telescopes is not None
