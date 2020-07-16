@@ -66,7 +66,7 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     log.info(
         'Using coordinate transformations for %s',
-        model_config.coordinate_transformation
+        model_config.data_format
     )
 
     df = convert_units(df, model_config)
