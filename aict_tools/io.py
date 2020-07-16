@@ -6,12 +6,12 @@ import pandas as pd
 import h5py
 import click
 from sklearn.base import is_classifier
+import tables
 
 from fact.io import read_h5py, write_data
 
 from .feature_generation import feature_generation
 from . import __version__
-
 
 __all__ = [
     'drop_prediction_column',
@@ -46,12 +46,26 @@ def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs
 
     if extension in ['.hdf', '.hdf5', '.h5']:
         try:
-            df = pd.read_hdf(file_path, key=key, columns=columns, start=first, stop=last, **kwargs)
+            df = pd.read_hdf(
+                file_path,
+                key=key,
+                columns=columns,
+                start=first,
+                stop=last,
+                **kwargs
+            )
         except (TypeError, ValueError):
-            df = read_h5py(file_path, key=key, columns=columns, first=first, last=last, **kwargs)
+            df = read_h5py(
+                file_path,
+                key=key,
+                columns=columns,
+                first=first,
+                last=last, **kwargs)
         return df
     else:
-        raise NotImplementedError(f'AICT tools cannot handle data with extension {extension} yet.')
+        raise NotImplementedError(
+            f'AICT tools cannot handle data with extension {extension} yet.'
+        )
 
 
 def drop_prediction_column(data_path, group_name, column_name, yes=True):
@@ -59,10 +73,11 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
     Deletes prediction columns in a h5py file if the columns exist.
     Including 'mean' and 'std' columns.
     '''
+    n_del = 0
     with h5py.File(data_path, 'r+') as f:
 
         if group_name not in f.keys():
-            return
+            return n_del
 
         columns = f[group_name].keys()
         if column_name in columns:
@@ -72,16 +87,73 @@ def drop_prediction_column(data_path, group_name, column_name, yes=True):
                 )
 
             del f[group_name][column_name]
+            n_del += 1
+            log.warn("Deleted {} from the feature set.".format(column_name))
 
         if column_name + '_std' in columns:
             del f[group_name][column_name + '_std']
+            n_del += 1
+            log.warn("Deleted {} from the feature set.".format(column_name+'_std'))
         if column_name + '_mean' in columns:
             del f[group_name][column_name + '_mean']
+            n_del += 1
+            log.warn("Deleted {} from the feature set.".format(column_name)+'_mean')
+    return n_del
 
 
-def read_telescope_data_chunked(path, aict_config, chunksize, columns=None, feature_generation_config=None):
+def drop_prediction_groups(data_path, group_name, yes=True):
     '''
-    Reads data from hdf5 file given as PATH and yields merged datafrmes with feature generation applied for each chunk
+    Deletes prediction groups in a h5py file if the group exists.
+    Including 'mean' and 'std' groups.
+    This is pretty hardcoded for the moment as its only used for CTA.
+    ToDo: Generalize this.
+    '''
+    n_del = 0
+    with h5py.File(data_path, 'r+') as f:
+
+        if 'dl2' not in f.keys():
+            return n_del
+        tel_group = f['dl2']['event']['telescope']
+        for tel in tel_group:
+            if group_name in tel_group[tel]:
+                if not yes:
+                    click.confirm(
+                        f'Group \"{group_name}\" exists in group /dl2/event/telescope/{tel} overwrite?',
+                        abort=True,
+                    )
+                del tel_group[tel][group_name]
+                log.warn(
+                    f'Group \"{group_name}\" deleted from group /dl2/event/telescope/{tel}'
+                )
+                n_del += 1
+
+        if 'subarray' not in f['dl2']['event']:
+            return n_del
+        array_group = f['dl2']['event']['subarray']
+        if group_name in array_group:
+            if not yes:
+                click.confirm(
+                    f'Group \"{group_name}\" exists in group /dl2/event/subarray, overwrite?',
+                    abort=True,
+                )
+            del array_group[group_name]
+            log.warn(
+                f'Group \"{group_name}\" deleted from group /dl2/event/subarray'
+            )
+            n_del += 1
+    return n_del
+
+
+def read_telescope_data_chunked(
+        path,
+        aict_config,
+        chunksize,
+        columns=None,
+        feature_generation_config=None
+):
+    '''
+    Reads data from hdf5 file given as PATH and yields merged
+    dataframes with feature generation applied for each chunk
     '''
     return TelescopeDataIterator(
         path,
@@ -164,10 +236,24 @@ class TelescopeDataIterator:
         self.aict_config = aict_config
         self.columns = columns
         self.feature_generation_config = feature_generation_config
-        if aict_config.has_multiple_telescopes:
-            self.n_rows = get_number_of_rows_in_table(path, aict_config.array_events_key)
+        if aict_config.data_format == "CTA":
+            with tables.open_file(path) as t:
+                if aict_config.telescopes:
+                    self.tables = [
+                        (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
+                        for tel in t.root.dl1.event.telescope.parameters
+                        if tel.name in aict_config.telescopes
+                    ]
+
+                else:
+                    self.tables = [
+                        (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
+                        for tel in t.root.dl1.event.telescope.parameters
+                    ]
+            self.n_rows = sum([i[1] for i in self.tables])
         else:
-            self.n_rows = get_number_of_rows_in_table(path, aict_config.telescope_events_key)
+            self.n_rows = get_number_of_rows_in_table(path, aict_config.events_key)
+            self.tables = [(aict_config.events_key, self.n_rows)]
         self.path = path
         if chunksize:
             self.chunksize = chunksize
@@ -177,6 +263,7 @@ class TelescopeDataIterator:
             self.chunksize = self.n_rows
         log.info('Splitting data into {} chunks'.format(self.n_chunks))
 
+        self.current_key = 0
         self._current_chunk = 0
         self._index_start = 0
 
@@ -194,14 +281,41 @@ class TelescopeDataIterator:
         start = chunk * self.chunksize
         end = min(self.n_rows, (chunk + 1) * self.chunksize)
         self._current_chunk += 1
+        if self.current_key > 0:
+            for index, table in zip(range(self.current_key), self.tables):
+                start -= table[1]
+                end -= table[1]
+
         df = read_telescope_data(
             self.path,
             aict_config=self.aict_config,
             columns=self.columns,
             first=start,
-            last=end
+            last=end,
+            key=self.tables[self.current_key][0],
         )
 
+        # In case the table is exhausted, continue with the next until
+        # the desired chunksize is reached
+        # Maybe combine this with the code above
+        while len(df) < self.chunksize:
+            start = 0
+            end -= self.tables[self.current_key][1]
+            # are there any valid cases where this gets negative??
+
+            self.current_key += 1
+            if self.current_key == len(self.tables):
+                break
+
+            next_df = read_telescope_data(
+                self.path,
+                aict_config=self.aict_config,
+                columns=self.columns,
+                first=start,
+                last=end,
+                key=self.tables[self.current_key][0],
+            )
+            df = pd.concat([df, next_df])
         df.index = np.arange(self._index_start, self._index_start + len(df))
 
         index_start = self._index_start
@@ -238,7 +352,8 @@ def remove_column_from_file(path, table_name, column_to_remove):
     Removes a column from a hdf5 file.
 
     Note: this is one of the reasons why we decided to not support pytables.
-    In case of 'tables' format this needs to copy the entire table into memory and then some.
+    In case of 'tables' format this needs to copy the entire table
+    into memory and then some.
 
 
     Parameters
@@ -263,91 +378,154 @@ def has_holes(values):
     return (np.diff(values) > 1).any()
 
 
-def read_telescope_data(path, aict_config, columns=None, feature_generation_config=None, n_sample=None, first=None, last=None):
+def read_telescope_data(
+        path,
+        aict_config,
+        columns=None,
+        feature_generation_config=None,
+        n_sample=None,
+        first=None,
+        last=None,
+        key=None
+):
     '''    Read columns from data in file given under PATH.
-        Returns a single pandas data frame containing all the requested data
+        Returns a single pandas data frame containing all the requested data.
 
     Parameters
     ----------
     path : str
         path to the hdf5 file to read
     aict_config : AICTConfig
-        The configuration object. This is needed for gathering the primary keys to merge merge on.
+        The configuration object.
+        This is needed for gathering the primary keys to merge merge on.
     columns : list, optional
         column names to read, by default None
     feature_generation_config : FeatureGenerationConfig, optional
-        The configuration object containing the information for feature generation, by default None
+        The configuration object containing the information
+        for feature generation, by default None
     n_sample : int, optional
         number of rows to randomly sample from the file, by default None
     first : int, optional
         first row to read from file, by default None
     last : int, optional
         last row to read form file, by default None
-
+    key: str, optional
+        Specify the telescope table to load in case of cta files
+        This is used for chunkwise reading
     Returns
     -------
     pd.DataFrame
         Dataframe containing the requested data.
 
     '''
-    telescope_event_columns = None
-    array_event_columns = None
-    if aict_config.has_multiple_telescopes:
-        join_keys = [aict_config.run_id_column, aict_config.array_event_id_column]
-
-        if columns:
-            t = aict_config.array_events_key
-            array_event_columns = get_column_names_in_file(path, table_name=t)
-            t = aict_config.telescope_events_key
-            telescope_event_columns = get_column_names_in_file(path, table_name=t)
-
-            array_event_columns = set(array_event_columns) & set(columns)
-            telescope_event_columns = set(telescope_event_columns) & set(columns)
-            array_event_columns |= set(join_keys)
-            telescope_event_columns |= set(join_keys)
-
-        tel_event_index = read_data(
-            file_path=path,
-            key=aict_config.telescope_events_key,
-            columns=['run_id', 'array_event_id', 'width'],
-        ).reset_index(drop=True)
-        array_event_index = read_data(
-            file_path=path,
-            key=aict_config.array_events_key,
-            columns=['run_id', 'array_event_id', 'num_triggered_telescopes'],
-        ).reset_index(drop=True).iloc[first:last]
-
-        tel_event_index['index_in_file'] = tel_event_index.index
-        r = pd.merge(array_event_index, tel_event_index, left_on=join_keys, right_on=join_keys)
-
-        # these asserts have been added to catch weird effects on old pandas version (< 0.20).
-        # I'll leave them here in case this changes again with new version. as the consequences were quite subtle
-        assert is_sorted(r.index_in_file)
-        assert not has_holes(r.index_in_file)
-        telescope_events = read_data(
-            file_path=path,
-            key=aict_config.telescope_events_key,
-            columns=telescope_event_columns,
-            first=r.index_in_file.iloc[0],
-            last=r.index_in_file.iloc[-1] + 1,
-        )
-        array_events = read_data(
-            file_path=path,
-            key=aict_config.array_events_key,
-            columns=array_event_columns,
-        )
-        df = pd.merge(left=array_events, right=telescope_events, left_on=join_keys, right_on=join_keys)
-        assert len(df) == len(telescope_events)
-        assert len(df) == len(r)
-
-    else:
+    # In case of a simple DataFrame just call read_data accordingly
+    if aict_config.data_format == 'simple':
         df = read_data(
             file_path=path,
-            key=aict_config.telescope_events_key,
+            key=aict_config.events_key,
             columns=columns,
             first=first,
             last=last,
         )
+    # For cta files multiple tables need to be read and appended/merged
+    elif aict_config.data_format == 'CTA':
+        # focal length is not in the parameter tables
+        if "equivalent_focal_length" in columns:
+            layout = pd.read_hdf(path, '/configuration/instrument/subarray/layout')
+            optics = pd.read_hdf(path, '/configuration/instrument/telescope/optics')
+            layout = layout.merge(optics, how='outer', on="name")
+            layout.set_index('tel_id', inplace=True)
+
+        # choose the telescope tables to load
+        file_table = tables.open_file(path)
+        if key:
+            tels_to_load = (key, )
+        else:
+            if aict_config.telescopes:
+                tels_to_load = [
+                    f"/dl1/event/telescope/parameters/{tel.name}"
+                    for tel in file_table.root.dl1.event.telescope.parameters
+                    if tel.name in aict_config.telescopes
+                ]
+            else:
+                tels_to_load = [
+                    f"/dl1/event/telescope/parameters/{tel.name}"
+                    for tel in file_table.root.dl1.event.telescope.parameters
+                ]
+
+        # load the telescope parameter table(s)
+        tel_dfs = []
+        for tel in tels_to_load:
+            # as not all columns are located here, we cant just use
+            # columns=columns
+            tel_df = pd.read_hdf(path, tel, start=first, stop=last)
+
+            # Pointing information has to be loaded from the monitoring tables
+            # Some magic has to be performed to merge the dfs,
+            # because only the last pointing is stored with the stage-1 ctapipe tool
+            # We also need the trigger tables as monitoring is based on time not events
+            # ToDo: Verify this for real data! MC contains only one pointing
+            if "azimuth" in columns or "altitude" in columns:
+                tel_key = tel.split('/')[-1]
+                tel_triggers = pd.read_hdf(
+                    path,
+                    "/dl1/event/telescope/trigger"
+                )
+                tel_df = tel_df.merge(
+                    tel_triggers,
+                    how='inner',
+                    on=['obs_id', 'event_id', 'tel_id']
+                )
+                tel_pointings = pd.read_hdf(
+                    path,
+                    f"/dl1/monitoring/telescope/pointing/{tel_key}"
+                )
+                tel_df = tel_df.merge(
+                    tel_pointings,
+                    how='left',
+                    on='telescopetrigger_time'
+                )
+                # for chunked reading there might not be a matching trigger time
+                if tel_df['azimuth'].isnull().iloc[0]:
+                    # find the closest earlier pointing
+                    earliest_chunktime = tel_df['telescopetrigger_time'].min()
+                    time_diff = (
+                        tel_pointings['telescopetrigger_time']
+                        - earliest_chunktime
+                    )
+                    earlier = (time_diff < 0)
+                    closest_pointing = tel_pointings.loc[time_diff[earlier].idxmax()]
+                    tel_df.at[0, 'azimuth'] = closest_pointing['azimuth']
+                    tel_df.at[0, 'altitude'] = closest_pointing['altitude']
+                tel_df[['azimuth', 'altitude']] = tel_df[['azimuth', 'altitude']].fillna(
+                    method='ffill'
+                )
+            if "equivalent_focal_length" in columns:
+                tel_number = int(tel.split('_')[-1])
+                tel_df["equivalent_focal_length"] = layout.loc[tel_number][
+                    "equivalent_focal_length"
+                ]
+            # combine the telescope dataframes
+            tel_dfs.append(tel_df)
+
+        # Monte carlo information is located in the simulation group
+        # and we are interested in the array wise true information only
+        # Is there a use case for the true image parameters?
+        df = pd.concat(tel_dfs)
+        if columns:
+            true_columns = [x for x in columns if x.startswith("true")]
+            if true_columns:
+                true_information = pd.read_hdf(
+                    path,
+                    "/simulation/event/subarray/shower")[
+                        true_columns+['obs_id', 'event_id']
+                    ]
+                df = df.merge(true_information, on=['obs_id', 'event_id'], how="left")
+
+        # Now that we loaded all the columns, use only the ones specified
+        if columns:
+            df = df[columns]
+        file_table.close()
 
     if n_sample is not None:
         if n_sample > len(df):
