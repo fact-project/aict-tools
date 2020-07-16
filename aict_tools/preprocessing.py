@@ -152,7 +152,7 @@ def get_zd(df, model_config):
 
 
 def horizontal_to_camera(df, model_config):
-    if model_config.coordinate_transformation == 'CTA':
+    if model_config.data_format == 'CTA':
         from .cta_helpers import horizontal_to_camera_cta_simtel
 
         alt_source, alt_pointing = get_alt(df, model_config)
@@ -163,8 +163,8 @@ def horizontal_to_camera(df, model_config):
             alt_pointing=alt_pointing,
             focal_length=df[model_config.focal_length_column],
         )
-
-    elif model_config.coordinate_transformation == 'FACT':
+    # simple is probably not a very good name here :/
+    elif model_config.data_format == 'simple':
         zd_source, zd_pointing = get_zd(df, model_config)
         source_x, source_y = horizontal_to_camera_fact(
             az=df[model_config.source_az_column],
