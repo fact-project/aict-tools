@@ -44,7 +44,7 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
 
     columns = model_config.columns_to_read_train
 
-    if model_config.coordinate_transformation == 'CTA':
+    if model_config.data_format == 'CTA':
         camera_unit = r'\mathrm{m}'
     else:
         camera_unit = r'\mathrm{mm}'
