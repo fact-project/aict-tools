@@ -52,14 +52,13 @@ def test_apply_cuts():
                 assert 'runs' in f
 
 
-@pytest.mark.skip()
 def test_apply_cuts_cta():
     from aict_tools.scripts.apply_cuts import main
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
-        output_file = os.path.join(d, 'cta_gammas_diffuse.dl1.h5')
         input_file = 'examples/cta_gammas_diffuse.dl1.h5'
+        output_file = os.path.join(d, 'cta_gammas_diffuse_cuts.dl1.h5')
 
         with DateNotModified(input_file):
             result = runner.invoke(
@@ -80,9 +79,6 @@ def test_apply_cuts_cta():
             with h5py.File(output_file, 'r') as out, h5py.File(input_file, 'r') as in_:
                 assert 'dl1' in in_
                 assert 'dl1' in out
-                n_in = len(in_.root.dl1.event.telescope.parameters.tel_001)
-                n_out = len(out.root.dl1.event.telescope.parameters.tel_001)
-                assert n_in > n_out
 
 
 @pytest.fixture

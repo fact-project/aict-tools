@@ -46,6 +46,7 @@ setup(
         'pytz',             # in anaconda
         'ruamel.yaml>=0.15.0',      # in anaconda
         'scikit-learn~=0.21.0',  # See PEP 440, compatible releases
+        'tables>=3.6'       # in anaconda
         'tqdm',
     ],
     extras_require=extras_require,

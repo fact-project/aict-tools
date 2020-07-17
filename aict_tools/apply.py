@@ -3,6 +3,7 @@ import logging
 from operator import le, lt, eq, ne, ge, gt
 import h5py
 from tqdm import tqdm
+import tables
 
 from .preprocessing import convert_to_float32, check_valid_rows
 from .io import get_number_of_rows_in_table
@@ -106,9 +107,17 @@ def create_mask_h5py(
         name, (operator, value) = list(c.items())[0]
 
         before = mask.sum()
-        mask = np.logical_and(
-            mask, OPERATORS[operator](infile[key][name][start:end], value)
-        )
+        if isinstance(infile, tables.file.File):
+            selection = OPERATORS[operator](
+                infile.get_node(key).col(name)[start:end],
+                value
+            )
+        else:
+            selection = OPERATORS[operator](
+                infile[key][name][start:end],
+                value
+            )
+        mask = np.logical_and(mask, selection)
         after = mask.sum()
         log.debug('Cut "{} {} {}" removed {} events'.format(
             name, operator, value, before - after

@@ -30,10 +30,12 @@ def write_hdf(data, path, table_name, mode='w', **kwargs):
 
 
 def get_number_of_rows_in_table(path, key):
-
     with h5py.File(path, 'r') as f:
-        group = f.get(key)
-        return group[next(iter(group.keys()))].shape[0]
+        element = f.get(key)
+        if isinstance(element, h5py._hl.group.Group):
+            return element[next(iter(element.keys()))].shape[0]
+        elif isinstance(element, h5py._hl.dataset.Dataset):
+            return element.shape[0]
 
 
 def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs):
@@ -662,9 +664,10 @@ def set_sample_fraction(path, fraction):
         f.attrs['sample_fraction'] = before * fraction
 
 
-def copy_runs_group(inpath, outpath):
-    with h5py.File(inpath, mode='r') as infile, h5py.File(outpath, 'r+') as outfile:
-        for key in ('runs', 'corsika_runs'):
-            if key in infile:
-                log.info('Copying group "{}"'.format(key))
-                infile.copy(key, outfile)
+def copy_group(inpath, outpath, group):
+    with h5py.File(inpath, mode='r') as infile, h5py.File(outpath, 'a') as outfile:
+        if group in infile:
+            group_path = infile[group].parent.name
+            out_group = outfile.require_group(group_path)
+            log.info('Copying group "{}"'.format(group))
+            infile.copy(group, out_group)
