@@ -22,7 +22,7 @@ from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
 from ..io import (
     read_telescope_data_chunked,
-    copy_runs_group,
+    copy_group,
     set_sample_fraction,
     load_model,
 )
@@ -381,7 +381,7 @@ def main(
         sample_fraction = f.attrs.get('sample_fraction', 1.0)
 
     set_sample_fraction(output, sample_fraction)
-    copy_runs_group(data_path, output)
+    copy_group(data_path, output, 'runs')
 
 
 if __name__ == '__main__':
