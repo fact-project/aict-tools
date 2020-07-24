@@ -108,8 +108,12 @@ def create_mask_h5py(
 
         before = mask.sum()
         if isinstance(infile, tables.file.File):
+            table = infile.get_node(key)
+            if name not in table.colnames:
+                log.debug(f'Missing column {name} in table {table.name}. Continuing')
+                continue
             selection = OPERATORS[operator](
-                infile.get_node(key).col(name)[start:end],
+                table.col(name)[start:end],
                 value
             )
         else:
