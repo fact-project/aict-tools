@@ -110,7 +110,6 @@ def main(
 
     log.info('Predicting on data...')
     for df_data, start, stop in tqdm(df_generator):
-
         disp = predict_disp(
             df_data[model_config.features], disp_model, sign_model,
             log_target=model_config.log_target,
@@ -120,16 +119,15 @@ def main(
         source_y = df_data[model_config.cog_y_column] + disp * np.sin(df_data[model_config.delta_column])
 
         if config.data_format == 'CTA':
-            for tel in df_data['tel_id'].unique():
-                table = f'/dl2/event/telescope/tel_{tel:03d}/{model_config.output_name}'
-                matching = (df_data['tel_id'] == tel)
+            for tel_id, group in df_data.groupby('tel_id'):
+                table = f'/dl2/event/telescope/tel_{tel_id:03d}/{model_config.output_name}'
 
-                d = df_data[['obs_id', 'event_id']].copy()
-                d['source_y_pred'] = source_y
-                d['source_x_pred'] = source_x
-                d['disp_pred'] = disp
+                d = group[['obs_id', 'event_id']].copy()
+                d['source_y_pred'] = source_y[group.index]
+                d['source_x_pred'] = source_x[group.index]
+                d['disp_pred'] = disp[group.index]
                 d.name = model_config.output_name
-                d[matching].to_hdf(
+                group.to_hdf(
                     data_path,
                     table,
                     mode='a',

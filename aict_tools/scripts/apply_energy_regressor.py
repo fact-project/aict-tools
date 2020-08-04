@@ -70,9 +70,6 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
         chunked_frames = []
 
     for df_data, start, stop in tqdm(df_generator):
-        print(df_data.columns)
-        print(model_config.features)
-
         energy_prediction = predict_energy(
             df_data[model_config.features],
             model,
@@ -80,13 +77,13 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
         )
 
         if config.data_format == 'CTA':
-            d = df_data[['obs_id', 'event_id']].copy()
-            d[prediction_column_name] = energy_prediction
-            chunked_frames.append(d)
-            for tel in df_data['tel_id'].unique():
-                table = f'/dl2/event/telescope/tel_{tel:03d}/{model_config.output_name}'
-                matching = (df_data['tel_id'] == tel)
-                d[matching].to_hdf(
+            for tel_id, group in df_data.groupby('tel_id'):
+                table = f'/dl2/event/telescope/tel_{tel_id:03d}/{model_config.output_name}'
+
+                d = group[['obs_id', 'event_id']].copy()
+                d[prediction_column_name] = energy_prediction[group.index]
+                chunked_frames.append(d)
+                d.to_hdf(
                     data_path,
                     table,
                     mode='a',
