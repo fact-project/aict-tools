@@ -32,9 +32,9 @@ def write_hdf(data, path, table_name, mode='w', **kwargs):
 def get_number_of_rows_in_table(path, key):
     with h5py.File(path, 'r') as f:
         element = f.get(key)
-        if isinstance(element, h5py._hl.group.Group):
+        if isinstance(element, h5py.Group):
             return element[next(iter(element.keys()))].shape[0]
-        elif isinstance(element, h5py._hl.dataset.Dataset):
+        elif isinstance(element, h5py.Dataset):
             return element.shape[0]
 
 
