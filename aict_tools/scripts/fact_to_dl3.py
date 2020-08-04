@@ -382,6 +382,7 @@ def main(
 
     set_sample_fraction(output, sample_fraction)
     copy_group(data_path, output, 'runs')
+    copy_group(data_path, output, 'corsika_runs')
 
 
 if __name__ == '__main__':
