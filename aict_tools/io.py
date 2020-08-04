@@ -244,7 +244,7 @@ class TelescopeDataIterator:
                     self.tables = [
                         (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
                         for tel in t.root.dl1.event.telescope.parameters
-                        if tel.name in aict_config.telescopes
+                        if int(tel.name.split('_')[-1]) in aict_config.telescopes
                     ]
 
                 else:
@@ -447,7 +447,7 @@ def read_telescope_data(
                 tels_to_load = [
                     f"/dl1/event/telescope/parameters/{tel.name}"
                     for tel in file_table.root.dl1.event.telescope.parameters
-                    if tel.name in aict_config.telescopes
+                    if int(tel.name.split('_')[-1]) in aict_config.telescopes
                 ]
             else:
                 tels_to_load = [

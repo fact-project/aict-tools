@@ -115,7 +115,7 @@ def test_read_chunks_cta_dl1(cta_file, cta_config):
     # make sure we only loaded the telescopes we wanted
     np.testing.assert_array_equal(
         df2.tel_id.unique(),
-        [int(x.split('_')[-1]) for x in cta_config.telescopes]
+        [x for x in cta_config.telescopes]
     )
 
 
