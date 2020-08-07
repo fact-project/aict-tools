@@ -1,6 +1,7 @@
 import click
 import numpy as np
 from tqdm import tqdm
+import tables
 
 from ..io import (
     append_column_to_hdf5,
@@ -126,13 +127,15 @@ def main(
                 d['source_y_pred'] = source_y[group.index]
                 d['source_x_pred'] = source_x[group.index]
                 d['disp_pred'] = disp[group.index]
-                d.name = model_config.output_name
-                group.to_hdf(
-                    data_path,
-                    table,
-                    mode='a',
-                    format='table',
-                )
+                with tables.open_file(data_path, mode='a') as f:
+                    table_path, table_name = table.rsplit('/', maxsplit=1)
+                    f.create_table(
+                        table_path,
+                        table_name,
+                        d.to_records(),
+                        createparents=True
+                    )
+
 
         elif config.data_format == 'simple':
             key = config.events_key

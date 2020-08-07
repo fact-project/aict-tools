@@ -1,7 +1,7 @@
 import click
-from tqdm import tqdm
-
 import pandas as pd
+from tqdm import tqdm
+import tables
 
 from ..apply import predict_energy
 from ..io import (
@@ -78,17 +78,16 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
 
         if config.data_format == 'CTA':
             for tel_id, group in df_data.groupby('tel_id'):
-                table = f'/dl2/event/telescope/tel_{tel_id:03d}/{model_config.output_name}'
-
                 d = group[['obs_id', 'event_id']].copy()
                 d[prediction_column_name] = energy_prediction[group.index]
                 chunked_frames.append(d)
-                d.to_hdf(
-                    data_path,
-                    table,
-                    mode='a',
-                    format='table'
-                )
+                with tables.open_file(data_path, mode='a') as f:
+                    f.create_table(
+                        f'/dl2/event/telescope/tel_{tel_id:03d}',
+                        model_config.output_name,
+                        d.to_records(),
+                        createparents=True,
+                    )
         elif config.data_format == 'simple':
             append_column_to_hdf5(
                 data_path,
@@ -111,6 +110,7 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
             mode='a',
             format='table'
         )
+
 
 if __name__ == '__main__':
     # pylint: disable=no-value-for-parameter
