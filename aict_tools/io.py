@@ -512,7 +512,6 @@ def read_telescope_data(
 
         # Monte carlo information is located in the simulation group
         # and we are interested in the array wise true information only
-        # Is there a use case for the true image parameters?
         df = pd.concat(tel_dfs)
         if columns:
             true_columns = [x for x in columns if x.startswith("true")]
