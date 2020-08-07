@@ -106,7 +106,7 @@ def create_mask_h5py(
             raise ValueError('Expected dict with single entry column: [operator, value].')
         name, (operator, value) = list(c.items())[0]
 
-        before = mask.sum()
+        before = np.count_nonzero(mask)
         if isinstance(infile, tables.file.File):
             table = infile.get_node(key)
             if name not in table.colnames:
@@ -122,7 +122,7 @@ def create_mask_h5py(
                 value
             )
         mask = np.logical_and(mask, selection)
-        after = mask.sum()
+        after = np.count_nonzero(mask)
         log.debug('Cut "{} {} {}" removed {} events'.format(
             name, operator, value, before - after
         ))
@@ -174,7 +174,7 @@ def apply_cuts_h5py_chunked(
                 else:
 
                     n_old = group[name].shape[0]
-                    n_new = mask.sum()
+                    n_new = np.count_nonzero(mask)
                     group[name].resize(n_old + n_new, axis=0)
 
                     if dataset.ndim == 1:
