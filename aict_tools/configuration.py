@@ -151,6 +151,7 @@ class DispConfig:
         'feature_generation',
         'columns_to_read_apply',
         'columns_to_read_train',
+        'coordinate_transformation',
         'source_az_column',
         'source_az_unit',
         'source_zd_column',
@@ -206,6 +207,7 @@ class DispConfig:
         self.output_name = model_config.get('output_name', 'disp_predictions')
         # ToDo: Throw Exceptions for wrong specifications!
         if self.data_format == 'CTA':
+            self.coordinate_transformation = model_config.get('coordinate_transformation', 'CTA')
             self.source_az_column = model_config.get('source_az_column', 'true_az')
             self.source_alt_column = model_config.get('source_alt_column', 'true_alt')
             self.source_zd_column = None
@@ -228,6 +230,7 @@ class DispConfig:
                 col = f'pointing_{coord}_unit'
                 setattr(self, col, u.Unit(model_config.get(col, 'rad')))
         elif self.data_format == 'simple':
+            self.coordinate_transformation = model_config.get('coordinate_transformation', 'FACT')
             self.source_az_column = model_config.get(
                 'source_az_column',
                 'source_position_az'
