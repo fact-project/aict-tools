@@ -105,26 +105,13 @@ class AICTConfig:
 
     def __init__(self, config):
         self.data_format = config.get('data_format', "simple")
-        self.telescopes = config.get('telescopes', None)
-        self.size_column = config.get('size')
-        self.energy_unit = u.Unit(config.get('energy_unit', 'GeV'))
         self.seed = config.get('seed', 0)
         np.random.seed(self.seed)
 
-        self.true_energy_column = config.get('true_energy_column')
-        self.events_key = config.get('events_key', 'events')
         if self.data_format == "CTA":
-            if config.get('events_key'):
-                log.warning(
-                    'You specified an event key for CTA data.'
-                    'We assume the file to be in the official dl1 format'
-                    'so this value will be ignored'
-                )
+            self.parse_cta(config)
         elif self.data_format == 'simple':
-            if self.telescopes:
-                log.warning(
-                    'The telescopes key is currently only available for CTA'
-                )
+            self.parse_simple(config)
         else:
             raise NotImplementedError(
                 'Unsupported data format! Supported: "CTA", "simple"'
@@ -139,6 +126,33 @@ class AICTConfig:
 
         if 'separator' in config:
             self.separator = SeparatorConfig(config)
+
+    def parse_cta(self, config):
+        SIMPLE_OPTIONS = set([
+            'size',
+            'energy_unit',
+            'true_energy_columns',
+            'events_key'
+        ])
+        if SIMPLE_OPTIONS.intersection(config.keys()):
+            raise TypeError(
+                'You are trying to use configuration keys for the simple '
+                'data format while setting the data_format to "CTA". '
+                'There should be no reason to do this as the DL1-format is fixed'
+            )
+        self.telescopes = config.get('telescopes', None)
+        return 0
+
+    def parse_simple(self, config):
+        if 'telescopes' in config.keys():
+            raise TypeError(
+                'Telescope selection is only possible for CTA data. '
+            )
+        self.size_column = config.get('size')
+        self.energy_unit = u.Unit(config.get('energy_unit', 'GeV'))
+        self.true_energy_column = config.get('true_energy_column')
+        self.events_key = config.get('events_key', 'events')
+        return 0
 
 
 class DispConfig:
@@ -194,7 +208,6 @@ class DispConfig:
         source_features = find_used_source_features(self.features, gen_config)
         if len(source_features):
             raise ValueError('Source dependent features used: {}'.format(source_features))
-
         if gen_config:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
             self.features.extend(self.feature_generation.features.keys())
@@ -203,73 +216,62 @@ class DispConfig:
         self.features.sort()
 
         # Only used as group name for CTA Data
-        # Column names are still source_x_prediction, source_y_prediction, ...
-        self.output_name = model_config.get('output_name', 'disp_predictions')
-        # ToDo: Throw Exceptions for wrong specifications!
         if self.data_format == 'CTA':
-            self.coordinate_transformation = model_config.get('coordinate_transformation', 'CTA')
-            self.source_az_column = model_config.get('source_az_column', 'true_az')
-            self.source_alt_column = model_config.get('source_alt_column', 'true_alt')
-            self.source_zd_column = None
-            self.pointing_az_column = model_config.get('pointing_az_column', 'azimuth')
-            self.pointing_alt_column = model_config.get('pointing_alt_column', 'altitude')
-            self.pointing_zd_column = None
-            self.focal_length_column = model_config.get(
-                'focal_length_column',
-                'equivalent_focal_length'
-            )
-            self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
-            self.cog_x_column = model_config.get('cog_x_column', 'hillas_x')
-            self.cog_y_column = model_config.get('cog_y_column', 'hillas_y')
-            self.delta_column = model_config.get('delta_column', 'hillas_psi')
-            self.delta_unit = u.Unit(model_config.get('delta_unit', 'rad'))
-            for coord in ('alt', 'az', 'zd'):
-                col = f'source_{coord}_unit'
-                setattr(self, col, u.Unit(model_config.get(col, 'deg')))
-            for coord in ('alt', 'az', 'zd'):
-                col = f'pointing_{coord}_unit'
-                setattr(self, col, u.Unit(model_config.get(col, 'rad')))
+            self.parse_cta(config)
         elif self.data_format == 'simple':
-            self.coordinate_transformation = model_config.get('coordinate_transformation', 'FACT')
-            self.source_az_column = model_config.get(
-                'source_az_column',
-                'source_position_az'
+            self.parse_simple(config)
+        else:
+            raise NotImplementedError(
+                'Unsupported data format! Supported: "CTA", "simple"'
             )
-            self.source_zd_column = model_config.get('source_zd_column')
-            self.source_alt_column = model_config.get('source_alt_column')
-            if (self.source_zd_column is None) is (self.source_alt_column is None):
-                raise ValueError(
-                        'Need to specify exactly one of'
-                        'source_zd_column or source_alt_column.'
-                        'source_zd_column: {}, source_alt_column: {}'.format(
-                            self.source_zd_column, self.source_alt_column)
-                )
-            self.pointing_az_column = model_config.get(
-                'pointing_az_column',
-                'pointing_position_az'
+
+    def parse_cta(self, config):
+        model_config = config['disp']
+        SIMPLE_OPTIONS = set([
+            'coordinate_transformation',
+            'source_az_column',
+            'source_alt_column',
+            'pointing_az_column',
+            'pointing_alt_column',
+            'source_az_unit',
+            'source_alt_unit',
+            'pointing_az_unit',
+            'pointing_alt_unit',
+            'focal_length_column',
+            'focal_length_unit',
+            'cog_x_column',
+            'cog_y_column',
+            'delta_column',
+            'delta_unit',
+            'focal_length_column',
+            'focal_length_unit',
+        ])
+        if SIMPLE_OPTIONS.intersection(model_config.keys()):
+            raise TypeError(
+                'You are trying to use configuration keys for the simple '
+                'data format while setting the data_format to "CTA". '
+                'There should be no reason to do this as the DL1-format is fixed'
             )
-            self.pointing_zd_column = model_config.get('pointing_zd_column')
-            self.pointing_alt_column = model_config.get('pointing_alt_column')
-            if (self.pointing_zd_column is None) is (self.pointing_alt_column is None):
-                raise ValueError(
-                        'Need to specify exactly one of'
-                        'pointing_zd_column or pointing_alt_column.'
-                        'pointing_zd_column: {}, pointing_alt_column: {}'.format(
-                            self.pointing_zd_column, self.pointing_alt_column)
-                        )
-            self.focal_length_column = model_config.get(
-                'focal_length_column',
-                'focal_length'
-            )
-            self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
-            self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
-            self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
-            self.delta_column = model_config.get('delta_column', 'delta')
-            self.delta_unit = u.Unit(model_config.get('delta_unit', 'rad'))
-            for name in ('source', 'pointing'):
-                for coord in ('alt', 'az', 'zd'):
-                    col = f'{name}_{coord}_unit'
-                    setattr(self, col, u.Unit(model_config.get(col, 'deg')))
+
+        self.output_name = model_config.get('output_name', 'disp_predictions')
+        self.coordinate_transformation = 'CTA'
+        self.source_az_column = 'true_az'
+        self.source_alt_column = 'true_alt'
+        self.pointing_az_column = 'azimuth'
+        self.pointing_alt_column = 'altitude'
+        self.focal_length_column = 'equivalent_focal_length'
+        self.cog_x_column = 'hillas_x'
+        self.cog_y_column = 'hillas_y'
+        self.delta_column = 'hillas_psi'
+
+        for coord in ('alt', 'az'):
+            col = f'source_{coord}_unit'
+            setattr(self, col, u.Unit('deg'))
+            for coord in ('alt', 'az'):
+                col = f'pointing_{coord}_unit'
+                setattr(self, col, u.Unit('rad'))
+        self.delta_unit = u.Unit('rad')
+        self.focal_length_unit = u.Unit('m')
 
         cols = {
             self.cog_x_column,
@@ -282,8 +284,84 @@ class DispConfig:
             cols.update(self.feature_generation.needed_columns)
         # Add id's because we generate new tables instead of adding columns
         # and want these to be included
-        if self.data_format == 'CTA':
-            cols.update(['tel_id', 'event_id', 'obs_id'])
+        # focal_length is necessary for coordinate transformations
+        cols.update(['tel_id', 'event_id', 'obs_id', 'equivalent_focal_length'])
+        self.columns_to_read_apply = list(cols)
+        cols.update({
+            self.pointing_az_column,
+            self.pointing_alt_column,
+            self.source_az_column,
+            self.source_alt_column,
+        })
+
+        # size relevant here?
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
+
+        self.columns_to_read_train = list(cols)
+
+    def parse_simple(self, config):
+        model_config = config['disp']
+        if 'output_name' in model_config.keys():
+            raise TypeError(
+                'output_name in the disp config is exclusively used to name the '
+                'prediction tables in CTA files. Is has no use using the '
+                'simple data format'
+            )
+        self.coordinate_transformation = model_config.get(
+            'coordinate_transformation',
+            'FACT'
+        )
+        self.source_az_column = model_config.get(
+            'source_az_column',
+            'source_position_az'
+        )
+        self.source_zd_column = model_config.get('source_zd_column')
+        self.source_alt_column = model_config.get('source_alt_column')
+        if (self.source_zd_column is None) is (self.source_alt_column is None):
+            raise ValueError(
+                'Need to specify exactly one of'
+                'source_zd_column or source_alt_column.'
+                'source_zd_column: {}, source_alt_column: {}'.format(
+                    self.source_zd_column, self.source_alt_column)
+            )
+        self.pointing_az_column = model_config.get(
+            'pointing_az_column',
+            'pointing_position_az'
+        )
+        self.pointing_zd_column = model_config.get('pointing_zd_column')
+        self.pointing_alt_column = model_config.get('pointing_alt_column')
+        if (self.pointing_zd_column is None) is (self.pointing_alt_column is None):
+            raise ValueError(
+                'Need to specify exactly one of'
+                'pointing_zd_column or pointing_alt_column.'
+                'pointing_zd_column: {}, pointing_alt_column: {}'.format(
+                    self.pointing_zd_column, self.pointing_alt_column)
+            )
+        self.focal_length_column = model_config.get(
+            'focal_length_column',
+            'focal_length'
+        )
+        self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
+        self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
+        self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
+        self.delta_column = model_config.get('delta_column', 'delta')
+        self.delta_unit = u.Unit(model_config.get('delta_unit', 'rad'))
+        for name in ('source', 'pointing'):
+            for coord in ('alt', 'az', 'zd'):
+                col = f'{name}_{coord}_unit'
+                setattr(self, col, u.Unit(model_config.get(col, 'deg')))
+
+        cols = {
+            self.cog_x_column,
+            self.cog_y_column,
+            self.delta_column,
+        }
+
+        cols.update(model_config['features'])
+        if self.feature_generation:
+            cols.update(self.feature_generation.needed_columns)
         self.columns_to_read_apply = list(cols)
         cols.update({
             self.pointing_az_column,
@@ -294,9 +372,6 @@ class DispConfig:
             self.source_alt_column,
         })
         cols.discard(None)
-        # Add the focal length to make sure the coordinate transformations work
-        if self.data_format == 'CTA':
-            cols.add(self.focal_length_column)
 
         for col in ('true_energy_column', 'size_column'):
             if col in config:
@@ -330,14 +405,22 @@ class EnergyConfig:
         k = 'n_cross_validations'
         setattr(self, k, model_config.get(k, config.get(k, 5)))
 
-        if self.data_format == 'CTA':
-            self.target_column = model_config.get(
-                'target_column', 'true_energy'
-            )
+        if self.data_format == "CTA":
+            self.parse_cta(config)
         elif self.data_format == 'simple':
-            self.target_column = model_config.get(
-                'target_column', 'corsika_event_header_total_energy'
+            self.parse_simple(config)
+        else:
+            raise NotImplementedError(
+                'Unsupported data format! Supported: "CTA", "simple"'
             )
+
+    def parse_cta(self, config):
+        model_config = config['energy']
+        if 'target_column' in model_config.keys():
+            raise TypeError(
+                'target_column is fixed for CTA dl1 files'
+            )
+        self.target_column = 'true_energy'
         self.output_name = model_config.get('output_name', 'gamma_energy_prediction')
         self.log_target = model_config.get('log_target', False)
 
@@ -358,8 +441,38 @@ class EnergyConfig:
 
         # Add id's because we generate new tables instead of adding columns
         # and want these to be included
-        if self.data_format == 'CTA':
-            cols.update(['tel_id', 'event_id', 'obs_id'])
+        cols.update(['tel_id', 'event_id', 'obs_id'])
+        self.columns_to_read_apply = list(cols)
+
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
+        cols.add(self.target_column)
+        self.columns_to_read_train = list(cols)
+
+    def parse_simple(self, config):
+        model_config = config['energy']
+        self.target_column = model_config.get(
+            'target_column', 'corsika_event_header_total_energy'
+        )
+        self.output_name = model_config.get('output_name', 'gamma_energy_prediction')
+        self.log_target = model_config.get('log_target', False)
+
+        gen_config = model_config.get('feature_generation')
+        source_features = find_used_source_features(self.features, gen_config)
+        if len(source_features):
+            raise ValueError('Source dependent features used: {}'.format(source_features))
+        if gen_config:
+            self.feature_generation = FeatureGenerationConfig(**gen_config)
+            self.features.extend(self.feature_generation.features.keys())
+        else:
+            self.feature_generation = None
+        self.features.sort()
+
+        cols = set(model_config['features'])
+        if self.feature_generation:
+            cols.update(self.feature_generation.needed_columns)
+
         self.columns_to_read_apply = list(cols)
 
         for col in ('true_energy_column', 'size_column'):
