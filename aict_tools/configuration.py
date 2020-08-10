@@ -258,7 +258,7 @@ class DispConfig:
         self.coordinate_transformation = 'CTA'
         self.source_az_column = 'true_az'
         self.source_alt_column = 'true_alt'
-        self.source_zd_column = 'true_alt'
+        self.source_zd_column = None
         self.pointing_az_column = 'azimuth'
         self.pointing_alt_column = 'altitude'
         self.pointing_zd_column = None
@@ -273,7 +273,7 @@ class DispConfig:
             for coord in ('alt', 'az', 'zd'):
                 col = f'pointing_{coord}_unit'
                 setattr(self, col, u.Unit('rad'))
-        self.delta_unit = u.Unit('rad')
+        self.delta_unit = u.Unit('deg')
         self.focal_length_unit = u.Unit('m')
 
         cols = {

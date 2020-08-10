@@ -79,7 +79,6 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
         df[model_config.delta_column],
         project_disp=model_config.project_disp,
     )
-    #from IPython import embed; embed()
 
     # generate features if given in config
     if model_config.feature_generation:

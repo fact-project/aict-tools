@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import joblib
 import fact.io
 
+from ..io import read_telescope_data
 from ..preprocessing import convert_units
 from ..configuration import AICTConfig
 from ..plotting import (
@@ -40,9 +41,8 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     model_config = config.disp
 
     log.info('Loading perfomance data')
-    df = fact.io.read_data(performance_path, key=key)
 
-    columns = model_config.columns_to_read_train
+    df = fact.io.read_data(performance_path, key=key)
 
     if model_config.data_format == 'CTA':
         camera_unit = r'\mathrm{m}'
@@ -50,7 +50,11 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
         camera_unit = r'\mathrm{mm}'
 
     log.info('Loading original data')
-    df_data = fact.io.read_data(data_path, key=key_data, columns=columns)
+    df_data = read_telescope_data(
+        data_path,
+        config,
+        model_config.columns_to_read_train,
+    )
 
     log.info('Loading disp model')
     disp_model = joblib.load(disp_model_path)
