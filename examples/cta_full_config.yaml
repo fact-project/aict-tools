@@ -46,11 +46,28 @@ disp:
   output_name: disp_prediction
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal : 500
+  n_signal : 5000
   features:
     - hillas_x
     - hillas_y
     - hillas_intensity
+    - hillas_length
+    - hillas_width
+    - hillas_skewness
+    - hillas_kurtosis
+    - timing_slope
+    - timing_intercept
+    - timing_deviation
+    - leakage_intensity_width_1
+    - concentration_cog
+    - morphology_num_islands
+    - equivalent_focal_length
+  feature_generation:
+    needed_columns:
+      - hillas_width
+      - hillas_length
+    features:
+      area: hillas_width * hillas_length * @pi
 
 
 energy:
@@ -63,7 +80,7 @@ energy:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal: 500
+  n_signal: 5000
 
 
   # Define the name of the variable you want estimate by regression.
@@ -74,17 +91,24 @@ energy:
     - hillas_x
     - hillas_y
     - hillas_intensity
-
-  # Generate some features using pd.DataFrame.eval
-  # List all columns that have to be read from the input files
-  # in needed_columns. 
-  # features must be a mapping of feature name -> expression
+    - hillas_length
+    - hillas_width
+    - hillas_skewness
+    - hillas_kurtosis
+    - timing_slope
+    - timing_intercept
+    - timing_deviation
+    - leakage_intensity_width_1
+    - concentration_cog
+    - morphology_num_islands
+    - equivalent_focal_length
   feature_generation:
     needed_columns:
       - hillas_width
       - hillas_length
     features:
       area: hillas_width * hillas_length * @pi
+
 
  
 # config for the g/h separation
@@ -100,8 +124,8 @@ separator:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_background: 500
-  n_signal: 500
+  n_background: 5000
+  n_signal: 5000
 
   # Define the name of the variable you want estimate by regression.
   # This the name of the group containing the predictions aswell as the column name in the CTA case
@@ -111,3 +135,21 @@ separator:
     - hillas_x
     - hillas_y
     - hillas_intensity
+    - hillas_length
+    - hillas_width
+    - hillas_skewness
+    - hillas_kurtosis
+    - timing_slope
+    - timing_intercept
+    - timing_deviation
+    - leakage_intensity_width_1
+    - concentration_cog
+    - morphology_num_islands
+    - equivalent_focal_length
+  feature_generation:
+    needed_columns:
+      - hillas_width
+      - hillas_length
+    features:
+      area: hillas_width * hillas_length * @pi
+
