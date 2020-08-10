@@ -3,7 +3,6 @@ import logging
 from operator import le, lt, eq, ne, ge, gt
 import h5py
 from tqdm import tqdm
-import tables
 
 from .preprocessing import convert_to_float32, check_valid_rows
 from .io import get_number_of_rows_in_table
@@ -107,20 +106,51 @@ def create_mask_h5py(
         name, (operator, value) = list(c.items())[0]
 
         before = np.count_nonzero(mask)
-        if isinstance(infile, tables.file.File):
-            table = infile.get_node(key)
-            if name not in table.colnames:
-                log.debug(f'Missing column {name} in table {table.name}. Continuing')
-                continue
-            selection = OPERATORS[operator](
-                table.col(name)[start:end],
-                value
+        selection = OPERATORS[operator](
+            infile[key][name][start:end],
+            value
+        )
+        mask = np.logical_and(mask, selection)
+        after = np.count_nonzero(mask)
+        log.debug('Cut "{} {} {}" removed {} events'.format(
+            name, operator, value, before - after
+        ))
+
+    return mask
+
+
+def create_mask_table(
+    table,
+    selection_config,
+    n_events,
+    start=None,
+    end=None,
+):
+    start = start or 0
+    end = min(n_events, end) if end else n_events
+
+    n_selected = end - start
+    mask = np.ones(n_selected, dtype=bool)
+
+    # legacy support for dict of column_name -> [op, val]
+    if isinstance(selection_config, dict):
+        selection_config = [{k: v} for k, v in selection_config.items()]
+
+    for c in selection_config:
+        if len(c) > 1:
+            raise ValueError('Expected dict with single entry column: [operator, value].')
+        name, (operator, value) = list(c.items())[0]
+
+        before = np.count_nonzero(mask)
+        if name not in table.colnames:
+            raise KeyError(
+                f'Cant perform selection based on {name} '
+                'Column is missing from parameters table'
             )
-        else:
-            selection = OPERATORS[operator](
-                infile[key][name][start:end],
-                value
-            )
+        selection = OPERATORS[operator](
+            table.col(name)[start:end],
+            value
+        )
         mask = np.logical_and(mask, selection)
         after = np.count_nonzero(mask)
         log.debug('Cut "{} {} {}" removed {} events'.format(
