@@ -131,7 +131,6 @@ class AICTConfig:
         SIMPLE_OPTIONS = set([
             'size',
             'energy_unit',
-            'true_energy_columns',
             'events_key'
         ])
         if SIMPLE_OPTIONS.intersection(config.keys()):
@@ -141,6 +140,8 @@ class AICTConfig:
                 'There should be no reason to do this as the DL1-format is fixed'
             )
         self.telescopes = config.get('telescopes', None)
+        self.true_energy_column = config.get('true_energy_column')
+        self.size_column = config.get('size')
         return 0
 
     def parse_simple(self, config):
@@ -257,17 +258,19 @@ class DispConfig:
         self.coordinate_transformation = 'CTA'
         self.source_az_column = 'true_az'
         self.source_alt_column = 'true_alt'
+        self.source_zd_column = 'true_alt'
         self.pointing_az_column = 'azimuth'
         self.pointing_alt_column = 'altitude'
+        self.pointing_zd_column = None
         self.focal_length_column = 'equivalent_focal_length'
         self.cog_x_column = 'hillas_x'
         self.cog_y_column = 'hillas_y'
         self.delta_column = 'hillas_psi'
 
-        for coord in ('alt', 'az'):
+        for coord in ('alt', 'az', 'zd'):
             col = f'source_{coord}_unit'
             setattr(self, col, u.Unit('deg'))
-            for coord in ('alt', 'az'):
+            for coord in ('alt', 'az', 'zd'):
                 col = f'pointing_{coord}_unit'
                 setattr(self, col, u.Unit('rad'))
         self.delta_unit = u.Unit('rad')
