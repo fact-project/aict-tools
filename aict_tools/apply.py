@@ -2,6 +2,7 @@ import numpy as np
 import logging
 from operator import le, lt, eq, ne, ge, gt
 import h5py
+import tables
 from tqdm import tqdm
 
 from .preprocessing import convert_to_float32, check_valid_rows
@@ -213,3 +214,65 @@ def apply_cuts_h5py_chunked(
                         group[name][n_old:n_old + n_new, :] = dataset[start:end][mask, :]
                     else:
                         log.warning('Skipping not 1d or 2d column {}'.format(name))
+
+
+def apply_cuts_cta_dl1(
+    input_path,
+    output_path,
+    selection_config
+):
+    '''
+    Apply cuts from a selection config to a cta dl1 file and write results
+    to output_path. This is done one row at a time, so chunksize wont do anything
+    '''
+    filters = tables.Filters(
+        complevel=5,  # compression medium, tradeoff between speed and compression
+        complib="blosc:zstd",  # use modern zstd algorithm
+        fletcher32=True,  # add checksums to data chunks
+    )
+    n_rows_before = 0
+    n_rows_after = 0
+    with tables.open_file(input_path) as in_, tables.open_file(output_path, 'a', filters=filters) as out_:
+        # perform cuts on the measured parameters
+        remaining_showers = set()
+        for table in in_.root.dl1.event.telescope.parameters:
+            key = '/dl1/event/telescope/parameters'
+            new_table = out_.create_table(
+                key,
+                table.name,
+                table.description,
+                createparents=True,
+            )
+            mask = create_mask_table(
+                table,
+                selection_config,
+                n_events=len(table),
+            )
+            for row, match in zip(table.iterrows(), mask):
+                n_rows_before += 1
+                if match:
+                    remaining_showers.add((row['obs_id'], row['event_id']))
+                    new_table.append([row[:]])
+                    n_rows_after += 1
+        # copy the other tables disregarding events with no more observations
+        for table in in_.walk_nodes():
+            # skip groups, we create the parents anyway
+            if not isinstance(table, tables.Table):
+                continue
+            # parameter tables were already processed
+            if table._v_parent._v_pathname == '/dl1/event/telescope/parameters':
+                continue
+            new_table = out_.create_table(
+                table._v_parent._v_pathname,
+                table.name,
+                table.description,
+                createparents=True,
+            )
+            for row in table.iterrows():
+                if 'event_id' in table.colnames:  # they dont appear individually
+                    event = (row['obs_id'], row['event_id'])
+                    if event not in remaining_showers:
+                        continue
+                    new_table.append([row[:]])
+
+        return n_rows_before, n_rows_after
