@@ -142,6 +142,7 @@ class AICTConfig:
         self.telescopes = config.get('telescopes', None)
         self.true_energy_column = config.get('true_energy_column')
         self.size_column = config.get('size')
+        self.energy_unit = u.Unit('TeV')
         return 0
 
     def parse_simple(self, config):

@@ -495,7 +495,7 @@ def read_telescope_data(
                         tel_pointings['telescopetrigger_time']
                         - earliest_chunktime
                     )
-                    earlier = (time_diff < 0)
+                    earlier = (time_diff <= 0)
                     closest_pointing = tel_pointings.loc[time_diff[earlier].idxmax()]
                     tel_df.at[0, 'azimuth'] = closest_pointing['azimuth']
                     tel_df.at[0, 'altitude'] = closest_pointing['altitude']
