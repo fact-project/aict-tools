@@ -133,7 +133,7 @@ def main(configuration_path, performance_path, data_path, disp_model_path, sign_
     else:
         with PdfPages(output) as pdf:
             for fig in figures:
-                fig.tight_layout(pad=0)
+                fig.tight_layout(pad=0, h_pad=1.08, w_pad=1.08)
                 pdf.savefig(fig)
 
 
