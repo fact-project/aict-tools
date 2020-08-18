@@ -198,7 +198,7 @@ def plot_scores(
             bins=bin_edges, label=classnames[label], histtype='step',
         )
 
-    #ax.set_xlabel(xlabel)
+    ax.set_xlabel(xlabel)
     ax.legend()
     ax.figure.tight_layout()
 
