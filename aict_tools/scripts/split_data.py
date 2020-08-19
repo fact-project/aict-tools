@@ -100,9 +100,7 @@ def main(input_path, output_basename, fraction, name, inkey, key, data_format, c
         split_cta_dl1_data(input_path, output_basename, fraction, name, chunksize)
 
 
-# ToDo: Adapt this to DL1 Files!
 def split_cta_dl1_data(input_path, output_basename, fraction, name, chunksize=None):
-
     import tables
     with tables.open_file(input_path) as f:
         obs_ids = f.root.dl1.event.subarray.trigger.col('obs_id')
@@ -145,6 +143,7 @@ def split_cta_dl1_data(input_path, output_basename, fraction, name, chunksize=No
                             if row['event_id'] not in event_ids_part:
                                 continue
                         new_table.append([row[:]])
+        set_sample_fraction(path, n / n_total)
 
 
 def split_single_telescope_data_chunked(

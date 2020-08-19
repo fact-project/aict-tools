@@ -147,11 +147,11 @@ def drop_prediction_groups(data_path, group_name, yes=True):
 
 
 def read_telescope_data_chunked(
-        path,
-        aict_config,
-        chunksize,
-        columns=None,
-        feature_generation_config=None
+    path,
+    aict_config,
+    chunksize,
+    columns=None,
+    feature_generation_config=None
 ):
     '''
     Reads data from hdf5 file given as PATH and yields merged
@@ -381,17 +381,17 @@ def has_holes(values):
 
 
 def read_telescope_data(
-        path,
-        aict_config,
-        columns=None,
-        feature_generation_config=None,
-        n_sample=None,
-        first=None,
-        last=None,
-        key=None
+    path,
+    aict_config,
+    columns=None,
+    feature_generation_config=None,
+    n_sample=None,
+    first=None,
+    last=None,
+    key=None
 ):
     '''    Read columns from data in file given under PATH.
-        Returns a single pandas data frame containing all the requested data.
+    Returns a single pandas data frame containing all the requested data.
 
     Parameters
     ----------
@@ -670,3 +670,18 @@ def copy_group(inpath, outpath, group):
             out_group = outfile.require_group(group_path)
             log.info('Copying group "{}"'.format(group))
             infile.copy(group, out_group)
+
+
+def append_predictions_cta(file_path, table_path, output_name, df):
+    with tables.open_file(file_path, mode='a') as f:
+        if f'{table_path}/{output_name}' not in f:
+            f.create_table(
+                table_path,
+                output_name,
+                df.to_records(),
+                createparents=True,
+            )
+        else:
+            f.get_node(
+                f'{table_path}/{output_name}'
+            ).append(df.to_records())

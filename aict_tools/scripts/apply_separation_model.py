@@ -1,11 +1,11 @@
 import click
 import pandas as pd
 from tqdm import tqdm
-import tables
 
 from ..apply import predict_separator
 from ..io import (
     append_column_to_hdf5,
+    append_predictions_cta,
     read_telescope_data_chunked,
     drop_prediction_column,
     drop_prediction_groups,
@@ -78,15 +78,14 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
         if config.data_format == 'CTA':
             for tel_id, group in df_data.groupby('tel_id'):
                 d = group[['obs_id', 'event_id']].copy()
-                d[prediction_column_name] = prediction[group.index]
+                d[prediction_column_name] = prediction[group.index-group.index[0]]
                 chunked_frames.append(d)
-                with tables.open_file(data_path, mode='a') as f:
-                    f.create_table(
-                        f'/dl2/event/telescope/tel_{tel_id:03d}',
-                        model_config.output_name,
-                        d.to_records(),
-                        createparents=True,
-                    )
+                append_predictions_cta(
+                    data_path,
+                    f'/dl2/event/telescope/tel_{tel_id:03d}',
+                    model_config.output_name,
+                    d
+                )
         elif config.data_format == 'simple':
             append_column_to_hdf5(
                 data_path,

@@ -6,6 +6,8 @@ from traceback import print_exception
 import h5py
 from pytest import importorskip
 import pytest
+import pandas as pd
+import numpy as np
 
 
 class DateNotModified:
@@ -287,6 +289,32 @@ def test_apply_regression_cta(temp_dir, cta_energy_model):
         print(result.output)
         print_exception(*result.exc_info)
 
+    res_no_chunks = pd.read_hdf(
+        os.path.join(temp_dir, 'cta_gammas_diffuse.dl1.h5'),
+        '/dl2/event/telescope/tel_005/gamma_energy_prediction'
+    )
+
+    result_2 = runner.invoke(
+        main,
+        [
+            'examples/cta_full_config.yaml',
+            os.path.join(temp_dir, 'cta_gammas_diffuse.dl1.h5'),
+            cta_energy_model,
+            '--yes',
+            '-N 50',
+        ]
+    )
+
+    if result_2.exit_code != 0:
+        print(result_2.output)
+        print_exception(*result_2.exc_info)
+
+    res_chunks = pd.read_hdf(
+        os.path.join(temp_dir, 'cta_gammas_diffuse.dl1.h5'),
+        '/dl2/event/telescope/tel_005/gamma_energy_prediction'
+    )
+    assert (res_no_chunks.all() == res_chunks.all()).all()
+
 
 def test_apply_separator(temp_dir, separator_model):
     from aict_tools.scripts.apply_separation_model import main as apply_model
@@ -557,7 +585,6 @@ def test_split_data_executable():
                 assert f.attrs['sample_fraction'] == 0.25
 
 
-@pytest.mark.xfail(reason='Not implemented. HOw do we want to perform splits?')
 def test_split_data_executable_cta():
     from aict_tools.scripts.split_data import main as split
 
@@ -577,6 +604,7 @@ def test_split_data_executable_cta():
                     '-f0.75',
                     '-ntrain',
                     '-f0.25',
+                    '-dCTA',
                 ]
             )
             if result.exit_code != 0:
@@ -584,18 +612,19 @@ def test_split_data_executable_cta():
                 print_exception(*result.exc_info)
             assert result.exit_code == 0
 
-            print(os.listdir(d))
-            test_path = os.path.join(d, 'signal_test.hdf5')
+            test_path = os.path.join(d, 'signal_test.dl1.h5')
             assert os.path.isfile(test_path)
 
             with h5py.File(test_path, 'r') as f:
-                assert f.attrs['sample_fraction'] == 0.75
+                # tolerance because event sample fraction need to be rounded with
+                # n_events = 1100
+                assert np.isclose(f.attrs['sample_fraction'], 0.75, atol=0.005)
 
-            train_path = os.path.join(d, 'signal_train.hdf5')
+            train_path = os.path.join(d, 'signal_train.dl1.h5')
             assert os.path.isfile(train_path)
 
             with h5py.File(train_path, 'r') as f:
-                assert f.attrs['sample_fraction'] == 0.25
+                assert np.isclose(f.attrs['sample_fraction'], 0.25, atol=0.005)
 
 
 def test_split_data_executable_chunked():

@@ -1,10 +1,10 @@
 import click
 import numpy as np
 from tqdm import tqdm
-import tables
 
 from ..io import (
     append_column_to_hdf5,
+    append_predictions_cta,
     read_telescope_data_chunked,
     drop_prediction_column,
     drop_prediction_groups,
@@ -121,21 +121,16 @@ def main(
 
         if config.data_format == 'CTA':
             for tel_id, group in df_data.groupby('tel_id'):
-                table = f'/dl2/event/telescope/tel_{tel_id:03d}/{model_config.output_name}'
-
                 d = group[['obs_id', 'event_id']].copy()
-                d['source_y_pred'] = source_y[group.index]
-                d['source_x_pred'] = source_x[group.index]
-                d['disp_pred'] = disp[group.index]
-                with tables.open_file(data_path, mode='a') as f:
-                    table_path, table_name = table.rsplit('/', maxsplit=1)
-                    f.create_table(
-                        table_path,
-                        table_name,
-                        d.to_records(),
-                        createparents=True
-                    )
-
+                d['source_y_pred'] = source_y[group.index-group.index[0]]
+                d['source_x_pred'] = source_x[group.index-group.index[0]]
+                d['disp_pred'] = disp[group.index-group.index[0]]
+                append_predictions_cta(
+                    data_path,
+                    f'/dl2/event/telescope/tel_{tel_id:03d}',
+                    model_config.output_name,
+                    d
+                )
 
         elif config.data_format == 'simple':
             key = config.events_key
