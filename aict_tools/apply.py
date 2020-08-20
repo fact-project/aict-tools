@@ -273,6 +273,6 @@ def apply_cuts_cta_dl1(
                     event = (row['obs_id'], row['event_id'])
                     if event not in remaining_showers:
                         continue
-                    new_table.append([row[:]])
+                new_table.append([row[:]])
 
         return n_rows_before, n_rows_after
