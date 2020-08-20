@@ -241,21 +241,22 @@ class TelescopeDataIterator:
         if aict_config.data_format == "CTA":
             with tables.open_file(path) as t:
                 if aict_config.telescopes:
-                    self.tables = [
+                    tables_ = [
                         (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
                         for tel in t.root.dl1.event.telescope.parameters
                         if int(tel.name.split('_')[-1]) in aict_config.telescopes
                     ]
 
                 else:
-                    self.tables = [
+                    tables_ = [
                         (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
                         for tel in t.root.dl1.event.telescope.parameters
                     ]
-            self.n_rows = sum([i[1] for i in self.tables])
+            self.n_rows = sum([i[1] for i in tables_])
+            self.tables = iter(tables_)
         else:
             self.n_rows = get_number_of_rows_in_table(path, aict_config.events_key)
-            self.tables = [(aict_config.events_key, self.n_rows)]
+            self.tables = iter([(aict_config.events_key, self.n_rows)])
         self.path = path
         if chunksize:
             self.chunksize = chunksize
@@ -265,7 +266,8 @@ class TelescopeDataIterator:
             self.chunksize = self.n_rows
         log.info('Splitting data into {} chunks'.format(self.n_chunks))
 
-        self.current_key = 0
+        self.exhausted_table_lengths = 0
+        self.table = next(self.tables)
         self._current_chunk = 0
         self._index_start = 0
 
@@ -283,10 +285,9 @@ class TelescopeDataIterator:
         start = chunk * self.chunksize
         end = min(self.n_rows, (chunk + 1) * self.chunksize)
         self._current_chunk += 1
-        if self.current_key > 0:
-            for index, table in zip(range(self.current_key), self.tables):
-                start -= table[1]
-                end -= table[1]
+        if self.exhausted_table_lengths > 0:
+            start -= self.exhausted_table_lengths
+            end -= self.exhausted_table_lengths
 
         df = read_telescope_data(
             self.path,
@@ -294,19 +295,19 @@ class TelescopeDataIterator:
             columns=self.columns,
             first=start,
             last=end,
-            key=self.tables[self.current_key][0],
+            key=self.table[0],
         )
 
         # In case the table is exhausted, continue with the next until
         # the desired chunksize is reached
-        # Maybe combine this with the code above
         while len(df) < self.chunksize:
             start = 0
-            end -= self.tables[self.current_key][1]
-            # are there any valid cases where this gets negative??
+            end -= self.table[1]
+            exhausted_table_length = self.table[1]
 
-            self.current_key += 1
-            if self.current_key == len(self.tables):
+            try:
+                self.table = next(self.tables)
+            except StopIteration:
                 break
 
             next_df = read_telescope_data(
@@ -315,9 +316,11 @@ class TelescopeDataIterator:
                 columns=self.columns,
                 first=start,
                 last=end,
-                key=self.tables[self.current_key][0],
+                key=self.table[0],
             )
+            self.exhausted_table_lengths += exhausted_table_length
             df = pd.concat([df, next_df])
+
         df.index = np.arange(self._index_start, self._index_start + len(df))
 
         index_start = self._index_start
