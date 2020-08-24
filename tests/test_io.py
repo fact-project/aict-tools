@@ -111,6 +111,7 @@ def test_read_chunks_cta_dl1(cta_file, cta_config):
         columns=columns
     )
     assert_frame_equal(df1, df2)
+    #assert False
 
     # make sure we only loaded the telescopes we wanted
     np.testing.assert_array_equal(
