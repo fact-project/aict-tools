@@ -122,9 +122,9 @@ def main(
         if config.data_format == 'CTA':
             for tel_id, group in df_data.groupby('tel_id'):
                 d = group[['obs_id', 'event_id']].copy()
-                d['source_y_pred'] = source_y[group.index-group.index[0]]
-                d['source_x_pred'] = source_x[group.index-group.index[0]]
-                d['disp_pred'] = disp[group.index-group.index[0]]
+                d['source_y_pred'] = source_y[group.index]
+                d['source_x_pred'] = source_x[group.index]
+                d['disp_pred'] = disp[group.index]
                 append_predictions_cta(
                     data_path,
                     f'/dl2/event/telescope/tel_{tel_id:03d}',

@@ -78,7 +78,7 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
         if config.data_format == 'CTA':
             for tel_id, group in df_data.groupby('tel_id'):
                 d = group[['obs_id', 'event_id']].copy()
-                d[prediction_column_name] = prediction[group.index-group.index[0]]
+                d[prediction_column_name] = prediction[group.index]
                 chunked_frames.append(d)
                 append_predictions_cta(
                     data_path,
