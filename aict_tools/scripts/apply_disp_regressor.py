@@ -13,6 +13,7 @@ from ..io import (
 from ..apply import predict_disp
 from ..configuration import AICTConfig
 from ..logging import setup_logging
+from ..preprocessing import convert_units
 
 
 @click.command()
@@ -111,6 +112,7 @@ def main(
 
     log.info('Predicting on data...')
     for df_data, start, stop in tqdm(df_generator):
+        df_data = convert_units(df_data, model_config)
         disp = predict_disp(
             df_data[model_config.features], disp_model, sign_model,
             log_target=model_config.log_target,
