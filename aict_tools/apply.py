@@ -72,6 +72,19 @@ def predict_disp(df, abs_model, sign_model, log_target=False):
     return disp_prediction
 
 
+def predict_dxdy(df, dxdy_model, log_target=False):
+    df_features = convert_to_float32(df)
+    valid = check_valid_rows(df_features)
+
+    dxdy_prediction = np.full((len(df_features),2), np.nan)     # 2, because prediction will return two values: dx and dy
+    dxdy_prediction[valid] = dxdy_model.predict(df_features.loc[valid].values)
+
+    if log_target:
+        dxdy_prediction[valid] = np.exp(dxdy_prediction[valid])
+
+    return dxdy_prediction
+
+
 def predict_separator(df, model):
     df_features = convert_to_float32(df)
     valid = check_valid_rows(df_features)

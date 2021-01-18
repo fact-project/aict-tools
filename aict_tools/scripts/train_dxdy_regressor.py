@@ -19,14 +19,13 @@ from ..logging import setup_logging
 @click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('signal_path', type=click.Path(exists=True, dir_okay=False))
 @click.argument('predictions_path', type=click.Path(exists=False, dir_okay=False))
-@click.argument('disp_model_path', type=click.Path(exists=False, dir_okay=False))
-@click.argument('sign_model_path', type=click.Path(exists=False, dir_okay=False))
+@click.argument('dxdy_model_path', type=click.Path(exists=False, dir_okay=False))
 @click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
-def main(configuration_path, signal_path, predictions_path, disp_model_path, sign_model_path, key, verbose):
+def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key, verbose):
     '''
     Train two learners to be able to reconstruct the source position.
-    One regressor for disp and one classifier for the sign of delta.
+    One regressor for dx and one regressor for dy.
 
     Both pmml and pickle format are supported for the output.
 
@@ -36,24 +35,21 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     PREDICTIONS_PATH : path to the file where the mc predictions are stored.
 
-    DISP_MODEL_PATH: Path to save the disp model to.
+    DXDY_MODEL_PATH: Path to save the dxdy model to.
 
-    SIGN_MODEL_PATH: Path to save the disp model to.
         Allowed extensions are .pkl and .pmml.
         If extension is .pmml, then both pmml and pkl file will be saved
     '''
     log = setup_logging(verbose=verbose)
 
     config = AICTConfig.from_yaml(configuration_path)
-    model_config = config.disp
+    model_config = config.dxdy
 
     np.random.seed(config.seed)
 
-    disp_regressor = model_config.disp_regressor
-    sign_classifier = model_config.sign_classifier
+    dxdy_regressor = model_config.dxdy_regressor
 
-    disp_regressor.random_state = config.seed
-    sign_classifier.random_state = config.seed
+    dxdy_regressor.random_state = config.seed
 
     log.info('Loading data')
     df = read_telescope_data(
@@ -71,26 +67,31 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
     df = convert_units(df, model_config)
     source_x, source_y = horizontal_to_camera(df, model_config)
-
+    
     log.info('Using projected disp: {}'.format(model_config.project_disp))
-    df['true_disp'], df['true_sign'] = calc_true_disp(
-        source_x, source_y,
-        df[model_config.cog_x_column], df[model_config.cog_y_column],
-        df[model_config.delta_column],
-        project_disp=model_config.project_disp,
-    )
+    #df['true_dx'] = source_x
+    #df['true_dy'] = source_y
+
+    df['true_dx'] = df['x'] - source_x
+    df['true_dy'] = df['y'] - source_y
+
+    ####
+    df['delta_err'] = delta_error(df, model_config)
+    log.info('Events after delta cut : {}'.format(sum(delta_error(df, model_config) < 10)))      # < 10: delta never gets that large
+    df = df.query(f'delta_err < 10')
+    ####
 
     # generate features if given in config
     if model_config.feature_generation:
         feature_generation(df, model_config.feature_generation, inplace=True)
 
-    df_train = convert_to_float32(df[config.disp.features])
+    df_train = convert_to_float32(df[model_config.features])
     df_train.dropna(how='any', inplace=True)
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target_disp = df['true_disp'].loc[df_train.index]
-    target_sign = df['true_sign'].loc[df_train.index]
+    target_dx = df['true_dx'].loc[df_train.index]
+    target_dy = df['true_dy'].loc[df_train.index]
 
     # load optional columns if available to be able to make performance plots
     # vs true energy / size
@@ -99,14 +100,11 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     if config.size_column is not None:
         size = df.loc[df_train.index, config.size_column].to_numpy()
 
-    if model_config.log_target is True:
-        target_disp = np.log(target_disp)
 
     log.info('Starting {} fold cross validation... '.format(
         model_config.n_cross_validations
     ))
-    scores_disp = []
-    scores_sign = []
+    scores_dxdy = []
     cv_predictions = []
 
     kfold = model_selection.KFold(
@@ -120,32 +118,22 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
 
         cv_x_train, cv_x_test = df_train.values[train], df_train.values[test]
 
-        cv_disp_train, cv_disp_test = target_disp.values[train], target_disp.values[test]
-        cv_sign_train, cv_sign_test = target_sign.values[train], target_sign.values[test]
+        cv_dxdy_train = np.stack((target_dx.values[train], target_dy.values[train]), axis=1)
+        cv_dxdy_test = np.stack((target_dx.values[test], target_dy.values[test]), axis=1)
 
-        disp_regressor.fit(cv_x_train, cv_disp_train)
-        cv_disp_prediction = disp_regressor.predict(cv_x_test)
+        dxdy_regressor.fit(cv_x_train, cv_dxdy_train)
+        cv_dxdy_prediction = dxdy_regressor.predict(cv_x_test)
 
         if model_config.log_target is True:
-            cv_disp_test = np.exp(cv_disp_test)
-            cv_disp_prediction = np.exp(cv_disp_prediction)
+            cv_dxdy_test = np.exp(cv_dxdy_test)
+            cv_dxdy_prediction = np.exp(cv_dxdy_prediction)
 
-        sign_classifier.fit(cv_x_train, cv_sign_train)
-        # scale proba for positive sign to [-1, 1], so it's a nice score for the sign
-        # where values close to -1 mean high confidence for - and values close to 1 mean
-        # high confidence for +
-        cv_sign_score = 2 * sign_classifier.predict_proba(cv_x_test)[:, 1] - 1
-        cv_sign_prediction = np.where(cv_sign_score < 0, -1.0, 1.0)
-
-        scores_disp.append(metrics.r2_score(cv_disp_test, cv_disp_prediction))
-        scores_sign.append(metrics.accuracy_score(cv_sign_test, cv_sign_prediction))
-
+        scores_dxdy.append(metrics.r2_score(cv_dxdy_test, cv_dxdy_prediction))
         cv_df = pd.DataFrame({
-            'disp': cv_disp_test,
-            'disp_prediction': cv_disp_prediction,
-            'sign': cv_sign_test,
-            'sign_prediction': cv_sign_prediction,
-            'sign_score': cv_sign_score,
+            'dx': cv_dxdy_test[:,0],
+            'dy': cv_dxdy_test[:,1],
+            'dx_prediction': cv_dxdy_prediction[:,0],
+            'dy_prediction': cv_dxdy_prediction[:,1],
             'cv_fold': fold,
         })
         if config.true_energy_column is not None:
@@ -159,41 +147,26 @@ def main(configuration_path, signal_path, predictions_path, disp_model_path, sig
     log.info('writing predictions from cross validation')
     write_data(predictions_df, predictions_path, mode='w')
 
-    scores_disp = np.array(scores_disp)
-    scores_sign = np.array(scores_sign)
-    log.info('Cross validated R^2 scores for disp: {}'.format(scores_disp))
+    scores_dxdy = np.array(scores_dxdy)
+    log.info('Cross validated R^2 scores for dxdy: {}'.format(scores_dxdy))
     log.info('Mean R^2 score from CV: {:0.4f} ± {:0.4f}'.format(
-        scores_disp.mean(), scores_disp.std()
-    ))
-
-    log.info('Cross validated accuracy for the sign: {}'.format(scores_sign))
-    log.info('Mean accuracy from CV: {:0.4f} ± {:0.4f}'.format(
-        scores_sign.mean(), scores_sign.std()
+        scores_dxdy.mean(), scores_dxdy.std()
     ))
 
     log.info('Building new model on complete data set...')
     # set random seed again to make sure different settings
     # for n_cross_validations don't change the final model
     np.random.seed(config.seed)
-    disp_regressor.random_state = config.seed
-    sign_classifier.random_state = config.seed
+    dxdy_regressor.random_state = config.seed
 
-    disp_regressor.fit(df_train.values, target_disp.values)
-    sign_classifier.fit(df_train.values, target_sign.values)
+    dxdy_regressor.fit(df_train.values, np.stack((target_dx.values, target_dy.values), axis=1))
 
-    log.info('Pickling disp model to {} ...'.format(disp_model_path))
+    log.info('Pickling dxdy model to {} ...'.format(dxdy_model_path))
     save_model(
-        disp_regressor,
+        dxdy_regressor,
         feature_names=list(df_train.columns),
-        model_path=disp_model_path,
-        label_text='abs_disp',
-    )
-    log.info('Pickling sign model to {} ...'.format(sign_model_path))
-    save_model(
-        sign_classifier,
-        feature_names=list(df_train.columns),
-        model_path=sign_model_path,
-        label_text='sign_disp',
+        model_path=dxdy_model_path,
+        label_text='dxdy',
     )
 
 
