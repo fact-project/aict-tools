@@ -72,8 +72,8 @@ def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key
     #df['true_dx'] = source_x
     #df['true_dy'] = source_y
 
-    df['true_dx'] = df['x'] - source_x
-    df['true_dy'] = df['y'] - source_y
+    df['true_dx'] = df[model_config.cog_x_column] - source_x
+    df['true_dy'] = df[model_config.cog_y_column] - source_y
 
     ####
     df['delta_err'] = delta_error(df, model_config)

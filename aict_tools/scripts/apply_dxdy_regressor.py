@@ -93,8 +93,8 @@ def main(configuration_path, data_path, dxdy_model_path, chunksize, n_jobs, yes,
             log_target=model_config.log_target,
         )
 
-        source_x = df_data['x'] - dxdy[:,0]
-        source_y = df_data['y'] - dxdy[:,1]
+        source_x = df_data[model_config.cog_x_column] - dxdy[:,0]
+        source_y = df_data[model_config.cog_y_column] - dxdy[:,1]
         
         disp, sign = calc_true_disp(
             source_x, source_y,

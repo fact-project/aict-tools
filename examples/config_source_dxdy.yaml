@@ -1,0 +1,40 @@
+# seed for the random number generators, to make things reproducible
+seed: 0
+
+# define th number of cross validations to perform
+n_cross_validations : 5
+true_energy_column: corsika_event_header_total_energy
+
+
+dxdy:
+  dxdy_regressor : |
+    ensemble.RandomForestRegressor(
+        n_estimators=20,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  coordinate_transformation: FACT
+  # columns containing coordinates of the source and of the pointing
+  source_az_column: source_position_az
+  source_zd_column: source_position_zd
+  pointing_az_column: pointing_position_az
+  pointing_zd_column: pointing_position_zd
+
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal : 500
+
+  features:
+    - concentration_cog
+    - concentration_core
+    - delta
+    - leakage1
+    - leakage2
+    - length
+    - skewness_long
+    - kurtosis_long
+    - num_islands
+    - size
+    - width
