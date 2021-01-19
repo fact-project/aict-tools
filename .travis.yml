@@ -11,24 +11,17 @@ env:
 matrix:
   include:
     - python: '3.6'
-      env:
-        - EXTRAS="all"
     - python: '3.7'
-      env:
-        - EXTRAS="all"
     - python: '3.8'
-      env:
-        - EXTRAS="pmml, cta" # no 3.8 support for onnx yet 
 
 before_install:
   - pip install --upgrade pip
-  - pip install Cython
 
 install:
-  - pip install ".[$EXTRAS]"
+  - pip install ".[all]"
 
 script:
-  - python setup.py test
+  - pytest -v
 
 deploy:
   provider: pypi
