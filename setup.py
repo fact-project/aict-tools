@@ -11,11 +11,12 @@ with open('aict_tools/__init__.py', 'r') as f:
 
 extras_require = {
     'pmml': [
-        'sklearn2pmml<0.57',
+        'sklearn2pmml>=0.66',
         'jpmml_evaluator>=0.2.2',
     ],
     'onnx': ['skl2onnx', 'onnxmltools', 'onnxruntime~=1.0'],
     'cta': ['ctapipe'],
+    'tests': ['pytest', 'pytest-runner'],
 }
 extras_require['all'] = list({dep for deps in extras_require.values() for dep in deps})
 
