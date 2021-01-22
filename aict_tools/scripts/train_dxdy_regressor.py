@@ -82,8 +82,7 @@ def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key
 
     log.info('Events after nan-dropping: {} '.format(len(df_train)))
 
-    target_dx = df['true_dx'].loc[df_train.index]
-    target_dy = df['true_dy'].loc[df_train.index]
+    target_dxdy = df.loc[df_train.index, ['true_dx', 'true_dy']]
 
     # load optional columns if available to be able to make performance plots
     # vs true energy / size
@@ -110,8 +109,8 @@ def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key
 
         cv_x_train, cv_x_test = df_train.values[train], df_train.values[test]
 
-        cv_dxdy_train = np.stack((target_dx.values[train], target_dy.values[train]), axis=1)
-        cv_dxdy_test = np.stack((target_dx.values[test], target_dy.values[test]), axis=1)
+        cv_dxdy_train = target_dxdy.values[train]
+        cv_dxdy_test = target_dxdy.values[test]
 
         dxdy_regressor.fit(cv_x_train, cv_dxdy_train)
         cv_dxdy_prediction = dxdy_regressor.predict(cv_x_test)
@@ -151,7 +150,7 @@ def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key
     np.random.seed(config.seed)
     dxdy_regressor.random_state = config.seed
 
-    dxdy_regressor.fit(df_train.values, np.stack((target_dx.values, target_dy.values), axis=1))
+    dxdy_regressor.fit(df_train.values, target_dxdy.values)
 
     log.info('Pickling dxdy model to {} ...'.format(dxdy_model_path))
     save_model(
