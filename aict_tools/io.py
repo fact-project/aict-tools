@@ -10,7 +10,6 @@ from sklearn.base import is_classifier
 from fact.io import read_h5py, write_data
 
 from .feature_generation import feature_generation
-from .preprocessing import horizontal_to_camera
 from . import __version__
 
 
@@ -491,19 +490,3 @@ def copy_runs_group(inpath, outpath):
             if key in infile:
                 log.info('Copying group "{}"'.format(key))
                 infile.copy(key, outfile)
-
-def delta_error(data_df, model_config):
-    df = data_df.copy()
-    source_x, source_y = horizontal_to_camera(df, model_config)
-    true_delta = np.arctan2(
-        source_y - df[model_config.cog_y_column],
-        source_x - df[model_config.cog_x_column],
-    )
-
-    ####    calculate the difference    ####
-    delta_diff = true_delta - df[model_config.delta_column]
-    ####    fold pi and -pi into the middle    ####
-    delta_diff[delta_diff < np.pi/2] = delta_diff[delta_diff < np.pi/2] + np.pi
-    delta_diff[delta_diff > np.pi/2] = delta_diff[delta_diff > np.pi/2] - np.pi
-
-    return delta_diff

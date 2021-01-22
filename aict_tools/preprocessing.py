@@ -176,3 +176,19 @@ def horizontal_to_camera(df, model_config):
         raise ValueError('Unsupported value for coordinate_transformation')
 
     return source_x, source_y
+
+def delta_error(data_df, model_config):
+    df = data_df.copy()
+    source_x, source_y = horizontal_to_camera(df, model_config)
+    true_delta = np.arctan2(
+        source_y - df[model_config.cog_y_column],
+        source_x - df[model_config.cog_x_column],
+    )
+
+    ####    calculate the difference    ####
+    delta_diff = true_delta - df[model_config.delta_column]
+    ####    fold pi and -pi into the middle    ####
+    delta_diff[delta_diff < np.pi/2] = delta_diff[delta_diff < np.pi/2] + np.pi
+    delta_diff[delta_diff > np.pi/2] = delta_diff[delta_diff > np.pi/2] - np.pi
+
+    return delta_diff

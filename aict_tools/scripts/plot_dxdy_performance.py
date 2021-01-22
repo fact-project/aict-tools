@@ -59,8 +59,7 @@ def main(configuration_path, performance_path, data_path, dxdy_model_path, outpu
     # Plot confusion dx log
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    #ax.set_title('Reconstructed vs. True dx (log color scale)')
-    ax.set_title('Rekonstruiertes vs. wahres dx')
+    ax.set_title('Reconstructed vs. True dx (log color scale)')
     plot_regressor_confusion(
         df, log_xy=False, ax=ax,
         label_column='dx', prediction_column='dx_prediction'

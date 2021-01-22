@@ -6,7 +6,7 @@ from tqdm import tqdm
 import numpy as np
 
 from fact.io import write_data
-from ..io import save_model, read_telescope_data, delta_error
+from ..io import save_model, read_telescope_data
 from ..preprocessing import (
     convert_to_float32, calc_true_disp, convert_units, horizontal_to_camera,
 )
@@ -24,8 +24,8 @@ from ..logging import setup_logging
 @click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
 def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key, verbose):
     '''
-    Train two learners to be able to reconstruct the source position.
-    One regressor for dx and one regressor for dy.
+    Train one learner to be able to reconstruct the source position.
+    One regressor for multiple outputs (dx,dy).
 
     Both pmml and pickle format are supported for the output.
 
@@ -69,17 +69,9 @@ def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key
     source_x, source_y = horizontal_to_camera(df, model_config)
     
     log.info('Using projected disp: {}'.format(model_config.project_disp))
-    #df['true_dx'] = source_x
-    #df['true_dy'] = source_y
 
-    df['true_dx'] = df[model_config.cog_x_column] - source_x
-    df['true_dy'] = df[model_config.cog_y_column] - source_y
-
-    ####
-    df['delta_err'] = delta_error(df, model_config)
-    log.info('Events after delta cut : {}'.format(sum(delta_error(df, model_config) < 10)))      # < 10: delta never gets that large
-    df = df.query(f'delta_err < 10')
-    ####
+    df['true_dx'] = source_x - df[model_config.cog_x_column]
+    df['true_dy'] = source_y - df[model_config.cog_y_column]
 
     # generate features if given in config
     if model_config.feature_generation:
