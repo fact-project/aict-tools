@@ -8,10 +8,8 @@ n_cross_validations: 5
 # and makes sure the obs_id, event_id and tel_id are loaded into the dataframe
 data_format: CTA
 telescopes:
-    - 1
-    - 2
-    - 5
-    - 18
+    - tel_001
+    - tel_018
 
 # Dummy cuts to ensure this is working
 selection:
@@ -48,8 +46,8 @@ disp:
   # randomly sample the data if you dont want to use the whole set
   n_signal : 1000
   features:
-    - hillas_x
-    - hillas_y
+    - hillas_fov_lon
+    - hillas_fov_lat
     - hillas_intensity
     - hillas_length
     - hillas_width
@@ -88,8 +86,8 @@ energy:
   output_name: gamma_energy_prediction
 
   features:
-    - hillas_x
-    - hillas_y
+    - hillas_fov_lon
+    - hillas_fov_lat
     - hillas_intensity
     - hillas_length
     - hillas_width
@@ -132,8 +130,8 @@ separator:
   output_name: gamma_prediction
 
   features:
-    - hillas_x
-    - hillas_y
+    - hillas_fov_lon
+    - hillas_fov_lat
     - hillas_intensity
     - hillas_length
     - hillas_width

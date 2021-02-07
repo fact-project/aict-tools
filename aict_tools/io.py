@@ -241,12 +241,15 @@ class TelescopeDataIterator:
         if aict_config.data_format == "CTA":
             with tables.open_file(path) as t:
                 if aict_config.telescopes:
-                    tables_ = [
-                        (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
-                        for tel in t.root.dl1.event.telescope.parameters
-                        if int(tel.name.split('_')[-1]) in aict_config.telescopes
-                    ]
-
+                    tables_ = []
+                    for key in aict_config.telescopes:
+                        if key in t.root.dl1.event.telescope.parameters:
+                            tables_.append((
+                                f"/dl1/event/telescope/parameters/{key}",
+                                len(t.root.dl1.event.telescope.parameters[key])
+                            ))
+                        else:
+                            raise Exception("Didnt fnd telescope", key)
                 else:
                     tables_ = [
                         (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
@@ -298,13 +301,13 @@ class TelescopeDataIterator:
             key=self.table[0],
         )
 
+        
         # In case the table is exhausted, continue with the next until
         # the desired chunksize is reached
         while len(df) < self.chunksize:
             start = 0
             end -= self.table[1]
             exhausted_table_length = self.table[1]
-
             try:
                 self.table = next(self.tables)
             except StopIteration:
@@ -318,8 +321,34 @@ class TelescopeDataIterator:
                 last=end,
                 key=self.table[0],
             )
+
             self.exhausted_table_lengths += exhausted_table_length
             df = pd.concat([df, next_df])
+
+        # could cache this
+        # or put into another function
+        if self.aict_config.data_format == 'CTA':
+            if "equivalent_focal_length" in self.columns:
+                layout = pd.read_hdf(self.path, '/configuration/instrument/subarray/layout')
+                optics = pd.read_hdf(self.path, '/configuration/instrument/telescope/optics')
+                layout = layout.merge(optics, how='outer', on="name")
+                #layout.set_index('tel_id', inplace=True)
+                next_df = df.merge(layout[['tel_id', 'equivalent_focal_length']], how='left', on='tel_id')
+
+
+        if self.aict_config.data_format == 'CTA':
+            if self.columns:
+                true_columns = [x for x in self.columns if x.startswith("true")]
+                if true_columns:
+                    true_information = pd.read_hdf(
+                        self.path,
+                        "/simulation/event/subarray/shower")[
+                            true_columns+['obs_id', 'event_id']
+                        ]
+                    df = df.merge(true_information, on=['obs_id', 'event_id'], how="left")
+
+
+
 
         df.index = np.arange(self._index_start, self._index_start + len(df))
 
@@ -434,13 +463,6 @@ def read_telescope_data(
         )
     # For cta files multiple tables need to be read and appended/merged
     elif aict_config.data_format == 'CTA':
-        # focal length is not in the parameter tables
-        if "equivalent_focal_length" in columns:
-            layout = pd.read_hdf(path, '/configuration/instrument/subarray/layout')
-            optics = pd.read_hdf(path, '/configuration/instrument/telescope/optics')
-            layout = layout.merge(optics, how='outer', on="name")
-            layout.set_index('tel_id', inplace=True)
-
         # choose the telescope tables to load
         file_table = tables.open_file(path)
         if key:
@@ -450,7 +472,7 @@ def read_telescope_data(
                 tels_to_load = [
                     f"/dl1/event/telescope/parameters/{tel.name}"
                     for tel in file_table.root.dl1.event.telescope.parameters
-                    if int(tel.name.split('_')[-1]) in aict_config.telescopes
+                    if tel.name in aict_config.telescopes
                 ]
             else:
                 tels_to_load = [
@@ -470,65 +492,52 @@ def read_telescope_data(
             # because only the last pointing is stored with the stage-1 ctapipe tool
             # We also need the trigger tables as monitoring is based on time not events
             # ToDo: Verify this for real data! MC contains only one pointing
-            if "azimuth" in columns or "altitude" in columns:
-                tel_key = tel.split('/')[-1]
-                tel_triggers = pd.read_hdf(
-                    path,
-                    "/dl1/event/telescope/trigger"
-                )
-                tel_df = tel_df.merge(
-                    tel_triggers,
-                    how='inner',
-                    on=['obs_id', 'event_id', 'tel_id']
-                )
-                tel_pointings = pd.read_hdf(
-                    path,
-                    f"/dl1/monitoring/telescope/pointing/{tel_key}"
-                )
-                tel_df = tel_df.merge(
-                    tel_pointings,
-                    how='left',
-                    on='telescopetrigger_time'
-                )
-                # for chunked reading there might not be a matching trigger time
-                if tel_df['azimuth'].isnull().iloc[0]:
-                    # find the closest earlier pointing
-                    earliest_chunktime = tel_df['telescopetrigger_time'].min()
-                    time_diff = (
-                        tel_pointings['telescopetrigger_time']
-                        - earliest_chunktime
+            if columns:
+                if "azimuth" in columns or "altitude" in columns:
+                    tel_key = tel.split('/')[-1]
+                    tel_triggers = pd.read_hdf(
+                        path,
+                        "/dl1/event/telescope/trigger"
                     )
-                    earlier = (time_diff <= 0)
-                    closest_pointing = tel_pointings.loc[time_diff[earlier].idxmax()]
-                    tel_df.at[0, 'azimuth'] = closest_pointing['azimuth']
-                    tel_df.at[0, 'altitude'] = closest_pointing['altitude']
-                tel_df[['azimuth', 'altitude']] = tel_df[['azimuth', 'altitude']].fillna(
-                    method='ffill'
-                )
-            if "equivalent_focal_length" in columns:
-                tel_number = int(tel.split('_')[-1])
-                tel_df["equivalent_focal_length"] = layout.loc[tel_number][
-                    "equivalent_focal_length"
-                ]
-            # combine the telescope dataframes
+                    tel_df = tel_df.merge(
+                        tel_triggers,
+                        how='inner',
+                        on=['obs_id', 'event_id', 'tel_id']
+                    )
+                    tel_pointings = pd.read_hdf(
+                        path,
+                        f"/dl1/monitoring/telescope/pointing/{tel_key}"
+                    )
+                    tel_df = tel_df.merge(
+                        tel_pointings,
+                        how='left',
+                        on='time'
+                    )
+                    # for chunked reading there might not be a matching trigger time
+                    if tel_df['azimuth'].isnull().iloc[0]:
+                        # find the closest earlier pointing
+                        earliest_chunktime = tel_df['telescopetrigger_time'].min()
+                        time_diff = (
+                            tel_pointings['time']
+                            - earliest_chunktime
+                        )
+                        earlier = (time_diff <= 0)
+                        closest_pointing = tel_pointings.loc[time_diff[earlier].idxmax()]
+                        tel_df.at[0, 'azimuth'] = closest_pointing['azimuth']
+                        tel_df.at[0, 'altitude'] = closest_pointing['altitude']
+                    tel_df[['azimuth', 'altitude']] = tel_df[['azimuth', 'altitude']].fillna(
+                        method='ffill'
+                    )
+           # combine the telescope dataframes
             tel_dfs.append(tel_df)
 
         # Monte carlo information is located in the simulation group
         # and we are interested in the array wise true information only
         df = pd.concat(tel_dfs)
-        if columns:
-            true_columns = [x for x in columns if x.startswith("true")]
-            if true_columns:
-                true_information = pd.read_hdf(
-                    path,
-                    "/simulation/event/subarray/shower")[
-                        true_columns+['obs_id', 'event_id']
-                    ]
-                df = df.merge(true_information, on=['obs_id', 'event_id'], how="left")
-
+        # this is super hacky and intransparent!
         # Now that we loaded all the columns, use only the ones specified
         if columns:
-            df = df[columns]
+            df = df[set(df.columns).intersection(columns)]
         file_table.close()
 
     if n_sample is not None:

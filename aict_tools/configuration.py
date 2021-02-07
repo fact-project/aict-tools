@@ -137,7 +137,7 @@ class AICTConfig:
             raise TypeError(
                 'You are trying to use configuration keys for the simple '
                 'data format while setting the data_format to "CTA". '
-                'There should be no reason to do this as the DL1-format is fixed'
+                'There should be no reason to do this as the CTA DL1-format is fixed'
             )
         self.telescopes = config.get('telescopes', None)
         self.true_energy_column = config.get('true_energy_column')
