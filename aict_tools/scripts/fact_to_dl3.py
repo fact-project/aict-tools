@@ -325,7 +325,7 @@ def main(
         df['disp_prediction'] = disp
 
         if source:
-            obstime = Time(pd.to_datetime(df['timestamp'].values).to_pydatetime())
+            obstime = Time(df['timestamp'].to_numpy().astype('U'))
             source_altaz = concat_results_altaz(parallelize_array_computation(
                 partial(to_altaz, source=source),
                 obstime,
@@ -338,8 +338,8 @@ def main(
                 prediction_y,
                 source_altaz.zen.deg,
                 source_altaz.az.deg,
-                df['pointing_position_zd'].values,
-                df['pointing_position_az'].values,
+                df['pointing_position_zd'].to_numpy(),
+                df['pointing_position_az'].to_numpy(),
                 obstime,
                 n_jobs=n_jobs,
             )
@@ -358,13 +358,13 @@ def main(
                 calc_source_features_sim,
                 prediction_x,
                 prediction_y,
-                df['source_position_zd'].values,
-                df['source_position_az'].values,
-                df['pointing_position_zd'].values,
-                df['pointing_position_az'].values,
-                df['cog_x'].values,
-                df['cog_y'].values,
-                df['delta'].values,
+                df['source_position_zd'].to_numpy(),
+                df['source_position_az'].to_numpy(),
+                df['pointing_position_zd'].to_numpy(),
+                df['pointing_position_az'].to_numpy(),
+                df['cog_x'].to_numpy(),
+                df['cog_y'].to_numpy(),
+                df['delta'].to_numpy(),
                 project_disp=config.disp.project_disp,
                 n_jobs=n_jobs,
             )
