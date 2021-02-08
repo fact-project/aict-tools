@@ -122,6 +122,7 @@ def main(
         source_y = df_data[model_config.cog_y_column] + disp * np.sin(df_data[model_config.delta_column])
 
         if config.data_format == 'CTA':
+            df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby('tel_id'):
                 d = group[['obs_id', 'event_id']].copy()
                 d['source_y_pred'] = source_y[group.index]
@@ -129,9 +130,9 @@ def main(
                 d['disp_pred'] = disp[group.index]
                 append_predictions_cta(
                     data_path,
+                    d,
                     f'/dl2/event/telescope/tel_{tel_id:03d}',
                     model_config.output_name,
-                    d
                 )
 
         elif config.data_format == 'simple':

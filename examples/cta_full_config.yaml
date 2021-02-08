@@ -44,7 +44,7 @@ disp:
   output_name: disp_prediction
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal : 1000
+  n_signal : 50
   features:
     - hillas_fov_lon
     - hillas_fov_lat
@@ -78,7 +78,7 @@ energy:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_signal: 1000
+  n_signal: 50
 
 
   # Define the name of the variable you want estimate by regression.
@@ -122,8 +122,8 @@ separator:
     )
 
   # randomly sample the data if you dont want to use the whole set
-  n_background: 1000
-  n_signal: 1000
+  n_background: 50
+  n_signal: 50
 
   # Define the name of the variable you want estimate by regression.
   # This the name of the group containing the predictions aswell as the column name in the CTA case

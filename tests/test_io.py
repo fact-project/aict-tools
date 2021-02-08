@@ -14,7 +14,7 @@ def hdf5_file(tmpdir_factory, request):
 @pytest.fixture(scope='function')
 def cta_file(tmpdir_factory, request):
     fn = tmpdir_factory.mktemp('aict_test_data').join('cta_file_test.h5')
-    shutil.copy('examples/cta_gammas_diffuse.dl1.h5', fn)
+    shutil.copy('examples/cta_gammas_diffuse_v1.1.0.dl1.h5', fn)
     return fn
 
 
@@ -111,12 +111,11 @@ def test_read_chunks_cta_dl1(cta_file, cta_config):
         columns=columns
     )
     assert_frame_equal(df1, df2)
-    #assert False
 
     # make sure we only loaded the telescopes we wanted
     np.testing.assert_array_equal(
         df2.tel_id.unique(),
-        [x for x in cta_config.telescopes]
+        [int(x.split('_')[1]) for x in cta_config.telescopes]
     )
 
 

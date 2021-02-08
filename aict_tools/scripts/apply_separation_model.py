@@ -76,15 +76,16 @@ def main(configuration_path, data_path, model_path, chunksize, yes, verbose):
     for df_data, start, stop in tqdm(df_generator):
         prediction = predict_separator(df_data[model_config.features], model)
         if config.data_format == 'CTA':
+            df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby('tel_id'):
                 d = group[['obs_id', 'event_id']].copy()
                 d[prediction_column_name] = prediction[group.index]
                 chunked_frames.append(d)
                 append_predictions_cta(
                     data_path,
+                    d,
                     f'/dl2/event/telescope/tel_{tel_id:03d}',
                     model_config.output_name,
-                    d
                 )
         elif config.data_format == 'simple':
             append_column_to_hdf5(

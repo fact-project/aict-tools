@@ -264,8 +264,8 @@ class DispConfig:
         self.pointing_alt_column = 'altitude'
         self.pointing_zd_column = None
         self.focal_length_column = 'equivalent_focal_length'
-        self.cog_x_column = 'hillas_x'
-        self.cog_y_column = 'hillas_y'
+        self.cog_x_column = 'hillas_fov_lon'
+        self.cog_y_column = 'hillas_fov_lat'
         self.delta_column = 'hillas_psi'
 
         for coord in ('alt', 'az', 'zd'):

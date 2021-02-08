@@ -325,31 +325,6 @@ class TelescopeDataIterator:
             self.exhausted_table_lengths += exhausted_table_length
             df = pd.concat([df, next_df])
 
-        # could cache this
-        # or put into another function
-        if self.aict_config.data_format == 'CTA':
-            if "equivalent_focal_length" in self.columns:
-                layout = pd.read_hdf(self.path, '/configuration/instrument/subarray/layout')
-                optics = pd.read_hdf(self.path, '/configuration/instrument/telescope/optics')
-                layout = layout.merge(optics, how='outer', on="name")
-                #layout.set_index('tel_id', inplace=True)
-                next_df = df.merge(layout[['tel_id', 'equivalent_focal_length']], how='left', on='tel_id')
-
-
-        if self.aict_config.data_format == 'CTA':
-            if self.columns:
-                true_columns = [x for x in self.columns if x.startswith("true")]
-                if true_columns:
-                    true_information = pd.read_hdf(
-                        self.path,
-                        "/simulation/event/subarray/shower")[
-                            true_columns+['obs_id', 'event_id']
-                        ]
-                    df = df.merge(true_information, on=['obs_id', 'event_id'], how="left")
-
-
-
-
         df.index = np.arange(self._index_start, self._index_start + len(df))
 
         index_start = self._index_start
@@ -480,6 +455,13 @@ def read_telescope_data(
                     for tel in file_table.root.dl1.event.telescope.parameters
                 ]
 
+        if "equivalent_focal_length" in columns:
+            layout = pd.read_hdf(path, '/configuration/instrument/subarray/layout')
+            optics = pd.read_hdf(path, '/configuration/instrument/telescope/optics')
+            layout = layout.merge(optics, how='outer', on="name")
+ #           layout.set_index('tel_id', inplace=True)
+
+
         # load the telescope parameter table(s)
         tel_dfs = []
         for tel in tels_to_load:
@@ -528,16 +510,31 @@ def read_telescope_data(
                     tel_df[['azimuth', 'altitude']] = tel_df[['azimuth', 'altitude']].fillna(
                         method='ffill'
                     )
-           # combine the telescope dataframes
+
+                if "equivalent_focal_length" in columns:
+                    tel_df = tel_df.merge(layout[['tel_id', 'equivalent_focal_length']], how='left', on='tel_id')
+
+            # combine the telescope dataframes
             tel_dfs.append(tel_df)
 
         # Monte carlo information is located in the simulation group
         # and we are interested in the array wise true information only
         df = pd.concat(tel_dfs)
+        if columns:
+            true_columns = [x for x in columns if x.startswith("true")]
+            if true_columns:
+                true_information = pd.read_hdf(
+                    path,
+                    "/simulation/event/subarray/shower")[
+                        true_columns+['obs_id', 'event_id']
+                    ]
+                df = df.merge(true_information, on=['obs_id', 'event_id'], how="left")
+
+
         # this is super hacky and intransparent!
         # Now that we loaded all the columns, use only the ones specified
         if columns:
-            df = df[set(df.columns).intersection(columns)]
+            df = df[columns]
         file_table.close()
 
     if n_sample is not None:
@@ -684,7 +681,7 @@ def copy_group(inpath, outpath, group):
             infile.copy(group, out_group)
 
 
-def append_predictions_cta(file_path, table_path, output_name, df):
+def append_predictions_cta(file_path, df, table_path, output_name):
     with tables.open_file(file_path, mode='a') as f:
         if f'{table_path}/{output_name}' not in f:
             f.create_table(

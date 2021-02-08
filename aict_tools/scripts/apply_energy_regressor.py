@@ -77,15 +77,16 @@ def main(configuration_path, data_path, model_path, chunksize, n_jobs, yes, verb
         )
 
         if config.data_format == 'CTA':
+            df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby('tel_id'):
                 d = group[['obs_id', 'event_id']].copy()
                 d[prediction_column_name] = energy_prediction[group.index]
                 chunked_frames.append(d)
                 append_predictions_cta(
                     data_path,
+                    d,
                     f'/dl2/event/telescope/tel_{tel_id:03d}',
                     model_config.output_name,
-                    d
                 )
 
         elif config.data_format == 'simple':

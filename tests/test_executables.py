@@ -59,7 +59,7 @@ def test_apply_cuts_cta():
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
         runner = CliRunner()
-        input_file = 'examples/cta_gammas_diffuse.dl1.h5'
+        input_file = 'examples/cta_gammas_diffuse_v1.1.0.dl1.h5'
         output_file = os.path.join(d, 'cta_gammas_diffuse_cuts.dl1.h5')
 
         with DateNotModified(input_file):
@@ -89,7 +89,7 @@ def temp_dir():
         for name in ('gamma', 'gamma_diffuse', 'proton'):
             shutil.copy(f'examples/{name}.hdf5', os.path.join(d, f'{name}.hdf5'))
         for name in ('gammas', 'gammas_diffuse', 'protons'):
-            shutil.copy(f'examples/cta_{name}.dl1.h5', os.path.join(d, f'cta_{name}.dl1.h5'))
+            shutil.copy(f'examples/cta_{name}_v1.1.0.dl1.h5', os.path.join(d, f'cta_{name}_v1.1.0.dl1.h5'))
         yield d
 
 
@@ -123,12 +123,12 @@ def cta_energy_model(temp_dir):
 
     runner = CliRunner()
     model = os.path.join(temp_dir, 'cta_energy.pkl')
-    with DateNotModified('examples/cta_gammas_diffuse.dl1.h5'):
+    with DateNotModified('examples/cta_gammas_diffuse_v1.1.0.dl1.h5'):
         result = runner.invoke(
             main,
             [
                 'examples/cta_full_config.yaml',
-                'examples/cta_gammas_diffuse.dl1.h5',
+                'examples/cta_gammas_diffuse_v1.1.0.dl1.h5',
                 os.path.join(temp_dir, 'cta_cv_energy.hdf5'),
                 model,
             ]
@@ -174,15 +174,15 @@ def cta_separator_model(temp_dir):
     runner = CliRunner()
     model = os.path.join(temp_dir, 'cta_separator.pkl')
     with DateNotModified([
-            'examples/cta_gammas_diffuse.dl1.h5',
-            'examples/cta_protons.dl1.h5'
+            'examples/cta_gammas_diffuse_v1.1.0.dl1.h5',
+            'examples/cta_protons_v1.1.0.dl1.h5'
     ]):
         result = runner.invoke(
             main,
             [
                 'examples/cta_full_config.yaml',
-                'examples/cta_gammas_diffuse.dl1.h5',
-                'examples/cta_protons.dl1.h5',
+                'examples/cta_gammas_diffuse_v1.1.0.dl1.h5',
+                'examples/cta_protons_v1.1.0.dl1.h5',
                 os.path.join(temp_dir, 'cta_cv_separator.hdf5'),
                 model,
             ]
@@ -230,12 +230,12 @@ def cta_disp_models(temp_dir):
     runner = CliRunner()
     disp_model = os.path.join(temp_dir, 'cta_disp.pkl')
     sign_model = os.path.join(temp_dir, 'cta_sign.pkl')
-    with DateNotModified('examples/cta_gammas_diffuse.dl1.h5'):
+    with DateNotModified('examples/cta_gammas_diffuse_v1.1.0.dl1.h5'):
         result = runner.invoke(
             main,
             [
                 'examples/cta_full_config.yaml',
-                'examples/cta_gammas_diffuse.dl1.h5',
+                'examples/cta_gammas_diffuse_v1.1.0.dl1.h5',
                 os.path.join(temp_dir, 'cta_cv_disp.hdf5'),
                 disp_model,
                 sign_model,
@@ -273,13 +273,14 @@ def test_apply_regression(temp_dir, energy_model):
 
 def test_apply_regression_cta(temp_dir, cta_energy_model):
     from aict_tools.scripts.apply_energy_regressor import main
+    from aict_tools.io import read_data
 
     runner = CliRunner()
     result = runner.invoke(
         main,
         [
             'examples/cta_full_config.yaml',
-            os.path.join(temp_dir, 'cta_gammas_diffuse.dl1.h5'),
+            os.path.join(temp_dir, 'cta_gammas_diffuse_v1.1.0.dl1.h5'),
             cta_energy_model,
             '--yes',
         ]
@@ -289,16 +290,16 @@ def test_apply_regression_cta(temp_dir, cta_energy_model):
         print(result.output)
         print_exception(*result.exc_info)
 
-    res_no_chunks = pd.read_hdf(
-        os.path.join(temp_dir, 'cta_gammas_diffuse.dl1.h5'),
-        '/dl2/event/telescope/tel_005/gamma_energy_prediction'
+    res_no_chunks = read_data(
+        os.path.join(temp_dir, 'cta_gammas_diffuse_v1.1.0.dl1.h5'),
+        '/dl2/event/telescope/tel_001/gamma_energy_prediction'
     )
 
     result_2 = runner.invoke(
         main,
         [
             'examples/cta_full_config.yaml',
-            os.path.join(temp_dir, 'cta_gammas_diffuse.dl1.h5'),
+            os.path.join(temp_dir, 'cta_gammas_diffuse_v1.1.0.dl1.h5'),
             cta_energy_model,
             '--yes',
             '-N 50',
@@ -309,10 +310,11 @@ def test_apply_regression_cta(temp_dir, cta_energy_model):
         print(result_2.output)
         print_exception(*result_2.exc_info)
 
-    res_chunks = pd.read_hdf(
-        os.path.join(temp_dir, 'cta_gammas_diffuse.dl1.h5'),
-        '/dl2/event/telescope/tel_005/gamma_energy_prediction'
+    res_chunks = read_data(
+        os.path.join(temp_dir, 'cta_gammas_diffuse_v1.1.0.dl1.h5'),
+        '/dl2/event/telescope/tel_001/gamma_energy_prediction'
     )
+
     assert (res_no_chunks.all() == res_chunks.all()).all()
 
 
@@ -349,7 +351,7 @@ def test_apply_separator_cta(temp_dir, cta_separator_model):
         apply_model,
         [
             'examples/cta_full_config.yaml',
-            os.path.join(temp_dir, 'cta_gammas.dl1.h5'),
+            os.path.join(temp_dir, 'cta_gammas_v1.1.0.dl1.h5'),
             cta_separator_model,
             '--yes',
         ]
@@ -360,7 +362,7 @@ def test_apply_separator_cta(temp_dir, cta_separator_model):
         print_exception(*result.exc_info)
     assert result.exit_code == 0
 
-    with h5py.File(os.path.join(temp_dir, 'cta_gammas.dl1.h5'), 'r') as f:
+    with h5py.File(os.path.join(temp_dir, 'cta_gammas_v1.1.0.dl1.h5'), 'r') as f:
         assert 'gamma_prediction' in f['dl2']['event']['telescope']['tel_001']
         assert 'gamma_prediction' in f['dl2']['event']['subarray']
 
@@ -422,7 +424,7 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
         apply_model,
         [
             'examples/cta_full_config.yaml',
-            os.path.join(temp_dir, 'cta_gammas.dl1.h5'),
+            os.path.join(temp_dir, 'cta_gammas_v1.1.0.dl1.h5'),
             cta_disp_model,
             cta_sign_model,
             '--yes',
@@ -434,7 +436,7 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
         print_exception(*result.exc_info)
     assert result.exit_code == 0
 
-    with h5py.File(os.path.join(temp_dir, 'cta_gammas.dl1.h5'), 'r') as f:
+    with h5py.File(os.path.join(temp_dir, 'cta_gammas_v1.1.0.dl1.h5'), 'r') as f:
         assert (
             'disp_prediction'
             in f['dl2']['event']['telescope']['tel_001']
@@ -590,8 +592,8 @@ def test_split_data_executable_cta():
 
     with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
 
-        infile = os.path.join(d, 'cta_gammas_diffuse.dl1.h5')
-        shutil.copy('examples/cta_gammas_diffuse.dl1.h5', infile)
+        infile = os.path.join(d, 'cta_gammas_diffuse_v1.1.0.dl1.h5')
+        shutil.copy('examples/cta_gammas_diffuse_v1.1.0.dl1.h5', infile)
         with DateNotModified(infile):
 
             runner = CliRunner()
