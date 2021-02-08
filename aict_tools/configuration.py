@@ -92,6 +92,7 @@ class AICTConfig:
         'energy',
         'separator',
         'data_format',
+        'datamodel_version',
         'telescopes',
         'energy_unit',
         'true_energy_column',
@@ -105,6 +106,7 @@ class AICTConfig:
 
     def __init__(self, config):
         self.data_format = config.get('data_format', "simple")
+        self.datamodel_version = config.get('datamodel_version', "v1.1.0")
         self.seed = config.get('seed', 0)
         np.random.seed(self.seed)
 
@@ -264,8 +266,12 @@ class DispConfig:
         self.pointing_alt_column = 'altitude'
         self.pointing_zd_column = None
         self.focal_length_column = 'equivalent_focal_length'
-        self.cog_x_column = 'hillas_fov_lon'
-        self.cog_y_column = 'hillas_fov_lat'
+        if config['datamodel_version'] >= '1.1.0':
+            self.cog_x_column = 'hillas_fov_lon'
+            self.cog_y_column = 'hillas_fov_lat'
+        else:
+            self.cog_x_column = 'hillas_x'
+            self.cog_y_column = 'hillas_y'
         self.delta_column = 'hillas_psi'
 
         for coord in ('alt', 'az', 'zd'):
