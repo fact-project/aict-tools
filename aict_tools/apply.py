@@ -219,7 +219,8 @@ def apply_cuts_h5py_chunked(
 def apply_cuts_cta_dl1(
     input_path,
     output_path,
-    selection_config
+    selection_config,
+    keep_images=True,
 ):
     '''
     Apply cuts from a selection config to a cta dl1 file and write results
@@ -259,6 +260,11 @@ def apply_cuts_cta_dl1(
             # skip groups, we create the parents anyway
             if not isinstance(table, tables.Table):
                 continue
+            if not keep_images:
+                if table._v_parent._v_pathname == '/dl1/event/telescope/images':
+                    continue
+                elif table._v_parent._v_pathname == '/simulation/event/telescope/images':
+                    continue
             # parameter tables were already processed
             if table._v_parent._v_pathname == '/dl1/event/telescope/parameters':
                 continue

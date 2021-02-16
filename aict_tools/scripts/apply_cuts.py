@@ -68,10 +68,12 @@ def main(configuration_path, input_path, output_path, chunksize, verbose):
         log.info(f'Events in new file after cuts {n_events_after}. That is {remaining:.2%}')
         copy_group(input_path, output_path, 'runs')
     elif data_format == 'CTA':
+        keep_images = config.get('keep_images', True)
         n_before, n_after = apply_cuts_cta_dl1(
             input_path,
             output_path,
-            selection
+            selection,
+            keep_images,
         )
 
         log.info(f'Telescope-events in file before cuts {n_before}')
