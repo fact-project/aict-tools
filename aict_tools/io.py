@@ -249,7 +249,7 @@ class TelescopeDataIterator:
                                 len(t.root.dl1.event.telescope.parameters[key])
                             ))
                         else:
-                            raise Exception("Didnt fnd telescope", key)
+                            raise Exception("Didnt find telescope", key)
                 else:
                     tables_ = [
                         (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
@@ -497,8 +497,12 @@ def read_telescope_data(
                     )
                     # for chunked reading there might not be a matching trigger time
                     if tel_df['azimuth'].isnull().iloc[0]:
+                        if aict_config.datamodel_version > '1.0.0': # is this the correct version?
+                            time_key = "time"
+                        else:
+                            time_key = "telescopetrigger_time"
                         # find the closest earlier pointing
-                        earliest_chunktime = tel_df['telescopetrigger_time'].min()
+                        earliest_chunktime = tel_df[time_key].min()
                         time_diff = (
                             tel_pointings['time']
                             - earliest_chunktime
