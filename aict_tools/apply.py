@@ -249,12 +249,12 @@ def apply_cuts_cta_dl1(
                 selection_config,
                 n_events=len(table),
             )
-            for row, match in zip(table.iterrows(), mask):
-                n_rows_before += 1
-                if match:
-                    remaining_showers.add((row['obs_id'], row['event_id']))
-                    new_table.append([row[:]])
-                    n_rows_after += 1
+            n_rows_before = len(table)
+            data = table.read()
+            new_table.append(data[mask])
+            remaining_showers.update(data[mask][['obs_id', 'event_id']].tolist())
+
+            n_rows_after = np.count_nonzero(mask)
         # copy the other tables disregarding events with no more observations
         for table in in_.walk_nodes():
             # skip groups, we create the parents anyway
