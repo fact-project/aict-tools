@@ -9,7 +9,7 @@ from sklearn import metrics
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.calibration import CalibratedClassifierCV
 
-from .preprocessing import delta_error
+from .preprocessing import delta_error, horizontal_to_camera
 
 
 def plot_regressor_confusion(
