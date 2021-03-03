@@ -96,17 +96,9 @@ def main(configuration_path, data_path, dxdy_model_path, chunksize, n_jobs, yes,
         source_x = df_data[model_config.cog_x_column] + dxdy[:,0]
         source_y = df_data[model_config.cog_y_column] + dxdy[:,1]
         
-        disp, sign = calc_true_disp(
-            source_x, source_y,
-            df_data[model_config.cog_x_column], df_data[model_config.cog_y_column],
-            df_data[model_config.delta_column],
-            project_disp=model_config.project_disp,
-        )
-        
         key = config.telescope_events_key
         append_column_to_hdf5(data_path, source_x, key, 'source_x_prediction')
         append_column_to_hdf5(data_path, source_y, key, 'source_y_prediction')
-        append_column_to_hdf5(data_path, disp, key, 'disp_prediction')
 
 
 if __name__ == '__main__':
