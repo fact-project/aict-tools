@@ -118,8 +118,8 @@ def main(
             log_target=model_config.log_target,
         )
 
-        source_x = df_data[model_config.cog_x_column] + disp * np.cos(df_data[model_config.delta_column])
-        source_y = df_data[model_config.cog_y_column] + disp * np.sin(df_data[model_config.delta_column])
+        source_x = df_data[model_config.cog_x_column].values + disp * np.cos(df_data[model_config.delta_column].values)
+        source_y = df_data[model_config.cog_y_column].values + disp * np.sin(df_data[model_config.delta_column].values)
 
         if config.data_format == 'CTA':
             df_data.reset_index(inplace=True)
