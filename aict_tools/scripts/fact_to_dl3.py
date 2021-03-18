@@ -51,6 +51,8 @@ dl3_columns = [
     'theta_deg_off_5',
     'pointing_position_az',
     'pointing_position_zd',
+    'az_prediction',
+    'zd_prediction',
 ]
 dl3_columns_sim_read = [
     'corsika_run_header_run_number',
@@ -118,6 +120,12 @@ def calc_source_features_common(
     pointing_position_az,
 ):
     result = {}
+
+    k_zd, k_az = 'zd_prediction', 'az_prediction'
+    result[k_zd], result[k_az] = camera_to_horizontal(
+        prediction_x, prediction_y,
+        pointing_position_zd, pointing_position_az,
+    )
     result['theta_deg'] = calc_theta_camera(
         prediction_x,
         prediction_y,
