@@ -34,7 +34,7 @@ setup(
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
-        'astropy',  # in anaconda
+        'astropy~=4.2',  # in anaconda
         'click',  # in anaconda
         'h5py',  # in anaconda
         'joblib',  # in anaconda
