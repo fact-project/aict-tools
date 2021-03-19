@@ -31,6 +31,7 @@ setup(
     author_email='kai.bruegge@tu-dortmund.de',
     license='MIT',
     packages=find_packages(),
+    python_requires='>=3.7',
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
@@ -78,7 +79,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',
