@@ -8,6 +8,7 @@ import h5py
 
 from astropy.time import Time
 from astropy.coordinates import AltAz, SkyCoord
+from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 import astropy.units as u
 
 from fact.io import read_h5py, to_h5py
@@ -31,6 +32,10 @@ from ..feature_generation import feature_generation
 from ..preprocessing import calc_true_disp
 from ..logging import setup_logging
 
+# use interpolation for all coordinate transforms
+# 100x speed increase with no precision lost (~uas)
+erfa_astrom.set(ErfaAstromInterpolator(5 * u.min))
+
 
 dl3_columns = [
     'run_id',
@@ -46,6 +51,8 @@ dl3_columns = [
     'theta_deg_off_5',
     'pointing_position_az',
     'pointing_position_zd',
+    'az_prediction',
+    'zd_prediction',
 ]
 dl3_columns_sim_read = [
     'corsika_run_header_run_number',
@@ -92,10 +99,14 @@ def to_altaz(obstime, source):
 
 
 def concat_results_altaz(results):
-    obstime = np.concatenate([s.obstime for s in results])
+    jd1 = np.concatenate([s.obstime.jd1 for s in results])
+    jd2 = np.concatenate([s.obstime.jd2 for s in results])
+    obstime = Time(jd1, jd2, format='jd', copy=False)
+
+    alt = u.Quantity(np.concatenate([s.alt.deg for s in results]), u.deg, copy=False)
+    az= u.Quantity(np.concatenate([s.az.deg for s in results]), u.deg, copy=False)
     return SkyCoord(
-        alt=np.concatenate([s.alt.deg for s in results]) * u.deg,
-        az=np.concatenate([s.az.deg for s in results]) * u.deg,
+        alt=alt, az=az,
         frame=AltAz(location=LOCATION, obstime=obstime)
     )
 
@@ -109,6 +120,12 @@ def calc_source_features_common(
     pointing_position_az,
 ):
     result = {}
+
+    k_zd, k_az = 'zd_prediction', 'az_prediction'
+    result[k_zd], result[k_az] = camera_to_horizontal(
+        prediction_x, prediction_y,
+        pointing_position_zd, pointing_position_az,
+    )
     result['theta_deg'] = calc_theta_camera(
         prediction_x,
         prediction_y,
