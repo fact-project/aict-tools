@@ -15,10 +15,10 @@ telescopes:
 
 # Dummy cuts to ensure this is working
 selection:
-    hillas_intensity:
+    - hillas_intensity:
       - '>='  # needs to be in quotes because > and ! are special character in yaml
       - 100
-    morphology_num_islands:
+    - morphology_num_islands:
       - <=
       - 8
 

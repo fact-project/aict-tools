@@ -12,22 +12,22 @@ energy_unit: GeV
 
 # Quality cuts from Fabian Temme's phd thesis
 selection:
-    num_pixel_in_shower:
+    - num_pixel_in_shower:
       - '>='  # needs to be in quotes because > and ! are special character in yaml
       - 10
-    num_islands:
+    - num_islands:
       - <=
       - 8
-    width:
+    - width:
       - <=
       - 30
-    leakage1:
+    - leakage1:
       - <
       - 0.6
-    leakage2:
+    - leakage2:
       - lt # string representation also possible
       - 0.85
-    length:
+    - length:
       - lt
       - 70
 

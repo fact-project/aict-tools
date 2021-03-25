@@ -135,10 +135,6 @@ def create_mask_h5py(
     n_selected = end - start
     mask = np.ones(n_selected, dtype=bool)
 
-    # legacy support for dict of column_name -> [op, val]
-    if isinstance(selection_config, dict):
-        selection_config = [{k: v} for k, v in selection_config.items()]
-
     for c in selection_config:
         if len(c) > 1:
             raise ValueError('Expected dict with single entry column: [operator, value].')
@@ -190,10 +186,6 @@ def create_mask_table(
 
     n_selected = end - start
     mask = np.ones(n_selected, dtype=bool)
-
-    # legacy support for dict of column_name -> [op, val]
-    if isinstance(selection_config, dict):
-        selection_config = [{k: v} for k, v in selection_config.items()]
 
     for c in selection_config:
         if len(c) > 1:
