@@ -3,7 +3,9 @@ import logging
 from operator import le, lt, eq, ne, ge, gt
 import h5py
 import tables
+from tables import NaturalNameWarning
 from tqdm import tqdm
+import warnings
 
 from .preprocessing import convert_to_float32, check_valid_rows
 from .io import get_number_of_rows_in_table
@@ -315,11 +317,19 @@ def apply_cuts_cta_dl1(
                 table.description,
                 createparents=True,
             )
+            # set user attributes 
+            for name in table.attrs._f_list():
+                new_table.attrs[name] = table.attrs[name]
             for row in table.iterrows():
                 if 'event_id' in table.colnames:  # they dont appear individually
                     event = (row['obs_id'], row['event_id'])
                     if event not in remaining_showers:
                         continue
                 new_table.append([row[:]])
+                
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", NaturalNameWarning)
+            for name in in_.root._v_attrs._f_list():
+                out_.root._v_attrs[name] = in_.root._v_attrs[name]
 
-        return n_rows_before, n_rows_after
+    return n_rows_before, n_rows_after

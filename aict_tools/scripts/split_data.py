@@ -8,6 +8,8 @@ import warnings
 from math import ceil
 from tqdm import tqdm
 import h5py
+import tables
+from tables import NaturalNameWarning
 
 from ..io import (
     read_data,
@@ -101,7 +103,6 @@ def main(input_path, output_basename, fraction, name, inkey, key, data_format, c
 
 
 def split_cta_dl1_data(input_path, output_basename, fraction, name, chunksize=None):
-    import tables
     with tables.open_file(input_path) as f:
         obs_ids = f.root.dl1.event.subarray.trigger.col('obs_id')
         event_ids = f.root.dl1.event.subarray.trigger.col('event_id')
@@ -133,18 +134,23 @@ def split_cta_dl1_data(input_path, output_basename, fraction, name, chunksize=No
                         member.name,
                         member.description,
                         createparents=True,
-                        expectedrows=min(len(event_ids_part), len(member))
                     )
-                    for row in member.iterrows():
-                        if 'obs_id' in member.colnames:
-                            if row['obs_id'] not in obs_ids_part:
-                                continue
-                        if 'event_id' in member.colnames:
-                            if row['event_id'] not in event_ids_part:
-                                continue
-                        new_table.append([row[:]])
+                    # set user attributes 
+                    for name in member.attrs._f_list():
+                        new_table.attrs[name] = member.attrs[name]
+                    mask = np.ones(len(member), dtype='bool')
+                    if 'obs_id' in member.colnames:
+                        mask &= np.in1d(member.col("obs_id"), obs_ids_part)
+                    if 'event_id' in member.colnames:
+                        mask &= np.in1d(member.col("event_id"), event_ids_part)
+                    new_table.append(member[mask])
+            # Fix root user attributes
+            
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", NaturalNameWarning)
+                for name in in_.root._v_attrs._f_list():
+                    out_.root._v_attrs[name] = in_.root._v_attrs[name]
         set_sample_fraction(path, n / n_total)
-
 
 def split_single_telescope_data_chunked(
         input_path,
