@@ -11,7 +11,7 @@ def parallelize_array_computation(func, *arrays, n_jobs=-1, **kwargs):
         n_jobs = cpu_count()
 
     if n_jobs == 1:
-        return func(*arrays)
+        return [func(*arrays)]
 
     n_elements = list(set(len(a) for a in arrays))
     if len(n_elements) > 1:

@@ -250,6 +250,31 @@ def cta_disp_models(temp_dir):
     return disp_model, sign_model
 
 
+@pytest.fixture
+def dxdy_model(temp_dir):
+    from aict_tools.scripts.train_dxdy_regressor import main as train
+
+    dxdy_model = os.path.join(temp_dir, 'dxdy.pkl')
+
+    with DateNotModified('examples/gamma_diffuse.hdf5'):
+        runner = CliRunner()
+        result = runner.invoke(
+            train,
+            [
+                'examples/config_source_dxdy.yaml',
+                'examples/gamma_diffuse.hdf5',
+                os.path.join(temp_dir, 'cv_dxdy.hdf5'),
+                dxdy_model,
+            ]
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+    return dxdy_model
+
+
 def test_apply_regression(temp_dir, energy_model):
     from aict_tools.scripts.apply_energy_regressor import main
 
@@ -415,6 +440,26 @@ def test_apply_disp(temp_dir, disp_models):
         assert 'source_x_prediction' in f['events']
 
 
+def test_apply_dxdy(temp_dir, dxdy_model):
+    from aict_tools.scripts.apply_dxdy_regressor import main as apply_model
+
+    runner = CliRunner()
+    result = runner.invoke(
+        apply_model,
+        [
+            'examples/config_source_dxdy.yaml',
+            os.path.join(temp_dir, 'gamma.hdf5'),
+            dxdy_model,
+            '--yes',
+        ]
+    )
+
+    if result.exit_code != 0:
+        print(result.output)
+        print_exception(*result.exc_info)
+    assert result.exit_code == 0
+ 
+
 def test_apply_disp_cta(temp_dir, cta_disp_models):
     from aict_tools.scripts.apply_disp_regressor import main as apply_model
 
@@ -435,6 +480,7 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
         print(result.output)
         print_exception(*result.exc_info)
     assert result.exit_code == 0
+
 
     with h5py.File(os.path.join(temp_dir, 'cta_gammas.dl1.h5'), 'r') as f:
         assert (

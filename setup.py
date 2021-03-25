@@ -31,10 +31,11 @@ setup(
     author_email='kai.bruegge@tu-dortmund.de',
     license='MIT',
     packages=find_packages(),
+    python_requires='>=3.7',
     setup_requires=['pytest-runner'],
     tests_require=['pytest'],
     install_requires=[
-        'astropy',  # in anaconda
+        'astropy~=4.2',  # in anaconda
         'click',  # in anaconda
         'h5py',  # in anaconda
         'joblib',  # in anaconda
@@ -60,10 +61,13 @@ setup(
             'aict_apply_energy_regressor = aict_tools.scripts.apply_energy_regressor:main',
             'aict_train_disp_regressor = aict_tools.scripts.train_disp_regressor:main',
             'aict_apply_disp_regressor = aict_tools.scripts.apply_disp_regressor:main',
+            'aict_train_dxdy_regressor = aict_tools.scripts.train_dxdy_regressor:main',
+            'aict_apply_dxdy_regressor = aict_tools.scripts.apply_dxdy_regressor:main',
             'aict_split_data = aict_tools.scripts.split_data:main',
             'aict_plot_separator_performance = aict_tools.scripts.plot_separator_performance:main',
             'aict_plot_regressor_performance = aict_tools.scripts.plot_regressor_performance:main',
             'aict_plot_disp_performance = aict_tools.scripts.plot_disp_performance:main',
+            'aict_plot_dxdy_performance = aict_tools.scripts.plot_dxdy_performance:main',
             'aict_apply_cuts = aict_tools.scripts.apply_cuts:main',
             'aict_convert_pandas2h5py = aict_tools.scripts.convert_pandas2h5py:main',
             'fact_to_dl3 = aict_tools.scripts.fact_to_dl3:main',
@@ -76,7 +80,6 @@ setup(
         'Natural Language :: English',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',

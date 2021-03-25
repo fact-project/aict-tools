@@ -10,7 +10,6 @@ env:
 
 matrix:
   include:
-    - python: '3.6'
     - python: '3.7'
     - python: '3.8'
 
@@ -33,7 +32,7 @@ deploy:
   on:
     branch: master
     tags: true
-    condition: $TRAVIS_PYTHON_VERSION = '3.7'
+    condition: $TRAVIS_PYTHON_VERSION = '3.8'
 
 
 addons:
