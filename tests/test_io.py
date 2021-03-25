@@ -14,7 +14,7 @@ def hdf5_file(tmpdir_factory, request):
 @pytest.fixture(scope='function')
 def cta_file(tmpdir_factory, request):
     fn = tmpdir_factory.mktemp('aict_test_data').join('cta_file_test.h5')
-    shutil.copy('examples/cta_gammas_diffuse_v1.1.0.dl1.h5', fn)
+    shutil.copy('examples/cta_gammas_diffuse.dl1.h5', fn)
     return fn
 
 
