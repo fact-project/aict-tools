@@ -255,7 +255,7 @@ class TelescopeDataIterator:
                         (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
                         for tel in t.root.dl1.event.telescope.parameters
                     ]
-            self.n_rows = sum([i[1] for i in tables_])
+            self.n_rows = sum([count for key, count in tables_])
             self.tables = iter(tables_)
         else:
             self.n_rows = get_number_of_rows_in_table(path, aict_config.events_key)
@@ -438,8 +438,29 @@ def read_telescope_data(
         )
     # For cta files multiple tables need to be read and appended/merged
     elif aict_config.data_format == 'CTA':
-        # choose the telescope tables to load
-        file_table = tables.open_file(path)
+        df = read_cta_dl1(path, key=key, columns=columns, aict_config=aict_config, first=first, last=last)
+    if n_sample is not None:
+        if n_sample > len(df):
+            raise ValueError(
+                'number of sampled events'
+                ' {} must be smaller than number events in file {} ({})'
+                .format(n_sample, path, len(df))
+            )
+        log.info('Randomly sample {} events'.format(n_sample))
+        state = np.random.RandomState()
+        state.set_state(np.random.get_state())
+        df = df.sample(n_sample, random_state=state)
+
+    # generate features if given in config
+    if feature_generation_config:
+        feature_generation(df, feature_generation_config, inplace=True)
+
+    return df
+
+
+def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=None):
+    # choose the telescope tables to load
+    with tables.open_file(path) as file_table:
         if key:
             tels_to_load = (key, )
         else:
@@ -456,24 +477,19 @@ def read_telescope_data(
                 ]
 
         if "equivalent_focal_length" in columns:
-            layout = pd.read_hdf(path, '/configuration/instrument/subarray/layout')
-            optics = pd.read_hdf(path, '/configuration/instrument/telescope/optics')
-            layout = layout.merge(optics, how='outer', on="name")
- #           layout.set_index('tel_id', inplace=True)
+                layout = pd.read_hdf(path, '/configuration/instrument/subarray/layout')
+                optics = pd.read_hdf(path, '/configuration/instrument/telescope/optics')
+                layout = layout.merge(optics, how='outer', on="name")
 
-
-        # load the telescope parameter table(s)
+            # load the telescope parameter table(s)
         tel_dfs = []
         for tel in tels_to_load:
             # as not all columns are located here, we cant just use
             # columns=columns
             tel_df = pd.read_hdf(path, tel, start=first, stop=last)
 
-            # Pointing information has to be loaded from the monitoring tables
-            # Some magic has to be performed to merge the dfs,
-            # because only the last pointing is stored with the stage-1 ctapipe tool
+            # Pointing information has to be loaded from the monitoring tables and interpolated
             # We also need the trigger tables as monitoring is based on time not events
-            # ToDo: Verify this for real data! MC contains only one pointing
             if columns:
                 if "azimuth" in columns or "altitude" in columns:
                     tel_key = tel.split('/')[-1]
@@ -495,68 +511,45 @@ def read_telescope_data(
                         how='left',
                         on='time'
                     )
-                    # for chunked reading there might not be a matching trigger time
-                    if tel_df['azimuth'].isnull().iloc[0]:
-                        if aict_config.datamodel_version > '1.0.0': # is this the correct version?
-                            time_key = "time"
-                        else:
-                            time_key = "telescopetrigger_time"
-                        # find the closest earlier pointing
-                        earliest_chunktime = tel_df[time_key].min()
-                        time_diff = (
-                            tel_pointings['time']
-                            - earliest_chunktime
+                    if aict_config.datamodel_version > '1.0.0':
+                        time_key = "time"
+                    else:
+                        time_key = "telescopetrigger_time"
+                    tel_df["azimuth"] = (
+                        np.interp(
+                            tel_df[time_key],#.mjd,
+                            tel_pointings[time_key],#.mjd,
+                            tel_pointings["azimuth"],#.quantity.to_value(u.deg),
                         )
-                        earlier = (time_diff <= 0)
-                        closest_pointing = tel_pointings.loc[time_diff[earlier].idxmax()]
-                        tel_df.at[0, 'azimuth'] = closest_pointing['azimuth']
-                        tel_df.at[0, 'altitude'] = closest_pointing['altitude']
-                    tel_df[['azimuth', 'altitude']] = tel_df[['azimuth', 'altitude']].fillna(
-                        method='ffill'
+                        #* u.deg
                     )
-
+                    tel_df["altitude"] = (
+                        np.interp(
+                            tel_df[time_key],#.mjd,
+                            tel_pointings[time_key],#.mjd,
+                            tel_pointings["altitude"],#.quantity.to_value(u.deg),
+                        )
+                        #* u.deg
+                    )
                 if "equivalent_focal_length" in columns:
                     tel_df = tel_df.merge(layout[['tel_id', 'equivalent_focal_length']], how='left', on='tel_id')
-
-            # combine the telescope dataframes
+                if columns:
+                    # True / Simulation columns are still missing, so only use the columns already present
+                    tel_df = tel_df[set(columns).intersection(tel_df.columns)].copy()
             tel_dfs.append(tel_df)
 
-        # Monte carlo information is located in the simulation group
-        # and we are interested in the array wise true information only
-        df = pd.concat(tel_dfs)
-        if columns:
-            true_columns = [x for x in columns if x.startswith("true")]
-            if true_columns:
-                true_information = pd.read_hdf(
-                    path,
-                    "/simulation/event/subarray/shower")[
-                        true_columns+['obs_id', 'event_id']
-                    ]
-                df = df.merge(true_information, on=['obs_id', 'event_id'], how="left")
-
-
-        # this is super hacky and intransparent!
-        # Now that we loaded all the columns, use only the ones specified
-        if columns:
-            df = df[columns]
-        file_table.close()
-
-    if n_sample is not None:
-        if n_sample > len(df):
-            raise ValueError(
-                'number of sampled events'
-                ' {} must be smaller than number events in file {} ({})'
-                .format(n_sample, path, len(df))
-            )
-        log.info('Randomly sample {} events'.format(n_sample))
-        state = np.random.RandomState()
-        state.set_state(np.random.get_state())
-        df = df.sample(n_sample, random_state=state)
-
-    # generate features if given in config
-    if feature_generation_config:
-        feature_generation(df, feature_generation_config, inplace=True)
-
+            # Monte carlo information is located in the simulation group
+            # and we are interested in the array wise true information only
+            df = pd.concat(tel_dfs)
+            if columns:
+                true_columns = [x for x in columns if x.startswith("true")]
+                if true_columns:
+                    true_information = pd.read_hdf(
+                        path,
+                        "/simulation/event/subarray/shower")[
+                            true_columns+['obs_id', 'event_id']
+                        ]
+                    df = df.merge(true_information, on=['obs_id', 'event_id'], how="left")
     return df
 
 

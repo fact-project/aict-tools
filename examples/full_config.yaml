@@ -47,6 +47,7 @@ energy:
 
   # define the name of the regression target
   target_column: corsika_event_header_total_energy
+  log_target: False
 
 
   # Define the name of the variable you want estimate by regression.

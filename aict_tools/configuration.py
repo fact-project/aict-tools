@@ -131,9 +131,10 @@ class AICTConfig:
 
     def parse_cta(self, config):
         SIMPLE_OPTIONS = set([
-            'size',
+            'size_columns',
             'energy_unit',
-            'events_key'
+            'events_key',
+            'true_energy_column',
         ])
         if SIMPLE_OPTIONS.intersection(config.keys()):
             raise TypeError(
@@ -142,11 +143,13 @@ class AICTConfig:
                 'There should be no reason to do this as the CTA DL1-format is fixed'
             )
         self.telescopes = config.get('telescopes', None)
-        self.true_energy_column = config.get('true_energy_column')
-        self.size_column = config.get('size')
+        self.true_energy_column = 'true_energy'
         self.energy_unit = u.Unit('TeV')
-        return 0
-
+        self.size_column = 'hillas_intensity'
+        # Model configs get the dict, so this needs to be filled
+        config['true_energy_column'] = 'true_energy'
+        config['size_columns'] = 'hillas_intensity'
+        
     def parse_simple(self, config):
         if 'telescopes' in config.keys():
             raise TypeError(
@@ -156,7 +159,6 @@ class AICTConfig:
         self.energy_unit = u.Unit(config.get('energy_unit', 'GeV'))
         self.true_energy_column = config.get('true_energy_column')
         self.events_key = config.get('events_key', 'events')
-        return 0
 
 
 class DispConfig:
@@ -278,9 +280,8 @@ class DispConfig:
         for coord in ('alt', 'az', 'zd'):
             col = f'source_{coord}_unit'
             setattr(self, col, u.Unit('deg'))
-            for coord in ('alt', 'az', 'zd'):
-                col = f'pointing_{coord}_unit'
-                setattr(self, col, u.Unit('rad'))
+            col = f'pointing_{coord}_unit'
+            setattr(self, col, u.Unit('rad'))
         self.delta_unit = u.Unit('deg')
         self.focal_length_unit = u.Unit('m')
 
@@ -305,7 +306,6 @@ class DispConfig:
             self.source_alt_column,
         })
 
-        # size relevant here?
         for col in ('true_energy_column', 'size_column'):
             if col in config:
                 cols.add(config[col])
@@ -432,8 +432,8 @@ class EnergyConfig:
                 'target_column is fixed for CTA dl1 files'
             )
         self.target_column = 'true_energy'
-        self.output_name = model_config.get('output_name', 'gamma_energy_prediction')
-        self.log_target = model_config.get('log_target', False)
+        self.output_name = model_config.get('output_name', 'estimated_energy')
+        self.log_target = model_config.get('log_target', True)
 
         gen_config = model_config.get('feature_generation')
         source_features = find_used_source_features(self.features, gen_config)
@@ -467,7 +467,7 @@ class EnergyConfig:
             'target_column', 'corsika_event_header_total_energy'
         )
         self.output_name = model_config.get('output_name', 'gamma_energy_prediction')
-        self.log_target = model_config.get('log_target', False)
+        self.log_target = model_config.get('log_target', True)
 
         gen_config = model_config.get('feature_generation')
         source_features = find_used_source_features(self.features, gen_config)

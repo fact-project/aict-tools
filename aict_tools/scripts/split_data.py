@@ -59,7 +59,7 @@ def split_indices(idx, n_total, fractions):
     show_default=True,
 )
 @click.option(
-    '--data_format', '-d', type=click.Choice(['simple', 'CTA']), default='simple',
+    '--data-format', '-d', type=click.Choice(['simple', 'CTA']), default='simple',
     show_default=True, help='Which telescope created the data',
 )
 @click.option(

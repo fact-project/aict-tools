@@ -91,6 +91,28 @@ def create_mask_h5py(
     start=None,
     end=None,
 ):
+    """
+    Creates a boolean mask for a dataframe in a h5 file based on a
+    selection config.
+
+    Parameters:
+    -----------
+    infile: str, Path
+    selection_config: dict
+        Dictionary with column names as keys and (operator, value) tuples as value
+    n_events: int
+        Number of events to select.
+    key: str
+        Path to the dataframe in the file
+    start: int
+        If None, select the first row
+    end: int
+        If None, select the last row
+
+    Returns:
+    --------
+    Boolean mask with len=n_events or len(df)
+    """
     start = start or 0
     end = min(n_events, end) if end else n_events
 
@@ -127,6 +149,26 @@ def create_mask_table(
     start=None,
     end=None,
 ):
+    """
+    Creates a boolean mask for a pytables.Table object
+
+    Parameters:
+    -----------
+    table: pytables.Table
+        Table to perform selection on
+    selection_config: dict
+        Dictionary with column names as keys and (operator, value) tuples as value
+    n_events: int
+        Number of events to select.
+    start: int
+        If None, select the first row
+    end: int
+        If None, select the last row
+
+    Returns:
+    --------
+    Boolean mask with len n_events or len(table) if unspecified
+    """
     start = start or 0
     end = min(n_events, end) if end else n_events
 
@@ -188,7 +230,6 @@ def apply_cuts_h5py_chunked(
             mask = create_mask_h5py(
                 infile, selection_config, n_events, key=key, start=start, end=end
             )
-
             for name, dataset in infile[key].items():
                 if chunk == 0:
                     if dataset.ndim == 1:
@@ -224,7 +265,7 @@ def apply_cuts_cta_dl1(
 ):
     '''
     Apply cuts from a selection config to a cta dl1 file and write results
-    to output_path. This is done one row at a time, so chunksize wont do anything
+    to output_path.
     '''
     filters = tables.Filters(
         complevel=5,  # compression medium, tradeoff between speed and compression
@@ -249,12 +290,12 @@ def apply_cuts_cta_dl1(
                 selection_config,
                 n_events=len(table),
             )
-            n_rows_before = len(table)
+            n_rows_before += len(table)
             data = table.read()
             new_table.append(data[mask])
             remaining_showers.update(data[mask][['obs_id', 'event_id']].tolist())
 
-            n_rows_after = np.count_nonzero(mask)
+            n_rows_after += np.count_nonzero(mask)
         # copy the other tables disregarding events with no more observations
         for table in in_.walk_nodes():
             # skip groups, we create the parents anyway
