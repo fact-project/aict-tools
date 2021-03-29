@@ -403,49 +403,42 @@ class DispConfig:
 
 class DxdyConfig:
     __slots__ = [
-        "dxdy_regressor",
-        "n_cross_validations",
-        "n_signal",
-        "features",
-        "feature_generation",
-        "columns_to_read_apply",
-        "columns_to_read_train",
-        "source_az_column",
-        "source_az_unit",
-        "source_zd_column",
-        "source_zd_unit",
-        "source_alt_column",
-        "source_alt_unit",
-        "pointing_az_column",
-        "pointing_az_unit",
-        "pointing_zd_column",
-        "pointing_zd_unit",
-        "pointing_alt_column",
-        "pointing_alt_unit",
-        "focal_length_column",
-        "focal_length_unit",
-        "cog_x_column",
-        "cog_y_column",
-        "delta_column",
-        "delta_unit",
-        "log_target",
-        "project_disp",
-        "coordinate_transformation",
+        'dxdy_regressor',
+        'n_cross_validations',
+        'n_signal',
+        'features',
+        'feature_generation',
+        'columns_to_read_apply',
+        'columns_to_read_train',
+        'coordinate_transformation',
+        'source_az_column',
+        'source_az_unit',
+        'source_zd_column',
+        'source_zd_unit',
+        'source_alt_column',
+        'source_alt_unit',
+        'pointing_az_column',
+        'pointing_az_unit',
+        'pointing_zd_column',
+        'pointing_zd_unit',
+        'pointing_alt_column',
+        'pointing_alt_unit',
+        'focal_length_column',
+        'focal_length_unit',
+        'cog_x_column',
+        'cog_y_column',
+        'delta_column',
+        'delta_unit',
+        'log_target',
+        'data_format',
+        'output_name',
     ]
 
     def __init__(self, config):
-        model_config = config["dxdy"]
-
-        self.coordinate_transformation = model_config.get("coordinate_transformation")
-        if self.coordinate_transformation not in ["CTA", "FACT"]:
-            raise ValueError(
-                "Value of coordinate_transformation not set to CTA or FACT: {}".format(
-                    self.coordinate_transformation
-                )
-            )
-        self.dxdy_regressor = load_regressor(model_config["dxdy_regressor"])
-        self.project_disp = model_config.get("project_disp", False)
-        self.log_target = model_config.get("log_target", False)
+        model_config = config['dxdy']
+        self.data_format = config.get('data_format', 'simple')
+        self.dxdy_regressor = load_regressor(model_config['dxdy_regressor'])
+        self.log_target = model_config.get('log_target', False)
 
         self.n_signal = model_config.get("n_signal", None)
         k = "n_cross_validations"
@@ -456,10 +449,7 @@ class DxdyConfig:
         gen_config = model_config.get("feature_generation")
         source_features = find_used_source_features(self.features, gen_config)
         if len(source_features):
-            raise ValueError(
-                "Source dependent features used: {}".format(source_features)
-            )
-
+            raise ValueError('Source dependent features used: {}'.format(source_features))
         if gen_config:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
             self.features.extend(self.feature_generation.features.keys())
@@ -467,48 +457,155 @@ class DxdyConfig:
             self.feature_generation = None
         self.features.sort()
 
-        self.source_az_column = model_config.get(
-            "source_az_column", "source_position_az"
+        self.source_az_column = model_config.get('source_az_column', 'source_position_az')
+        self.source_zd_column = model_config.get('source_zd_column')
+        self.source_alt_column = model_config.get('source_alt_column')
+        # Only used as group name for CTA Data
+        if self.data_format == 'CTA':
+            self.parse_cta(config)
+        elif self.data_format == 'simple':
+            self.parse_simple(config)
+        else:
+            raise NotImplementedError(
+                'Unsupported data format! Supported: "CTA", "simple"'
+            )
+
+    def parse_cta(self, config):
+        model_config = config['dxdy']
+        SIMPLE_OPTIONS = set([
+            'coordinate_transformation',
+            'source_az_column',
+            'source_alt_column',
+            'pointing_az_column',
+            'pointing_alt_column',
+            'source_az_unit',
+            'source_alt_unit',
+            'pointing_az_unit',
+            'pointing_alt_unit',
+            'focal_length_column',
+            'focal_length_unit',
+            'cog_x_column',
+            'cog_y_column',
+            'delta_column',
+            'delta_unit',
+            'focal_length_column',
+            'focal_length_unit',
+        ])
+        invalid = SIMPLE_OPTIONS.intersection(model_config.keys())
+        if invalid:
+            raise TypeError(
+                'You are trying to use configuration keys for the simple '
+                'data format while setting the data_format to "CTA". '
+                'There should be no reason to do this as the DL1-format is fixed. '
+                f'Invalid options: {invalid}'
+            )
+
+        self.output_name = model_config.get('output_name', 'disp_predictions')
+        self.coordinate_transformation = 'CTA'
+        self.source_az_column = 'true_az'
+        self.source_alt_column = 'true_alt'
+        self.source_zd_column = None
+        self.pointing_az_column = 'azimuth'
+        self.pointing_alt_column = 'altitude'
+        self.pointing_zd_column = None
+        self.focal_length_column = 'equivalent_focal_length'
+        # This is still speculation
+        if config['datamodel_version'] > '1.1.0':
+            self.cog_x_column = 'hillas_fov_lon'
+            self.cog_y_column = 'hillas_fov_lat'
+        else:
+            self.cog_x_column = 'hillas_x'
+            self.cog_y_column = 'hillas_y'
+        self.delta_column = 'hillas_psi'
+
+        for coord in ('alt', 'az', 'zd'):
+            col = f'source_{coord}_unit'
+            setattr(self, col, u.Unit('deg'))
+            col = f'pointing_{coord}_unit'
+            setattr(self, col, u.Unit('rad'))
+        self.delta_unit = u.Unit('deg')
+        self.focal_length_unit = u.Unit('m')
+
+        cols = {
+            self.cog_x_column,
+            self.cog_y_column,
+            self.delta_column,
+        }
+
+        cols.update(model_config['features'])
+        if self.feature_generation:
+            cols.update(self.feature_generation.needed_columns)
+        # Add id's because we generate new tables instead of adding columns
+        # and want these to be included
+        # focal_length is necessary for coordinate transformations
+        cols.update(['tel_id', 'event_id', 'obs_id', 'equivalent_focal_length'])
+        self.columns_to_read_apply = list(cols)
+        cols.update({
+            self.pointing_az_column,
+            self.pointing_alt_column,
+            self.source_az_column,
+            self.source_alt_column,
+        })
+
+        for col in ('true_energy_column', 'size_column'):
+            if col in config:
+                cols.add(config[col])
+
+        self.columns_to_read_train = list(cols)
+
+    def parse_simple(self, config):
+        model_config = config['dxdy']
+        if 'output_name' in model_config.keys():
+            raise TypeError(
+                'output_name in the disp config is exclusively used to name the '
+                'prediction tables in CTA files. Is has no use using the '
+                'simple data format'
+            )
+        self.coordinate_transformation = model_config.get(
+            'coordinate_transformation',
+            'FACT'
         )
-        self.source_zd_column = model_config.get("source_zd_column")
-        self.source_alt_column = model_config.get("source_alt_column")
+        self.source_az_column = model_config.get(
+            'source_az_column',
+            'source_position_az'
+        )
+        self.source_zd_column = model_config.get('source_zd_column')
+        self.source_alt_column = model_config.get('source_alt_column')
         if (self.source_zd_column is None) is (self.source_alt_column is None):
             raise ValueError(
-                "Need to specify exactly one of"
-                "source_zd_column or source_alt_column."
-                "source_zd_column: {}, source_alt_column: {}".format(
-                    self.source_zd_column, self.source_alt_column
-                )
+                'Need to specify exactly one of'
+                'source_zd_column or source_alt_column.'
+                'source_zd_column: {}, source_alt_column: {}'.format(
+                    self.source_zd_column, self.source_alt_column)
             )
-
         self.pointing_az_column = model_config.get(
-            "pointing_az_column", "pointing_position_az"
+            'pointing_az_column',
+            'pointing_position_az'
         )
-        self.pointing_zd_column = model_config.get("pointing_zd_column")
-        self.pointing_alt_column = model_config.get("pointing_alt_column")
+        self.pointing_zd_column = model_config.get('pointing_zd_column')
+        self.pointing_alt_column = model_config.get('pointing_alt_column')
         if (self.pointing_zd_column is None) is (self.pointing_alt_column is None):
             raise ValueError(
-                "Need to specify exactly one of"
-                "pointing_zd_column or pointing_alt_column."
-                "pointing_zd_column: {}, pointing_alt_column: {}".format(
-                    self.pointing_zd_column, self.pointing_alt_column
+                'Need to specify exactly one of'
+                ' pointing_zd_column or pointing_alt_column.'
+                ' pointing_zd_column: {}, pointing_alt_column: {}'.format(
+                    self.pointing_zd_column,
+                    self.pointing_alt_column,
                 )
             )
-
-        for name in ("source", "pointing"):
-            for coord in ("alt", "az", "zd"):
-                col = f"{name}_{coord}_unit"
-                setattr(self, col, u.Unit(model_config.get(col, "deg")))
-
         self.focal_length_column = model_config.get(
-            "focal_length_column", "focal_length"
+            'focal_length_column',
+            'focal_length'
         )
-        self.focal_length_unit = u.Unit(model_config.get("focal_length", "m"))
-
-        self.cog_x_column = model_config.get("cog_x_column", "cog_x")
-        self.cog_y_column = model_config.get("cog_y_column", "cog_y")
-        self.delta_column = model_config.get("delta_column", "delta")
-        self.delta_unit = u.Unit(model_config.get("delta_unit", "rad"))
+        self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
+        self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
+        self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
+        self.delta_column = model_config.get('delta_column', 'delta')
+        self.delta_unit = u.Unit(model_config.get('delta_unit', 'rad'))
+        for name in ('source', 'pointing'):
+            for coord in ('alt', 'az', 'zd'):
+                col = f'{name}_{coord}_unit'
+                setattr(self, col, u.Unit(model_config.get(col, 'deg')))
 
         cols = {
             self.cog_x_column,
@@ -531,7 +628,7 @@ class DxdyConfig:
             }
         )
         cols.discard(None)
-        if self.coordinate_transformation == "CTA":
+        if self.coordinate_transformation == 'CTA':
             cols.add(self.focal_length_column)
 
         for col in ("true_energy_column", "size_column"):
