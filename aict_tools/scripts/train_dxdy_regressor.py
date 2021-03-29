@@ -67,8 +67,6 @@ def main(configuration_path, signal_path, predictions_path, dxdy_model_path, key
 
     df = convert_units(df, model_config)
     source_x, source_y = horizontal_to_camera(df, model_config)
-    
-    log.info('Using projected disp: {}'.format(model_config.project_disp))
 
     df['true_dx'] = source_x - df[model_config.cog_x_column]
     df['true_dy'] = source_y - df[model_config.cog_y_column]
