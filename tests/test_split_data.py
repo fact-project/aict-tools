@@ -6,15 +6,16 @@ import pandas as pd
 def test_array_splitting():
 
     test_df = pd.DataFrame(
-        {'array_event_id': np.repeat(np.arange(10), 2)},
-        index=np.arange(20)
+        {"array_event_id": np.repeat(np.arange(10), 2)}, index=np.arange(20)
     )
 
     num_ids = split_data.split_indices(test_df.index, n_total=20, fractions=[0.5, 0.5])
     assert len(num_ids) == 2
     assert num_ids == [10, 10]
 
-    num_ids = split_data.split_indices(test_df.array_event_id, n_total=10, fractions=[0.5, 0.5])
+    num_ids = split_data.split_indices(
+        test_df.array_event_id, n_total=10, fractions=[0.5, 0.5]
+    )
     assert len(num_ids) == 2
     assert num_ids == [5, 5]
 
