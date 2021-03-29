@@ -301,7 +301,6 @@ class TelescopeDataIterator:
             key=self.table[0],
         )
 
-        
         # In case the table is exhausted, continue with the next until
         # the desired chunksize is reached
         while len(df) < self.chunksize:
@@ -483,59 +482,61 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
 
             # load the telescope parameter table(s)
         tel_dfs = []
+
         for tel in tels_to_load:
+            log.info(f'Loading data for telescope {tel}')
             # as not all columns are located here, we cant just use
             # columns=columns
             tel_df = pd.read_hdf(path, tel, start=first, stop=last)
+            log.info('Read table')
 
             # Pointing information has to be loaded from the monitoring tables and interpolated
             # We also need the trigger tables as monitoring is based on time not events
+            if columns is not None and ("azimuth" in columns or "altitude" in columns):
+                tel_key = tel.split('/')[-1]
+                log.info('reading trigger table')
+                tel_triggers = pd.read_hdf(
+                    path,
+                    "/dl1/event/telescope/trigger"
+                )
+                log.info('merging trigger table')
+                tel_df = tel_df.merge(
+                    tel_triggers,
+                    how='inner',
+                    on=['obs_id', 'event_id', 'tel_id']
+                )
+                log.info('reading pointing table')
+                tel_pointings = pd.read_hdf(
+                    path,
+                    f"/dl1/monitoring/telescope/pointing/{tel_key}"
+                )
+                if aict_config.datamodel_version > '1.0.0':
+                    time_key = "time"
+                else:
+                    time_key = "telescopetrigger_time"
+
+                log.info('Interpolating pointing')
+                tel_df["azimuth"] = (
+                    np.interp(
+                        tel_df[time_key],
+                        tel_pointings[time_key],
+                        tel_pointings["azimuth"],
+                    )
+                )
+                tel_df["altitude"] = (
+                    np.interp(
+                        tel_df[time_key],
+                        tel_pointings[time_key],
+                        tel_pointings["altitude"],
+                    )
+                )
+
+            if "equivalent_focal_length" in columns:
+                tel_df = tel_df.merge(layout[['tel_id', 'equivalent_focal_length']], how='left', on='tel_id')
+
             if columns:
-                if "azimuth" in columns or "altitude" in columns:
-                    tel_key = tel.split('/')[-1]
-                    tel_triggers = pd.read_hdf(
-                        path,
-                        "/dl1/event/telescope/trigger"
-                    )
-                    tel_df = tel_df.merge(
-                        tel_triggers,
-                        how='inner',
-                        on=['obs_id', 'event_id', 'tel_id']
-                    )
-                    tel_pointings = pd.read_hdf(
-                        path,
-                        f"/dl1/monitoring/telescope/pointing/{tel_key}"
-                    )
-                    tel_df = tel_df.merge(
-                        tel_pointings,
-                        how='left',
-                        on='time'
-                    )
-                    if aict_config.datamodel_version > '1.0.0':
-                        time_key = "time"
-                    else:
-                        time_key = "telescopetrigger_time"
-                    tel_df["azimuth"] = (
-                        np.interp(
-                            tel_df[time_key],#.mjd,
-                            tel_pointings[time_key],#.mjd,
-                            tel_pointings["azimuth"],#.quantity.to_value(u.deg),
-                        )
-                        #* u.deg
-                    )
-                    tel_df["altitude"] = (
-                        np.interp(
-                            tel_df[time_key],#.mjd,
-                            tel_pointings[time_key],#.mjd,
-                            tel_pointings["altitude"],#.quantity.to_value(u.deg),
-                        )
-                        #* u.deg
-                    )
-                if "equivalent_focal_length" in columns:
-                    tel_df = tel_df.merge(layout[['tel_id', 'equivalent_focal_length']], how='left', on='tel_id')
-                if columns:
-                    # True / Simulation columns are still missing, so only use the columns already present
-                    tel_df = tel_df[set(columns).intersection(tel_df.columns)].copy()
+                # True / Simulation columns are still missing, so only use the columns already present
+                tel_df = tel_df[set(columns).intersection(tel_df.columns)].copy()
             tel_dfs.append(tel_df)
 
             # Monte carlo information is located in the simulation group

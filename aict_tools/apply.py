@@ -332,7 +332,7 @@ def apply_cuts_cta_dl1(
                     if event not in remaining_showers:
                         continue
                 new_table.append([row[:]])
-                
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", NaturalNameWarning)
             for name in in_.root._v_attrs._f_list():
