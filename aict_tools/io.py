@@ -494,7 +494,9 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
             ].quantity.to_value(u.m)
             # load the telescope parameter table(s)
         tel_dfs = []
+
         for tel in tels_to_load:
+            log.info(f'Loading data for telescope {tel}')
             # as not all columns are located here, we cant just use
             # columns=columns
             tel_df = read_table(path, tel)[first:last]
@@ -540,6 +542,7 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
                     tel_df = tel_df[
                         list(set(columns).intersection(tel_df.columns))
                     ].copy()
+
             tel_dfs.append(tel_df)
 
         # Monte carlo information is located in the simulation group
