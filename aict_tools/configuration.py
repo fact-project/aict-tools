@@ -16,34 +16,34 @@ from .features import find_used_source_features
 
 
 sklearn_modules = {
-    'ensemble': ensemble,
-    'linear_model': linear_model,
-    'neighbors': neighbors,
-    'svm': svm,
-    'tree': tree,
-    'naive_bayes': naive_bayes,
+    "ensemble": ensemble,
+    "linear_model": linear_model,
+    "neighbors": neighbors,
+    "svm": svm,
+    "tree": tree,
+    "naive_bayes": naive_bayes,
 }
 
 
 log = logging.getLogger(__name__)
-yaml = YAML(typ='safe')
+yaml = YAML(typ="safe")
 
 
 _feature_gen_config = namedtuple(
-    'FeatureGenerationConfig',
-    ['needed_columns', 'features'],
+    "FeatureGenerationConfig",
+    ["needed_columns", "features"],
 )
 
 
 class FeatureGenerationConfig(_feature_gen_config):
-    '''
+    """
     Stores the needed features and the expressions for the
     feature generation
-    '''
+    """
 
     def __new__(cls, needed_columns, features):
         if features is None:
-            log.warning('Feature generation config present but no features defined.')
+            log.warning("Feature generation config present but no features defined.")
             features = {}
         return super().__new__(cls, needed_columns, features)
 
@@ -53,16 +53,16 @@ def print_models(filter_func=is_classifier):
         for cls_name in dir(module):
             cls = getattr(module, cls_name)
             if filter_func(cls):
-                logging.info(name + '.' + cls.__name__)
+                logging.info(name + "." + cls.__name__)
 
 
 def print_supported_classifiers():
-    logging.info('Supported Classifiers:')
+    logging.info("Supported Classifiers:")
     print_models(is_classifier)
 
 
 def print_supported_regressors():
-    logging.info('Supported Regressors:')
+    logging.info("Supported Regressors:")
     print_models(is_regressor)
 
 
@@ -86,18 +86,18 @@ def load_classifier(config):
 
 class AICTConfig:
     __slots__ = (
-        'seed',
-        'events_key',
-        'disp',
-        'dxdy',
-        'energy',
-        'separator',
-        'data_format',
-        'datamodel_version',
-        'telescopes',
-        'energy_unit',
-        'true_energy_column',
-        'size_column',
+        "seed",
+        "events_key",
+        "disp",
+        "dxdy",
+        "energy",
+        "separator",
+        "data_format",
+        "datamodel_version",
+        "telescopes",
+        "energy_unit",
+        "true_energy_column",
+        "size_column",
     )
 
     @classmethod
@@ -106,14 +106,14 @@ class AICTConfig:
             return cls(yaml.load(f))
 
     def __init__(self, config):
-        self.data_format = config.get('data_format', "simple")
-        self.datamodel_version = config.get('datamodel_version', "v1.1.0")
-        self.seed = config.get('seed', 0)
+        self.data_format = config.get("data_format", "simple")
+        self.datamodel_version = config.get("datamodel_version", "v1.1.0")
+        self.seed = config.get("seed", 0)
         np.random.seed(self.seed)
 
         if self.data_format == "CTA":
             self.parse_cta(config)
-        elif self.data_format == 'simple':
+        elif self.data_format == "simple":
             self.parse_simple(config)
         else:
             raise NotImplementedError(
@@ -121,103 +121,105 @@ class AICTConfig:
             )
 
         self.disp = self.energy = self.separator = None
-        if 'disp' in config:
+        if "disp" in config:
             self.disp = DispConfig(config)
 
-        if 'dxdy' in config:
+        if "dxdy" in config:
             self.dxdy = DxdyConfig(config)
 
-        if 'energy' in config:
+        if "energy" in config:
             self.energy = EnergyConfig(config)
 
-        if 'separator' in config:
+        if "separator" in config:
             self.separator = SeparatorConfig(config)
 
     def parse_cta(self, config):
-        SIMPLE_OPTIONS = set([
-            'size_columns',
-            'energy_unit',
-            'events_key',
-            'true_energy_column',
-        ])
+        SIMPLE_OPTIONS = set(
+            [
+                "size_columns",
+                "energy_unit",
+                "events_key",
+                "true_energy_column",
+            ]
+        )
         if SIMPLE_OPTIONS.intersection(config.keys()):
             raise TypeError(
-                'You are trying to use configuration keys for the simple '
+                "You are trying to use configuration keys for the simple "
                 'data format while setting the data_format to "CTA". '
-                'There should be no reason to do this as the CTA DL1-format is fixed'
+                "There should be no reason to do this as the CTA DL1-format is fixed"
             )
-        self.telescopes = config.get('telescopes', None)
-        self.true_energy_column = 'true_energy'
-        self.energy_unit = u.Unit('TeV')
-        self.size_column = 'hillas_intensity'
+        self.telescopes = config.get("telescopes", None)
+        self.true_energy_column = "true_energy"
+        self.energy_unit = u.Unit("TeV")
+        self.size_column = "hillas_intensity"
         # Model configs get the dict, so this needs to be filled
-        config['true_energy_column'] = 'true_energy'
-        config['size_columns'] = 'hillas_intensity'
-        
+        config["true_energy_column"] = "true_energy"
+        config["size_columns"] = "hillas_intensity"
+
     def parse_simple(self, config):
-        if 'telescopes' in config.keys():
-            raise TypeError(
-                'Telescope selection is only possible for CTA data. '
-            )
-        self.size_column = config.get('size')
-        self.energy_unit = u.Unit(config.get('energy_unit', 'GeV'))
-        self.true_energy_column = config.get('true_energy_column')
-        self.events_key = config.get('events_key', 'events')
+        if "telescopes" in config.keys():
+            raise TypeError("Telescope selection is only possible for CTA data. ")
+        self.size_column = config.get("size")
+        self.energy_unit = u.Unit(config.get("energy_unit", "GeV"))
+        self.true_energy_column = config.get("true_energy_column")
+        self.events_key = config.get("events_key", "events")
 
 
 class DispConfig:
     __slots__ = [
-        'disp_regressor',
-        'sign_classifier',
-        'n_cross_validations',
-        'n_signal',
-        'features',
-        'feature_generation',
-        'columns_to_read_apply',
-        'columns_to_read_train',
-        'coordinate_transformation',
-        'source_az_column',
-        'source_az_unit',
-        'source_zd_column',
-        'source_zd_unit',
-        'source_alt_column',
-        'source_alt_unit',
-        'pointing_az_column',
-        'pointing_az_unit',
-        'pointing_zd_column',
-        'pointing_zd_unit',
-        'pointing_alt_column',
-        'pointing_alt_unit',
-        'focal_length_column',
-        'focal_length_unit',
-        'cog_x_column',
-        'cog_y_column',
-        'delta_column',
-        'delta_unit',
-        'log_target',
-        'project_disp',
-        'data_format',
-        'output_name',
+        "disp_regressor",
+        "sign_classifier",
+        "n_cross_validations",
+        "n_signal",
+        "features",
+        "feature_generation",
+        "columns_to_read_apply",
+        "columns_to_read_train",
+        "coordinate_transformation",
+        "source_az_column",
+        "source_az_unit",
+        "source_zd_column",
+        "source_zd_unit",
+        "source_alt_column",
+        "source_alt_unit",
+        "pointing_az_column",
+        "pointing_az_unit",
+        "pointing_zd_column",
+        "pointing_zd_unit",
+        "pointing_alt_column",
+        "pointing_alt_unit",
+        "focal_length_column",
+        "focal_length_unit",
+        "cog_x_column",
+        "cog_y_column",
+        "delta_column",
+        "delta_unit",
+        "log_target",
+        "project_disp",
+        "data_format",
+        "output_name",
     ]
 
     def __init__(self, config):
-        model_config = config['disp']
-        self.data_format = config.get('data_format', 'simple')
-        self.disp_regressor = load_regressor(model_config['disp_regressor'])
-        self.sign_classifier = load_classifier(model_config['sign_classifier'])
-        self.project_disp = model_config.get('project_disp', False)
-        self.log_target = model_config.get('log_target', False)
+        model_config = config["disp"]
+        self.data_format = config.get("data_format", "simple")
+        self.disp_regressor = load_regressor(model_config["disp_regressor"])
+        self.sign_classifier = load_classifier(model_config["sign_classifier"])
+        self.project_disp = model_config.get("project_disp", False)
+        self.log_target = model_config.get("log_target", False)
 
-        self.n_signal = model_config.get('n_signal', None)
-        k = 'n_cross_validations'
+        self.n_signal = model_config.get("n_signal", None)
+        k = "n_cross_validations"
         setattr(self, k, model_config.get(k, config.get(k, 5)))
 
-        self.features = model_config['features'].copy()
+        self.features = model_config["features"].copy()
 
-        gen_config = model_config.get('feature_generation')
+        gen_config = model_config.get("feature_generation")
         source_features = find_used_source_features(self.features, gen_config)
         if len(source_features):
-            raise ValueError('Source dependent features used: {}'.format(source_features))
+            raise ValueError(
+                "Source dependent features used: {}".format(source_features)
+            )
         if gen_config:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
             self.features.extend(self.feature_generation.features.keys())
@@ -226,9 +228,9 @@ class DispConfig:
         self.features.sort()
 
         # Only used as group name for CTA Data
-        if self.data_format == 'CTA':
+        if self.data_format == "CTA":
             self.parse_cta(config)
-        elif self.data_format == 'simple':
+        elif self.data_format == "simple":
             self.parse_simple(config)
         else:
             raise NotImplementedError(
@@ -236,58 +238,60 @@ class DispConfig:
             )
 
     def parse_cta(self, config):
-        model_config = config['disp']
-        SIMPLE_OPTIONS = set([
-            'coordinate_transformation',
-            'source_az_column',
-            'source_alt_column',
-            'pointing_az_column',
-            'pointing_alt_column',
-            'source_az_unit',
-            'source_alt_unit',
-            'pointing_az_unit',
-            'pointing_alt_unit',
-            'focal_length_column',
-            'focal_length_unit',
-            'cog_x_column',
-            'cog_y_column',
-            'delta_column',
-            'delta_unit',
-            'focal_length_column',
-            'focal_length_unit',
-        ])
+        model_config = config["disp"]
+        SIMPLE_OPTIONS = set(
+            [
+                "coordinate_transformation",
+                "source_az_column",
+                "source_alt_column",
+                "pointing_az_column",
+                "pointing_alt_column",
+                "source_az_unit",
+                "source_alt_unit",
+                "pointing_az_unit",
+                "pointing_alt_unit",
+                "focal_length_column",
+                "focal_length_unit",
+                "cog_x_column",
+                "cog_y_column",
+                "delta_column",
+                "delta_unit",
+                "focal_length_column",
+                "focal_length_unit",
+            ]
+        )
         if SIMPLE_OPTIONS.intersection(model_config.keys()):
             raise TypeError(
-                'You are trying to use configuration keys for the simple '
+                "You are trying to use configuration keys for the simple "
                 'data format while setting the data_format to "CTA". '
-                'There should be no reason to do this as the DL1-format is fixed'
+                "There should be no reason to do this as the DL1-format is fixed"
             )
 
-        self.output_name = model_config.get('output_name', 'disp_predictions')
-        self.coordinate_transformation = 'CTA'
-        self.source_az_column = 'true_az'
-        self.source_alt_column = 'true_alt'
+        self.output_name = model_config.get("output_name", "disp_predictions")
+        self.coordinate_transformation = "CTA"
+        self.source_az_column = "true_az"
+        self.source_alt_column = "true_alt"
         self.source_zd_column = None
-        self.pointing_az_column = 'azimuth'
-        self.pointing_alt_column = 'altitude'
+        self.pointing_az_column = "azimuth"
+        self.pointing_alt_column = "altitude"
         self.pointing_zd_column = None
-        self.focal_length_column = 'equivalent_focal_length'
+        self.focal_length_column = "equivalent_focal_length"
         # This is still speculation
-        if config['datamodel_version'] > '1.1.0':
-            self.cog_x_column = 'hillas_fov_lon'
-            self.cog_y_column = 'hillas_fov_lat'
+        if config["datamodel_version"] > "1.1.0":
+            self.cog_x_column = "hillas_fov_lon"
+            self.cog_y_column = "hillas_fov_lat"
         else:
-            self.cog_x_column = 'hillas_x'
-            self.cog_y_column = 'hillas_y'
-        self.delta_column = 'hillas_psi'
+            self.cog_x_column = "hillas_x"
+            self.cog_y_column = "hillas_y"
+        self.delta_column = "hillas_psi"
 
-        for coord in ('alt', 'az', 'zd'):
-            col = f'source_{coord}_unit'
-            setattr(self, col, u.Unit('deg'))
-            col = f'pointing_{coord}_unit'
-            setattr(self, col, u.Unit('rad'))
-        self.delta_unit = u.Unit('deg')
-        self.focal_length_unit = u.Unit('m')
+        for coord in ("alt", "az", "zd"):
+            col = f"source_{coord}_unit"
+            setattr(self, col, u.Unit("deg"))
+            col = f"pointing_{coord}_unit"
+            setattr(self, col, None)
+        self.delta_unit = None  # u.Unit('deg')
+        self.focal_length_unit = None  # u.Unit('m')
 
         cols = {
             self.cog_x_column,
@@ -295,78 +299,78 @@ class DispConfig:
             self.delta_column,
         }
 
-        cols.update(model_config['features'])
+        cols.update(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
         # Add id's because we generate new tables instead of adding columns
         # and want these to be included
         # focal_length is necessary for coordinate transformations
-        cols.update(['tel_id', 'event_id', 'obs_id', 'equivalent_focal_length'])
+        cols.update(["tel_id", "event_id", "obs_id", "equivalent_focal_length"])
         self.columns_to_read_apply = list(cols)
-        cols.update({
-            self.pointing_az_column,
-            self.pointing_alt_column,
-            self.source_az_column,
-            self.source_alt_column,
-        })
+        cols.update(
+            {
+                self.pointing_az_column,
+                self.pointing_alt_column,
+                self.source_az_column,
+                self.source_alt_column,
+            }
+        )
 
-        for col in ('true_energy_column', 'size_column'):
+        for col in ("true_energy_column", "size_column"):
             if col in config:
                 cols.add(config[col])
 
         self.columns_to_read_train = list(cols)
 
     def parse_simple(self, config):
-        model_config = config['disp']
-        if 'output_name' in model_config.keys():
+        model_config = config["disp"]
+        if "output_name" in model_config.keys():
             raise TypeError(
-                'output_name in the disp config is exclusively used to name the '
-                'prediction tables in CTA files. Is has no use using the '
-                'simple data format'
+                "output_name in the disp config is exclusively used to name the "
+                "prediction tables in CTA files. Is has no use using the "
+                "simple data format"
             )
         self.coordinate_transformation = model_config.get(
-            'coordinate_transformation',
-            'FACT'
+            "coordinate_transformation", "FACT"
         )
         self.source_az_column = model_config.get(
-            'source_az_column',
-            'source_position_az'
+            "source_az_column", "source_position_az"
         )
-        self.source_zd_column = model_config.get('source_zd_column')
-        self.source_alt_column = model_config.get('source_alt_column')
+        self.source_zd_column = model_config.get("source_zd_column")
+        self.source_alt_column = model_config.get("source_alt_column")
         if (self.source_zd_column is None) is (self.source_alt_column is None):
             raise ValueError(
-                'Need to specify exactly one of'
-                'source_zd_column or source_alt_column.'
-                'source_zd_column: {}, source_alt_column: {}'.format(
-                    self.source_zd_column, self.source_alt_column)
+                "Need to specify exactly one of"
+                "source_zd_column or source_alt_column."
+                "source_zd_column: {}, source_alt_column: {}".format(
+                    self.source_zd_column, self.source_alt_column
+                )
             )
         self.pointing_az_column = model_config.get(
-            'pointing_az_column',
-            'pointing_position_az'
+            "pointing_az_column", "pointing_position_az"
         )
-        self.pointing_zd_column = model_config.get('pointing_zd_column')
-        self.pointing_alt_column = model_config.get('pointing_alt_column')
+        self.pointing_zd_column = model_config.get("pointing_zd_column")
+        self.pointing_alt_column = model_config.get("pointing_alt_column")
         if (self.pointing_zd_column is None) is (self.pointing_alt_column is None):
             raise ValueError(
-                'Need to specify exactly one of'
-                'pointing_zd_column or pointing_alt_column.'
-                'pointing_zd_column: {}, pointing_alt_column: {}'.format(
-                    self.pointing_zd_column, self.pointing_alt_column)
+                "Need to specify exactly one of"
+                "pointing_zd_column or pointing_alt_column."
+                "pointing_zd_column: {}, pointing_alt_column: {}".format(
+                    self.pointing_zd_column, self.pointing_alt_column
+                )
             )
         self.focal_length_column = model_config.get(
-            'focal_length_column',
-            'focal_length'
+            "focal_length_column", "focal_length"
         )
-        self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
-        self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
-        self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
-        self.delta_column = model_config.get('delta_column', 'delta')
-        self.delta_unit = u.Unit(model_config.get('delta_unit', 'rad'))
-        for name in ('source', 'pointing'):
-            for coord in ('alt', 'az', 'zd'):
-                col = f'{name}_{coord}_unit'
-                setattr(self, col, u.Unit(model_config.get(col, 'deg')))
+        self.focal_length_unit = u.Unit(model_config.get("focal_length", "m"))
+        self.cog_x_column = model_config.get("cog_x_column", "cog_x")
+        self.cog_y_column = model_config.get("cog_y_column", "cog_y")
+        self.delta_column = model_config.get("delta_column", "delta")
+        self.delta_unit = u.Unit(model_config.get("delta_unit", "rad"))
+        for name in ("source", "pointing"):
+            for coord in ("alt", "az", "zd"):
+                col = f"{name}_{coord}_unit"
+                setattr(self, col, u.Unit(model_config.get(col, "deg")))
 
         cols = {
             self.cog_x_column,
@@ -374,21 +378,23 @@ class DispConfig:
             self.delta_column,
         }
 
-        cols.update(model_config['features'])
+        cols.update(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
         self.columns_to_read_apply = list(cols)
-        cols.update({
-            self.pointing_az_column,
-            self.pointing_zd_column,
-            self.pointing_alt_column,
-            self.source_az_column,
-            self.source_zd_column,
-            self.source_alt_column,
-        })
+        cols.update(
+            {
+                self.pointing_az_column,
+                self.pointing_zd_column,
+                self.pointing_alt_column,
+                self.source_az_column,
+                self.source_zd_column,
+                self.source_alt_column,
+            }
+        )
         cols.discard(None)
 
-        for col in ('true_energy_column', 'size_column'):
+        for col in ("true_energy_column", "size_column"):
             if col in config:
                 cols.add(config[col])
 
@@ -397,60 +403,62 @@ class DispConfig:
 
 class DxdyConfig:
     __slots__ = [
-        'dxdy_regressor',
-        'n_cross_validations',
-        'n_signal',
-        'features',
-        'feature_generation',
-        'columns_to_read_apply',
-        'columns_to_read_train',
-        'source_az_column',
-        'source_az_unit',
-        'source_zd_column',
-        'source_zd_unit',
-        'source_alt_column',
-        'source_alt_unit',
-        'pointing_az_column',
-        'pointing_az_unit',
-        'pointing_zd_column',
-        'pointing_zd_unit',
-        'pointing_alt_column',
-        'pointing_alt_unit',
-        'focal_length_column',
-        'focal_length_unit',
-        'cog_x_column',
-        'cog_y_column',
-        'delta_column',
-        'delta_unit',
-        'log_target',
-        'project_disp',
-        'coordinate_transformation',
+        "dxdy_regressor",
+        "n_cross_validations",
+        "n_signal",
+        "features",
+        "feature_generation",
+        "columns_to_read_apply",
+        "columns_to_read_train",
+        "source_az_column",
+        "source_az_unit",
+        "source_zd_column",
+        "source_zd_unit",
+        "source_alt_column",
+        "source_alt_unit",
+        "pointing_az_column",
+        "pointing_az_unit",
+        "pointing_zd_column",
+        "pointing_zd_unit",
+        "pointing_alt_column",
+        "pointing_alt_unit",
+        "focal_length_column",
+        "focal_length_unit",
+        "cog_x_column",
+        "cog_y_column",
+        "delta_column",
+        "delta_unit",
+        "log_target",
+        "project_disp",
+        "coordinate_transformation",
     ]
 
     def __init__(self, config):
-        model_config = config['dxdy']
+        model_config = config["dxdy"]
 
-        self.coordinate_transformation = model_config.get('coordinate_transformation')
-        if self.coordinate_transformation not in ['CTA', 'FACT']:
+        self.coordinate_transformation = model_config.get("coordinate_transformation")
+        if self.coordinate_transformation not in ["CTA", "FACT"]:
             raise ValueError(
-                'Value of coordinate_transformation not set to CTA or FACT: {}'.format(
+                "Value of coordinate_transformation not set to CTA or FACT: {}".format(
                     self.coordinate_transformation
                 )
             )
-        self.dxdy_regressor = load_regressor(model_config['dxdy_regressor'])
-        self.project_disp = model_config.get('project_disp', False)
-        self.log_target = model_config.get('log_target', False)
+        self.dxdy_regressor = load_regressor(model_config["dxdy_regressor"])
+        self.project_disp = model_config.get("project_disp", False)
+        self.log_target = model_config.get("log_target", False)
 
-        self.n_signal = model_config.get('n_signal', None)
-        k = 'n_cross_validations'
+        self.n_signal = model_config.get("n_signal", None)
+        k = "n_cross_validations"
         setattr(self, k, model_config.get(k, config.get(k, 5)))
 
-        self.features = model_config['features'].copy()
+        self.features = model_config["features"].copy()
 
-        gen_config = model_config.get('feature_generation')
+        gen_config = model_config.get("feature_generation")
         source_features = find_used_source_features(self.features, gen_config)
         if len(source_features):
-            raise ValueError('Source dependent features used: {}'.format(source_features))
+            raise ValueError(
+                "Source dependent features used: {}".format(source_features)
+            )
 
         if gen_config:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
@@ -459,40 +467,48 @@ class DxdyConfig:
             self.feature_generation = None
         self.features.sort()
 
-        self.source_az_column = model_config.get('source_az_column', 'source_position_az')
-        self.source_zd_column = model_config.get('source_zd_column')
-        self.source_alt_column = model_config.get('source_alt_column')
+        self.source_az_column = model_config.get(
+            "source_az_column", "source_position_az"
+        )
+        self.source_zd_column = model_config.get("source_zd_column")
+        self.source_alt_column = model_config.get("source_alt_column")
         if (self.source_zd_column is None) is (self.source_alt_column is None):
             raise ValueError(
-                    'Need to specify exactly one of'
-                    'source_zd_column or source_alt_column.'
-                    'source_zd_column: {}, source_alt_column: {}'.format(
-                        self.source_zd_column, self.source_alt_column)
-                    )
+                "Need to specify exactly one of"
+                "source_zd_column or source_alt_column."
+                "source_zd_column: {}, source_alt_column: {}".format(
+                    self.source_zd_column, self.source_alt_column
+                )
+            )
 
-        self.pointing_az_column = model_config.get('pointing_az_column', 'pointing_position_az')
-        self.pointing_zd_column = model_config.get('pointing_zd_column')
-        self.pointing_alt_column = model_config.get('pointing_alt_column')
+        self.pointing_az_column = model_config.get(
+            "pointing_az_column", "pointing_position_az"
+        )
+        self.pointing_zd_column = model_config.get("pointing_zd_column")
+        self.pointing_alt_column = model_config.get("pointing_alt_column")
         if (self.pointing_zd_column is None) is (self.pointing_alt_column is None):
             raise ValueError(
-                    'Need to specify exactly one of'
-                    'pointing_zd_column or pointing_alt_column.'
-                    'pointing_zd_column: {}, pointing_alt_column: {}'.format(
-                        self.pointing_zd_column, self.pointing_alt_column)
-                    )
+                "Need to specify exactly one of"
+                "pointing_zd_column or pointing_alt_column."
+                "pointing_zd_column: {}, pointing_alt_column: {}".format(
+                    self.pointing_zd_column, self.pointing_alt_column
+                )
+            )
 
-        for name in ('source', 'pointing'):
-            for coord in ('alt', 'az', 'zd'):
-                col = f'{name}_{coord}_unit'
-                setattr(self, col, u.Unit(model_config.get(col, 'deg')))
+        for name in ("source", "pointing"):
+            for coord in ("alt", "az", "zd"):
+                col = f"{name}_{coord}_unit"
+                setattr(self, col, u.Unit(model_config.get(col, "deg")))
 
-        self.focal_length_column = model_config.get('focal_length_column', 'focal_length')
-        self.focal_length_unit = u.Unit(model_config.get('focal_length', 'm'))
+        self.focal_length_column = model_config.get(
+            "focal_length_column", "focal_length"
+        )
+        self.focal_length_unit = u.Unit(model_config.get("focal_length", "m"))
 
-        self.cog_x_column = model_config.get('cog_x_column', 'cog_x')
-        self.cog_y_column = model_config.get('cog_y_column', 'cog_y')
-        self.delta_column = model_config.get('delta_column', 'delta')
-        self.delta_unit = u.Unit(model_config.get('delta_unit', 'rad'))
+        self.cog_x_column = model_config.get("cog_x_column", "cog_x")
+        self.cog_y_column = model_config.get("cog_y_column", "cog_y")
+        self.delta_column = model_config.get("delta_column", "delta")
+        self.delta_unit = u.Unit(model_config.get("delta_unit", "rad"))
 
         cols = {
             self.cog_x_column,
@@ -500,23 +516,25 @@ class DxdyConfig:
             self.delta_column,
         }
 
-        cols.update(model_config['features'])
+        cols.update(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
         self.columns_to_read_apply = list(cols)
-        cols.update({
-            self.pointing_az_column,
-            self.pointing_zd_column,
-            self.pointing_alt_column,
-            self.source_az_column,
-            self.source_zd_column,
-            self.source_alt_column,
-        })
+        cols.update(
+            {
+                self.pointing_az_column,
+                self.pointing_zd_column,
+                self.pointing_alt_column,
+                self.source_az_column,
+                self.source_zd_column,
+                self.source_alt_column,
+            }
+        )
         cols.discard(None)
-        if self.coordinate_transformation == 'CTA':
+        if self.coordinate_transformation == "CTA":
             cols.add(self.focal_length_column)
 
-        for col in ('true_energy_column', 'size_column'):
+        for col in ("true_energy_column", "size_column"):
             if col in config:
                 cols.add(config[col])
 
@@ -525,32 +543,32 @@ class DxdyConfig:
 
 class EnergyConfig:
     __slots__ = [
-        'model',
-        'n_cross_validations',
-        'n_signal',
-        'features',
-        'feature_generation',
-        'columns_to_read_train',
-        'columns_to_read_apply',
-        'target_column',
-        'output_name',
-        'log_target',
-        'data_format',
+        "model",
+        "n_cross_validations",
+        "n_signal",
+        "features",
+        "feature_generation",
+        "columns_to_read_train",
+        "columns_to_read_apply",
+        "target_column",
+        "output_name",
+        "log_target",
+        "data_format",
     ]
 
     def __init__(self, config):
-        model_config = config['energy']
-        self.data_format = config.get('data_format', 'simple')
-        self.model = load_regressor(model_config['regressor'])
-        self.features = model_config['features'].copy()
+        model_config = config["energy"]
+        self.data_format = config.get("data_format", "simple")
+        self.model = load_regressor(model_config["regressor"])
+        self.features = model_config["features"].copy()
 
-        self.n_signal = model_config.get('n_signal', None)
-        k = 'n_cross_validations'
+        self.n_signal = model_config.get("n_signal", None)
+        k = "n_cross_validations"
         setattr(self, k, model_config.get(k, config.get(k, 5)))
 
         if self.data_format == "CTA":
             self.parse_cta(config)
-        elif self.data_format == 'simple':
+        elif self.data_format == "simple":
             self.parse_simple(config)
         else:
             raise NotImplementedError(
@@ -558,19 +576,19 @@ class EnergyConfig:
             )
 
     def parse_cta(self, config):
-        model_config = config['energy']
-        if 'target_column' in model_config.keys():
-            raise TypeError(
-                'target_column is fixed for CTA dl1 files'
-            )
-        self.target_column = 'true_energy'
-        self.output_name = model_config.get('output_name', 'estimated_energy')
-        self.log_target = model_config.get('log_target', True)
+        model_config = config["energy"]
+        if "target_column" in model_config.keys():
+            raise TypeError("target_column is fixed for CTA dl1 files")
+        self.target_column = "true_energy"
+        self.output_name = model_config.get("output_name", "estimated_energy")
+        self.log_target = model_config.get("log_target", True)
 
-        gen_config = model_config.get('feature_generation')
+        gen_config = model_config.get("feature_generation")
         source_features = find_used_source_features(self.features, gen_config)
         if len(source_features):
-            raise ValueError('Source dependent features used: {}'.format(source_features))
+            raise ValueError(
+                "Source dependent features used: {}".format(source_features)
+            )
         if gen_config:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
             self.features.extend(self.feature_generation.features.keys())
@@ -578,33 +596,35 @@ class EnergyConfig:
             self.feature_generation = None
         self.features.sort()
 
-        cols = set(model_config['features'])
+        cols = set(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
 
         # Add id's because we generate new tables instead of adding columns
         # and want these to be included
-        cols.update(['tel_id', 'event_id', 'obs_id'])
+        cols.update(["tel_id", "event_id", "obs_id"])
         self.columns_to_read_apply = list(cols)
 
-        for col in ('true_energy_column', 'size_column'):
+        for col in ("true_energy_column", "size_column"):
             if col in config:
                 cols.add(config[col])
         cols.add(self.target_column)
         self.columns_to_read_train = list(cols)
 
     def parse_simple(self, config):
-        model_config = config['energy']
+        model_config = config["energy"]
         self.target_column = model_config.get(
-            'target_column', 'corsika_event_header_total_energy'
+            "target_column", "corsika_event_header_total_energy"
         )
-        self.output_name = model_config.get('output_name', 'gamma_energy_prediction')
-        self.log_target = model_config.get('log_target', True)
+        self.output_name = model_config.get("output_name", "gamma_energy_prediction")
+        self.log_target = model_config.get("log_target", True)
 
-        gen_config = model_config.get('feature_generation')
+        gen_config = model_config.get("feature_generation")
         source_features = find_used_source_features(self.features, gen_config)
         if len(source_features):
-            raise ValueError('Source dependent features used: {}'.format(source_features))
+            raise ValueError(
+                "Source dependent features used: {}".format(source_features)
+            )
         if gen_config:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
             self.features.extend(self.feature_generation.features.keys())
@@ -612,13 +632,13 @@ class EnergyConfig:
             self.feature_generation = None
         self.features.sort()
 
-        cols = set(model_config['features'])
+        cols = set(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
 
         self.columns_to_read_apply = list(cols)
 
-        for col in ('true_energy_column', 'size_column'):
+        for col in ("true_energy_column", "size_column"):
             if col in config:
                 cols.add(config[col])
         cols.add(self.target_column)
@@ -627,36 +647,38 @@ class EnergyConfig:
 
 class SeparatorConfig:
     __slots__ = [
-        'model',
-        'n_cross_validations',
-        'n_signal',
-        'n_background',
-        'features',
-        'feature_generation',
-        'columns_to_read_train',
-        'columns_to_read_apply',
-        'calibrate_classifier',
-        'output_name',
-        'data_format',
+        "model",
+        "n_cross_validations",
+        "n_signal",
+        "n_background",
+        "features",
+        "feature_generation",
+        "columns_to_read_train",
+        "columns_to_read_apply",
+        "calibrate_classifier",
+        "output_name",
+        "data_format",
     ]
 
     def __init__(self, config):
-        model_config = config['separator']
-        self.data_format = config.get('data_format', 'simple')
-        self.model = load_classifier(model_config['classifier'])
-        self.features = model_config['features'].copy()
+        model_config = config["separator"]
+        self.data_format = config.get("data_format", "simple")
+        self.model = load_classifier(model_config["classifier"])
+        self.features = model_config["features"].copy()
 
-        self.n_signal = model_config.get('n_signal', None)
-        self.n_background = model_config.get('n_background', None)
-        k = 'n_cross_validations'
+        self.n_signal = model_config.get("n_signal", None)
+        self.n_background = model_config.get("n_background", None)
+        k = "n_cross_validations"
         setattr(self, k, model_config.get(k, config.get(k, 5)))
-        self.calibrate_classifier = model_config.get('calibrate_classifier', False)
-        self.output_name = model_config.get('output_name', 'gamma_prediction')
+        self.calibrate_classifier = model_config.get("calibrate_classifier", False)
+        self.output_name = model_config.get("output_name", "gamma_prediction")
 
-        gen_config = model_config.get('feature_generation')
+        gen_config = model_config.get("feature_generation")
         source_features = find_used_source_features(self.features, gen_config)
         if len(source_features):
-            raise ValueError('Source dependent features used: {}'.format(source_features))
+            raise ValueError(
+                "Source dependent features used: {}".format(source_features)
+            )
         if gen_config:
             self.feature_generation = FeatureGenerationConfig(**gen_config)
             self.features.extend(self.feature_generation.features.keys())
@@ -664,17 +686,17 @@ class SeparatorConfig:
             self.feature_generation = None
         self.features.sort()
 
-        cols = set(model_config['features'])
+        cols = set(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
 
         # Add id's because we generate new tables instead of adding columns
         # and want these to be included
-        if self.data_format == 'CTA':
-            cols.update(['tel_id', 'event_id', 'obs_id'])
+        if self.data_format == "CTA":
+            cols.update(["tel_id", "event_id", "obs_id"])
 
         self.columns_to_read_apply = list(cols)
-        for col in ('true_energy_column', 'size_column'):
+        for col in ("true_energy_column", "size_column"):
             if col in config:
                 cols.add(config[col])
         self.columns_to_read_train = list(cols)
