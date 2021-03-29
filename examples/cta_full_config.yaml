@@ -11,6 +11,7 @@ datamodel_version: 1.1.0
 
 telescopes:
     - tel_001
+    - tel_003
     - tel_018
 
 # Dummy cuts to ensure this is working
