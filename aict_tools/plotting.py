@@ -391,3 +391,89 @@ def plot_energy_dependent_disp_metrics(
     ax2.set_xscale("log")
 
     return fig
+
+
+def plot_energy_dependent_dxdy_metrics(df, true_energy_column, energy_unit='GeV', fig=None):
+
+    df = df.copy()
+    edges = 10**np.arange(
+        np.log10(df[true_energy_column].min()),
+        np.log10(df[true_energy_column].max()),
+        0.2
+    )
+    df['bin_idx'] = np.digitize(df[true_energy_column], edges)
+
+    def r2_dx(group):
+        return metrics.r2_score(
+            group.dx,
+            group.dx_prediction,
+        )
+
+    def r2_dy(group):
+        return metrics.r2_score(
+            group.dy,
+            group.dy_prediction,
+        )
+
+    # discard under and overflow
+    df = df[(df['bin_idx'] != 0) & (df['bin_idx'] != len(edges))]
+
+    binned = pd.DataFrame({
+        'e_center': 0.5 * (edges[1:] + edges[:-1]),
+        'e_low': edges[:-1],
+        'e_high': edges[1:],
+        'e_width': np.diff(edges),
+    }, index=pd.Series(np.arange(1, len(edges)), name='bin_idx'))
+
+    r2_dx_scores = pd.DataFrame(index=binned.index)
+    r2_dy_scores = pd.DataFrame(index=binned.index)
+    counts = pd.DataFrame(index=binned.index)
+
+    with warnings.catch_warnings():
+        # warns when there are less than 2 events for calculating metrics,
+        # but we throw those away anyways
+        warnings.filterwarnings('ignore', category=UndefinedMetricWarning)
+        for cv_fold, cv in df.groupby('cv_fold'):
+            grouped = cv.groupby('bin_idx')
+            r2_dx_scores[cv_fold] = grouped.apply(r2_dx)
+            r2_dy_scores[cv_fold] = grouped.apply(r2_dy)
+            counts[cv_fold] = grouped.size()
+
+    binned['r2_dx_score'] = r2_dx_scores.mean(axis=1)
+    binned['r2_dx_std'] = r2_dx_scores.std(axis=1)
+    binned['r2_dy_score'] = r2_dy_scores.mean(axis=1)
+    binned['r2_dy_std'] = r2_dy_scores.std(axis=1)
+
+    # at least 10 events in each crossval iteration
+    binned['valid'] = (counts > 100).any(axis=1)
+    binned = binned.query('valid')
+
+    fig = fig or plt.figure()
+
+    ax1 = fig.add_subplot(2, 1, 1)
+    ax2 = fig.add_subplot(2, 1, 2, sharex=ax1)
+
+    ax1.errorbar(
+        binned.e_center, binned.r2_dx_score,
+        yerr=binned.r2_dx_std, xerr=binned.e_width / 2,
+        ls='',
+    )
+    ax1.set_ylabel(r'$r^2$ score for $dx$')
+    ax1.set_ylim(None, 1)
+    ax1.grid()
+
+    ax2.errorbar(
+        binned.e_center, binned.r2_dy_score,
+        yerr=binned.r2_dy_std, xerr=binned.e_width / 2,
+        ls='',
+    )
+    ax2.set_ylabel(r'$r^2$ score for $dy$')
+    ax2.set_ylim(None, 1)
+    ax2.grid()
+
+    ax2.set_xlabel(
+        r'$E_{\mathrm{wahr}} \,\,/\,\,' + rf' \mathrm{{{energy_unit}}}$'
+    )
+    ax2.set_xscale('log')
+
+    return fig

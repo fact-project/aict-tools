@@ -13,6 +13,7 @@ from ..plotting import (
     plot_true_delta_delta,
     plot_energy_dependent_dxdy_metrics,
 )
+from ..io import read_telescope_data
 
 if matplotlib.get_backend() == "pgf":
     from matplotlib.backends.backend_pgf import PdfPages
@@ -58,8 +59,12 @@ def main(
     else:
         camera_unit = r"\mathrm{mm}"
 
-    log.info("Loading original data")
-    df_data = fact.io.read_data(data_path, key=key_data, columns=columns)
+    log.info('Loading original data')
+    df_data = read_telescope_data(
+        data_path,
+        config,
+        model_config.columns_to_read_train,
+    )
 
     log.info("Loading dxdy model")
     dxdy_model = joblib.load(dxdy_model_path)
@@ -131,7 +136,7 @@ def main(
     # Plot true_delta - delta
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    plot_true_delta_delta(df_data, model_config, config.true_energy_column, ax)
+    plot_true_delta_delta(df_data, model_config, ax)
 
     if config.true_energy_column in df.columns:
         fig = plot_energy_dependent_dxdy_metrics(

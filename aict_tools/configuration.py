@@ -529,7 +529,6 @@ class DxdyConfig:
         cols = {
             self.cog_x_column,
             self.cog_y_column,
-            self.delta_column,
         }
 
         cols.update(model_config['features'])

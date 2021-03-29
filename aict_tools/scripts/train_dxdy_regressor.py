@@ -53,7 +53,6 @@ def main(
     np.random.seed(config.seed)
 
     dxdy_regressor = model_config.dxdy_regressor
-
     dxdy_regressor.random_state = config.seed
 
     log.info("Loading data")
