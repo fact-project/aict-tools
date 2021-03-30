@@ -550,7 +550,7 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
         df = vstack(tel_dfs)
         if aict_config.disp:
             df = convert_units(df, aict_config.disp)
-        df = df.to_pandas()
+        df = pd.DataFrame(np.array(df)) # workaround for #11286 in astropy 4.2
         if columns:
             true_columns = [x for x in columns if x.startswith("true")]
             if true_columns:
