@@ -482,6 +482,7 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
             layout = Table.read(path, "/configuration/instrument/subarray/layout")
             optics = Table.read(path, "/configuration/instrument/telescope/optics")
             optics["tel_description"] = optics["description"]
+            optics.meta.clear()
             layout = join(
                 layout,
                 optics[["tel_description", "equivalent_focal_length"]],
