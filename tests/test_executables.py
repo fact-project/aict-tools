@@ -280,7 +280,7 @@ def cta_dxdy_model(temp_dir):
 
     dxdy_model = os.path.join(temp_dir, "cta_dxdy.pkl")
 
-    with DateNotModified("examples/gamma_diffuse.hdf5"):
+    with DateNotModified("examples/cta_gammas_diffuse.dl1.h5"):
         runner = CliRunner()
         result = runner.invoke(
             train,
@@ -297,7 +297,7 @@ def cta_dxdy_model(temp_dir):
         assert result.exit_code == 0
 
     return dxdy_model
-    
+
 
 def test_apply_regression(temp_dir, energy_model):
     from aict_tools.scripts.apply_energy_regressor import main
@@ -493,7 +493,7 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
         apply_model,
         [
             "examples/cta_full_config.yaml",
-            os.path.join(temp_dir, "cta_gammas.dl1.h5"),
+            os.path.join(temp_dir, "cta_gammas_diffuse.dl1.h5"),
             cta_disp_model,
             cta_sign_model,
             "--yes",

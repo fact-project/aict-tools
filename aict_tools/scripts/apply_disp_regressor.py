@@ -72,7 +72,6 @@ def main(
         )
 
     n_del_cols = 0
-
     for column in columns_to_delete:
         if config.data_format == "CTA":
             n_del = drop_prediction_groups(data_path, group_name=column, yes=yes)
@@ -128,9 +127,9 @@ def main(
             df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby("tel_id"):
                 d = group[["obs_id", "event_id"]].copy()
-                d["source_y_pred"] = source_y[group.index]
-                d["source_x_pred"] = source_x[group.index]
-                d["disp_pred"] = disp[group.index]
+                d["source_y_prediction"] = source_y[group.index]
+                d["source_x_prediction"] = source_x[group.index]
+                d["disp_prediction"] = disp[group.index]
                 append_predictions_cta(
                     data_path,
                     d,

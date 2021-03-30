@@ -5,10 +5,11 @@ from tqdm import tqdm
 from ..io import (
     append_column_to_hdf5,
     append_predictions_cta,
-    read_telescope_data_chunked,
+    append_predictions_cta,
     drop_prediction_column,
     drop_prediction_groups,
     load_model,
+    read_telescope_data_chunked,
 )
 from ..apply import predict_dxdy
 from ..configuration import AICTConfig
@@ -63,8 +64,8 @@ def main(
         )
 
     n_del_cols = 0
-
     for column in columns_to_delete:
+        n_del = 0
         if config.data_format == "CTA":
             n_del = drop_prediction_groups(data_path, group_name=column, yes=yes)
         elif config.data_format == "simple":
@@ -105,23 +106,27 @@ def main(
 
         source_x = df_data[config.cog_x_column] + dxdy[:, 0]
         source_y = df_data[config.cog_y_column] + dxdy[:, 1]
-
         if config.data_format == "CTA":
             df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby("tel_id"):
                 d = group[["obs_id", "event_id"]].copy()
-                d["source_y_pred"] = source_y[group.index]
-                d["source_x_pred"] = source_x[group.index]
+                d["source_y_prediction"] = source_y[group.index]
+                d["source_x_prediction"] = source_x[group.index]
+                d["dx_prediction"] = dxdy[:, 0][group.index]
+                d["dy_prediction"] = dxdy[:, 1][group.index]
                 append_predictions_cta(
                     data_path,
                     d,
                     f"/dl2/event/telescope/tel_{tel_id:03d}",
                     model_config.output_name,
                 )
+
         elif config.data_format == "simple":
             key = config.events_key
             append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
             append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")
+            append_column_to_hdf5(data_path, dxdy[:, 0], key, "dx_prediction")
+            append_column_to_hdf5(data_path, dxdy[:, 1], key, "dy_prediction")
 
 if __name__ == "__main__":
     # pylint: disable=no-value-for-parameter
