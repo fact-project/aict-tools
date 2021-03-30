@@ -424,8 +424,7 @@ def read_telescope_data(
             first=first,
             last=last,
         )
-        if aict_config.disp:
-            df = convert_units(df, aict_config.disp)
+        df = convert_units(df, aict_config.disp)
     # For cta files multiple tables need to be read and appended/merged
     elif aict_config.data_format == "CTA":
         df = read_cta_dl1(
@@ -548,8 +547,7 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
         # Monte carlo information is located in the simulation group
         # and we are interested in the array wise true information only
         df = vstack(tel_dfs)
-        if aict_config.disp:
-            df = convert_units(df, aict_config.disp)
+        df = convert_units(df, aict_config.disp)
         df = pd.DataFrame(np.array(df)) # workaround for #11286 in astropy 4.2
         if columns:
             true_columns = [x for x in columns if x.startswith("true")]
