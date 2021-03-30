@@ -33,10 +33,15 @@ def write_hdf(data, path, table_name, mode="w", **kwargs):
 def get_number_of_rows_in_table(path, key):
     with h5py.File(path, "r") as f:
         element = f.get(key)
+        if element is None:
+            raise ValueError(f"File {path} does not contain {key}")
+
         if isinstance(element, h5py.Group):
             return element[next(iter(element.keys()))].shape[0]
         elif isinstance(element, h5py.Dataset):
             return element.shape[0]
+
+        raise ValueError(f'Unsupported object found: {element}')
 
 
 def read_data(file_path, key=None, columns=None, first=None, last=None, **kwargs):
