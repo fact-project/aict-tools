@@ -517,7 +517,7 @@ def test_apply_dxdy_cta(temp_dir, cta_dxdy_model):
         apply_model,
         [
             "examples/cta_full_config.yaml",
-            os.path.join(temp_dir, "cta_gammas.hdf5"),
+            os.path.join(temp_dir, "cta_gammas.dl1.h5"),
             cta_dxdy_model,
             "--yes",
         ],
