@@ -141,6 +141,9 @@ def create_mask_h5py(
     n_selected = end - start
     mask = np.ones(n_selected, dtype=bool)
 
+    if isinstance(selection_config, dict):
+        raise ValueError('Dictionaries are not supported for the cuts anymore, use a list')
+
     for c in selection_config:
         if len(c) > 1:
             raise ValueError(

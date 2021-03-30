@@ -53,7 +53,7 @@ def main(inputfile, outputfile, input_key, output_key, verbose):
                     g.create_dataset(column, data=array, maxshape=tuple(shape))
 
                 else:
-                    log.warn("skipping object type column {}".format(column))
+                    log.warning("skipping object type column {}".format(column))
             else:
                 log.debug("Writing out {}".format(column))
                 g.create_dataset(column, data=data.values, maxshape=(None,))

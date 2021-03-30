@@ -289,16 +289,16 @@ def plot_feature_importances(model, feature_names, ax=None, max_features=20):
     ax.figure.tight_layout()
 
 
-def plot_true_delta_delta(data_df, model_config, ax=None):
+def plot_true_delta_delta(data_df, config, ax=None):
 
     df = data_df.copy()
-    source_x, source_y = horizontal_to_camera(df, model_config)
+    source_x, source_y = horizontal_to_camera(df, config)
     true_delta = np.arctan2(
-        source_y - df[model_config.cog_y_column],
-        source_x - df[model_config.cog_x_column],
+        source_y - df[config.cog_y_column],
+        source_x - df[config.cog_x_column],
     )
 
-    ax.hist(true_delta - df[model_config.delta_column], bins=100, histtype="step")
+    ax.hist(true_delta - df[config.delta_column], bins=100, histtype="step")
     ax.figure.tight_layout()
     ax.set_xlabel(r"$\delta_{true}\,-\,\delta$")
     return ax

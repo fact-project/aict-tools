@@ -10,7 +10,6 @@ from ..io import save_model, read_telescope_data
 from ..preprocessing import (
     convert_to_float32,
     calc_true_disp,
-    convert_units,
     horizontal_to_camera,
 )
 from ..feature_generation import feature_generation
@@ -75,18 +74,17 @@ def main(
         n_sample=model_config.n_signal,
     )
     log.info("Total number of events: {}".format(len(df)))
+    log.info("Using coordinate transformations for %s", config.coordinate_transformation)
 
-    log.info("Using coordinate transformations for %s", model_config.data_format)
-
-    source_x, source_y = horizontal_to_camera(df, model_config)
+    source_x, source_y = horizontal_to_camera(df, config)
 
     log.info("Using projected disp: {}".format(model_config.project_disp))
     df["true_disp"], df["true_sign"] = calc_true_disp(
         source_x,
         source_y,
-        df[model_config.cog_x_column],
-        df[model_config.cog_y_column],
-        df[model_config.delta_column],
+        df[config.cog_x_column],
+        df[config.cog_y_column],
+        df[config.delta_column],
         project_disp=model_config.project_disp,
     )
 

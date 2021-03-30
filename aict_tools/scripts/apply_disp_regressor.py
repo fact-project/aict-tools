@@ -86,7 +86,7 @@ def main(
         drop_prediction_groups(data_path, group_name=model_config.output_name, yes=yes)
 
     if n_del_cols > 0:
-        log.warn(
+        log.warning(
             "Source dependent features need to be calculated from the predicted source possition. "
             + "Use e.g. `fact_calculate_theta` from https://github.com/fact-project/pyfact."
         )
@@ -117,11 +117,11 @@ def main(
             log_target=model_config.log_target,
         )
 
-        source_x = df_data[model_config.cog_x_column].values + disp * np.cos(
-            df_data[model_config.delta_column].values
+        source_x = df_data[config.cog_x_column].values + disp * np.cos(
+            df_data[config.delta_column].values
         )
-        source_y = df_data[model_config.cog_y_column].values + disp * np.sin(
-            df_data[model_config.delta_column].values
+        source_y = df_data[config.cog_y_column].values + disp * np.sin(
+            df_data[config.delta_column].values
         )
 
         if config.data_format == "CTA":

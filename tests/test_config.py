@@ -72,5 +72,5 @@ def test_cta():
 
     cta_config = AICTConfig.from_yaml("examples/cta_full_config.yaml")
     assert cta_config.data_format == "CTA"
-    assert cta_config.disp.pointing_alt_column == "altitude"
+    assert cta_config.pointing_alt_column == "altitude"
     assert cta_config.telescopes is not None

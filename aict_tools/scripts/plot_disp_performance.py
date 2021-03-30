@@ -6,7 +6,6 @@ import joblib
 import fact.io
 
 from ..io import read_telescope_data
-from ..preprocessing import convert_units
 from ..configuration import AICTConfig
 from ..plotting import (
     plot_roc,
@@ -57,7 +56,7 @@ def main(
 
     df = fact.io.read_data(performance_path, key=key)
 
-    if model_config.data_format == "CTA":
+    if config.data_format == "CTA":
         camera_unit = r"\mathrm{m}"
     else:
         camera_unit = r"\mathrm{mm}"
@@ -74,8 +73,6 @@ def main(
 
     log.info("Loading sign model")
     sign_model = joblib.load(sign_model_path)
-
-    df_data = convert_units(df_data, model_config)
 
     figures = []
 
@@ -147,7 +144,7 @@ def main(
     # Plot true_delta - delta
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    plot_true_delta_delta(df_data, model_config, ax)
+    plot_true_delta_delta(df_data, config, ax)
 
     if config.true_energy_column in df.columns:
         fig = plot_energy_dependent_disp_metrics(

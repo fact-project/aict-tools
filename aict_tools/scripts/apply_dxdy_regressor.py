@@ -105,8 +105,8 @@ def main(
             log_target=model_config.log_target,
         )
 
-        source_x = df_data[model_config.cog_x_column] + dxdy[:, 0]
-        source_y = df_data[model_config.cog_y_column] + dxdy[:, 1]
+        source_x = df_data[config.cog_x_column] + dxdy[:, 0]
+        source_y = df_data[config.cog_y_column] + dxdy[:, 1]
         key = config.events_key
         append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
         append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")

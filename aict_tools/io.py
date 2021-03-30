@@ -424,7 +424,7 @@ def read_telescope_data(
             first=first,
             last=last,
         )
-        df = convert_units(df, aict_config.disp)
+        df = convert_units(df, aict_config)
     # For cta files multiple tables need to be read and appended/merged
     elif aict_config.data_format == "CTA":
         df = read_cta_dl1(
@@ -488,10 +488,8 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
                 join_type="left",
                 keys="tel_description",
             )
-            layout["equivalent_focal_length"] = layout[
-                "equivalent_focal_length"
-            ].quantity.to_value(u.m)
-            # load the telescope parameter table(s)
+
+        # load the telescope parameter table(s)
         tel_tables = []
 
         for tel in tels_to_load:
@@ -547,7 +545,7 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
         # Monte carlo information is located in the simulation group
         # and we are interested in the array wise true information only
         event_table = vstack(tel_tables)
-        event_table = convert_units(event_table, aict_config.disp)
+        event_table = convert_units(event_table, aict_config)
         df = pd.DataFrame(event_table.as_array()) # workaround for #11286 in astropy 4.2
         if columns:
             true_columns = [x for x in columns if x.startswith("true")]

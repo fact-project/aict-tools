@@ -64,17 +64,15 @@ def main(
         n_sample=model_config.n_signal,
     )
     log.info("Total number of events: {}".format(len(df)))
-
     log.info(
         "Using coordinate transformations for %s",
-        model_config.coordinate_transformation,
+        config.coordinate_transformation,
     )
 
-    df = convert_units(df, model_config)
-    source_x, source_y = horizontal_to_camera(df, model_config)
+    source_x, source_y = horizontal_to_camera(df, config)
 
-    df["true_dx"] = source_x - df[model_config.cog_x_column]
-    df["true_dy"] = source_y - df[model_config.cog_y_column]
+    df["true_dx"] = source_x - df[config.cog_x_column]
+    df["true_dy"] = source_y - df[config.cog_y_column]
 
     # generate features if given in config
     if model_config.feature_generation:

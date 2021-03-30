@@ -4,6 +4,8 @@ import astropy.units as u
 from astropy.table import Table
 from fact.coordinates.utils import horizontal_to_camera as horizontal_to_camera_fact
 
+from .configuration import AICTConfig
+
 
 log = logging.getLogger(__name__)
 
@@ -76,7 +78,7 @@ def calc_true_disp(source_x, source_y, cog_x, cog_y, delta, project_disp=False):
     return abs_disp, sign_disp
 
 
-def convert_units(df, model_config):
+def convert_units(df, config):
     """
     Transforms the columns to the desired units.
 
@@ -93,14 +95,14 @@ def convert_units(df, model_config):
     df: The DataFrame with converted values.
     """
     coordinate_units = (
-        (model_config.delta_column, model_config.delta_unit, "rad"),
-        (model_config.focal_length_column, model_config.focal_length_unit, "m"),
-        (model_config.source_az_column, model_config.source_az_unit, "deg"),
-        (model_config.source_zd_column, model_config.source_zd_unit, "deg"),
-        (model_config.source_alt_column, model_config.source_alt_unit, "deg"),
-        (model_config.pointing_az_column, model_config.pointing_az_unit, "deg"),
-        (model_config.pointing_zd_column, model_config.pointing_zd_unit, "deg"),
-        (model_config.pointing_alt_column, model_config.pointing_alt_unit, "deg"),
+        (config.delta_column, config.delta_unit, "rad"),
+        (config.focal_length_column, config.focal_length_unit, "m"),
+        (config.source_az_column, config.source_az_unit, "deg"),
+        (config.source_zd_column, config.source_zd_unit, "deg"),
+        (config.source_alt_column, config.source_alt_unit, "deg"),
+        (config.pointing_az_column, config.pointing_az_unit, "deg"),
+        (config.pointing_zd_column, config.pointing_zd_unit, "deg"),
+        (config.pointing_alt_column, config.pointing_alt_unit, "deg"),
     )
     for column, unit, expected_unit in coordinate_units:
         if column in df.columns:
@@ -116,60 +118,60 @@ def convert_units(df, model_config):
     return df
 
 
-def get_alt(df, model_config):
+def get_alt(df, config: AICTConfig):
     """
     Return altitude for source and pointing from the df.
     Transforms from zenith distance to altitude if zd is given
     """
-    if model_config.source_zd_column:
-        source_alt = 90 - df[model_config.source_zd_column]
+    if config.source_zd_column:
+        source_alt = 90 - df[config.source_zd_column]
     else:
-        source_alt = df[model_config.source_alt_column]
+        source_alt = df[config.source_alt_column]
 
-    if model_config.pointing_zd_column:
-        pointing_alt = 90 - df[model_config.pointing_zd_column]
+    if config.pointing_zd_column:
+        pointing_alt = 90 - df[config.pointing_zd_column]
     else:
-        pointing_alt = df[model_config.pointing_alt_column]
+        pointing_alt = df[config.pointing_alt_column]
 
     return source_alt, pointing_alt
 
 
-def get_zd(df, model_config):
+def get_zd(df, config):
     """
     Return altitude for source and pointing from the df.
     Transforms from zenith distance to altitude if zd is given
     """
-    if model_config.source_alt_column:
-        source_zd = 90 - df[model_config.source_alt_column]
+    if config.source_alt_column:
+        source_zd = 90 - df[config.source_alt_column]
     else:
-        source_zd = df[model_config.source_zd_column]
+        source_zd = df[config.source_zd_column]
 
-    if model_config.pointing_alt_column:
-        pointing_zd = 90 - df[model_config.pointing_alt_column]
+    if config.pointing_alt_column:
+        pointing_zd = 90 - df[config.pointing_alt_column]
     else:
-        pointing_zd = df[model_config.pointing_zd_column]
+        pointing_zd = df[config.pointing_zd_column]
 
     return source_zd, pointing_zd
 
 
-def horizontal_to_camera(df, model_config):
-    if model_config.coordinate_transformation == "CTA":
+def horizontal_to_camera(df, config):
+    if config.coordinate_transformation == "CTA":
         from .cta_helpers import horizontal_to_camera_cta_simtel
 
-        alt_source, alt_pointing = get_alt(df, model_config)
+        alt_source, alt_pointing = get_alt(df, config)
         source_x, source_y = horizontal_to_camera_cta_simtel(
-            az=df[model_config.source_az_column],
+            az=df[config.source_az_column],
             alt=alt_source,
-            az_pointing=df[model_config.pointing_az_column],
+            az_pointing=df[config.pointing_az_column],
             alt_pointing=alt_pointing,
-            focal_length=df[model_config.focal_length_column],
+            focal_length=df[config.focal_length_column],
         )
-    elif model_config.coordinate_transformation == "FACT":
-        zd_source, zd_pointing = get_zd(df, model_config)
+    elif config.coordinate_transformation == "FACT":
+        zd_source, zd_pointing = get_zd(df, config)
         source_x, source_y = horizontal_to_camera_fact(
-            az=df[model_config.source_az_column],
+            az=df[config.source_az_column],
             zd=zd_source,
-            az_pointing=df[model_config.pointing_az_column],
+            az_pointing=df[config.pointing_az_column],
             zd_pointing=zd_pointing,
         )
     else:
