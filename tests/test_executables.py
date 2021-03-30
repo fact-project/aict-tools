@@ -493,7 +493,7 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
         apply_model,
         [
             "examples/cta_full_config.yaml",
-            os.path.join(temp_dir, "cta_gammas_diffuse.dl1.h5"),
+            os.path.join(temp_dir, "cta_gammas.dl1.h5"),
             cta_disp_model,
             cta_sign_model,
             "--yes",
