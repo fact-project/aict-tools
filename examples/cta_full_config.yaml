@@ -154,3 +154,41 @@ separator:
     features:
       area: hillas_width * hillas_length * @pi
 
+
+dxdy:
+  dxdy_regressor: |
+    ensemble.RandomForestRegressor(
+        n_estimators=30,
+        max_features='sqrt',
+        n_jobs=-1,
+        max_depth=20,
+    )
+
+  # Define the name of the variable you want estimate by regression.
+  # This the name of the group containing the predictions in the CTA case
+  # Prediction columns are named source_x_prediction, source_y_prediction
+  output_name: dxdy_prediction
+
+  # randomly sample the data if you dont want to use the whole set
+  n_signal : 25
+  features:
+    - hillas_x
+    - hillas_y
+    - hillas_intensity
+    - hillas_length
+    - hillas_width
+    - hillas_skewness
+    - hillas_kurtosis
+    - timing_slope
+    - timing_intercept
+    - timing_deviation
+    - leakage_intensity_width_1
+    - concentration_cog
+    - morphology_num_islands
+    - equivalent_focal_length
+  feature_generation:
+    needed_columns:
+      - hillas_width
+      - hillas_length
+    features:
+      area: hillas_width * hillas_length * @pi

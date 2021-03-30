@@ -250,7 +250,6 @@ def cta_disp_models(temp_dir):
 
     return disp_model, sign_model
 
-
 @pytest.fixture
 def dxdy_model(temp_dir):
     from aict_tools.scripts.train_dxdy_regressor import main as train
@@ -275,6 +274,30 @@ def dxdy_model(temp_dir):
 
     return dxdy_model
 
+@pytest.fixture
+def cta_dxdy_model(temp_dir):
+    from aict_tools.scripts.train_dxdy_regressor import main as train
+
+    dxdy_model = os.path.join(temp_dir, "cta_dxdy.pkl")
+
+    with DateNotModified("examples/gamma_diffuse.hdf5"):
+        runner = CliRunner()
+        result = runner.invoke(
+            train,
+            [
+                "examples/cta_full_config.yaml",
+                "examples/cta_gammas_diffuse.dl1.h5",
+                os.path.join(temp_dir, "cta_cv_dxdy.hdf5"),
+                dxdy_model,
+            ],
+        )
+        if result.exit_code != 0:
+            print(result.output)
+            print_exception(*result.exc_info)
+        assert result.exit_code == 0
+
+    return dxdy_model
+    
 
 def test_apply_regression(temp_dir, energy_model):
     from aict_tools.scripts.apply_energy_regressor import main
@@ -484,6 +507,26 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
 
     with h5py.File(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "r") as f:
         assert "disp_prediction" in f["dl2"]["event"]["telescope"]["tel_001"]
+
+
+def test_apply_dxdy_cta(temp_dir, cta_dxdy_model):
+    from aict_tools.scripts.apply_dxdy_regressor import main as apply_model
+
+    runner = CliRunner()
+    result = runner.invoke(
+        apply_model,
+        [
+            "examples/cta_full_config.yaml",
+            os.path.join(temp_dir, "cta_gammas.hdf5"),
+            cta_dxdy_model,
+            "--yes",
+        ],
+    )
+
+    if result.exit_code != 0:
+        print(result.output)
+        print_exception(*result.exc_info)
+    assert result.exit_code == 0
 
 
 def test_to_dl3():
