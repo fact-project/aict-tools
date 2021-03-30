@@ -492,13 +492,13 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
                 "equivalent_focal_length"
             ].quantity.to_value(u.m)
             # load the telescope parameter table(s)
-        tel_dfs = []
+        tel_tables = []
 
         for tel in tels_to_load:
             log.info(f'Loading data for telescope {tel}')
             # as not all columns are located here, we cant just use
             # columns=columns
-            tel_df = read_table(path, tel)[first:last]
+            tel_table = read_table(path, tel)[first:last]
 
             # Pointing information has to be loaded from the monitoring tables and interpolated
             # We also need the trigger tables as monitoring is based on time not events
@@ -506,8 +506,8 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
                 if "azimuth" in columns or "altitude" in columns:
                     tel_key = tel.split("/")[-1]
                     tel_triggers = read_table(path, "/dl1/event/telescope/trigger")
-                    tel_df = join(
-                        tel_df,
+                    tel_table = join(
+                        tel_table,
                         tel_triggers,
                         join_type="inner",
                         keys=["obs_id", "event_id", "tel_id"],
@@ -519,36 +519,36 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
                         time_key = "time"
                     else:
                         time_key = "telescopetrigger_time"
-                    tel_df["azimuth"] = np.interp(
-                        tel_df[time_key].mjd,
+                    tel_table["azimuth"] = np.interp(
+                        tel_table[time_key].mjd,
                         tel_pointings[time_key].mjd,
                         tel_pointings["azimuth"].quantity.to_value(u.deg),
                     )
-                    tel_df["altitude"] = np.interp(
-                        tel_df[time_key].mjd,
+                    tel_table["altitude"] = np.interp(
+                        tel_table[time_key].mjd,
                         tel_pointings[time_key].mjd,
                         tel_pointings["altitude"].quantity.to_value(u.deg),
                     )
                 if "equivalent_focal_length" in columns:
-                    tel_df = join(
-                        tel_df,
+                    tel_table = join(
+                        tel_table,
                         layout[["tel_id", "equivalent_focal_length"]],
                         join_type="left",
                         keys="tel_id",
                     )
                 if columns:
                     # True / Simulation columns are still missing, so only use the columns already present
-                    tel_df = tel_df[
-                        list(set(columns).intersection(tel_df.columns))
+                    tel_table = tel_table[
+                        list(set(columns).intersection(tel_table.columns))
                     ].copy()
 
-            tel_dfs.append(tel_df)
+            tel_tables.append(tel_table)
 
         # Monte carlo information is located in the simulation group
         # and we are interested in the array wise true information only
-        df = vstack(tel_dfs)
-        df = convert_units(df, aict_config.disp)
-        df = pd.DataFrame(np.array(df)) # workaround for #11286 in astropy 4.2
+        event_table = vstack(tel_tables)
+        event_table = convert_units(event_table, aict_config.disp)
+        df = pd.DataFrame(event_table.as_array()) # workaround for #11286 in astropy 4.2
         if columns:
             true_columns = [x for x in columns if x.startswith("true")]
             if true_columns:
