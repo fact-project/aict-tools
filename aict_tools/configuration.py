@@ -437,7 +437,7 @@ class DxdyConfig:
             self.parse_simple(model_config, aict_config)
 
     def parse_cta(self, model_config, aict_config):
-        self.output_name = model_config.get('output_name', 'disp_predictions')
+        self.output_name = model_config.get('output_name', 'dxdy_prediction')
 
         cols = {
             aict_config.cog_x_column,
