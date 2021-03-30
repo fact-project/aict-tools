@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import joblib
 import fact.io
 
-from ..preprocessing import convert_units
 from ..configuration import AICTConfig
 from ..plotting import (
     plot_regressor_confusion,
@@ -68,8 +67,6 @@ def main(
 
     log.info("Loading dxdy model")
     dxdy_model = joblib.load(dxdy_model_path)
-
-    df_data = convert_units(df_data, model_config)
 
     figures = []
 

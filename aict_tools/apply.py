@@ -304,22 +304,25 @@ def apply_cuts_cta_dl1(
         output_path, "w", filters=filters
     ) as out_:
         # perform cuts on the measured parameters
-        remaining_showers = set()
         remaining_obs_ids = set()
         remaining_event_ids = set()
         for table in in_.root.dl1.event.telescope.parameters:
             key = "/dl1/event/telescope/parameters"
-            new_table = out_.create_table(
-                key,
-                table.name,
-                table.description,
-                createparents=True,
-            )
             mask = create_mask_table(
                 table,
                 selection_config,
                 n_events=len(table),
             )
+            new_table = out_.create_table(
+                key,
+                table.name,
+                table.description,
+                createparents=True,
+                expectedrows=np.count_nonzero(mask),
+            )
+            # set user attributes
+            for name in table.attrs._f_list():
+                new_table.attrs[name] = table.attrs[name]
             n_rows_before += len(table)
             data = table.read()
             new_table.append(data[mask])
@@ -342,6 +345,7 @@ def apply_cuts_cta_dl1(
             # parameter tables were already processed
             if table._v_parent._v_pathname == "/dl1/event/telescope/parameters":
                 continue
+
             new_table = out_.create_table(
                 table._v_parent._v_pathname,
                 table.name,

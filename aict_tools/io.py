@@ -522,12 +522,12 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
                         tel_table[time_key].mjd,
                         tel_pointings[time_key].mjd,
                         tel_pointings["azimuth"].quantity.to_value(u.deg),
-                    )
+                    ) * u.deg
                     tel_table["altitude"] = np.interp(
                         tel_table[time_key].mjd,
                         tel_pointings[time_key].mjd,
                         tel_pointings["altitude"].quantity.to_value(u.deg),
-                    )
+                    ) * u.deg
                 if "equivalent_focal_length" in columns:
                     tel_table = join(
                         tel_table,

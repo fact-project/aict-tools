@@ -10,7 +10,6 @@ from ..io import save_model, read_telescope_data
 from ..preprocessing import (
     convert_to_float32,
     calc_true_disp,
-    convert_units,
     horizontal_to_camera,
 )
 from ..feature_generation import feature_generation
