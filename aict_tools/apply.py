@@ -1,3 +1,4 @@
+from astropy.table import Table, join
 import numpy as np
 import logging
 from operator import le, lt, eq, ne, ge, gt
@@ -304,8 +305,7 @@ def apply_cuts_cta_dl1(
         output_path, "w", filters=filters
     ) as out_:
         # perform cuts on the measured parameters
-        remaining_obs_ids = set()
-        remaining_event_ids = set()
+        remaining_showers = set()
         for table in in_.root.dl1.event.telescope.parameters:
             key = "/dl1/event/telescope/parameters"
             mask = create_mask_table(
@@ -326,10 +326,10 @@ def apply_cuts_cta_dl1(
             n_rows_before += len(table)
             data = table.read()
             new_table.append(data[mask])
-            remaining_obs_ids.update(data[mask]["obs_id"].tolist())
-            remaining_event_ids.update(data[mask]["event_id"].tolist())
+            remaining_showers.update(data[mask][["obs_id", "event_id"]].tolist())
 
             n_rows_after += np.count_nonzero(mask)
+        selection_table = Table(data=np.array(list(remaining_showers)), names=['obs_id', 'event_id'])
         # copy the other tables disregarding events with no more observations
         for table in in_.walk_nodes():
             # skip groups, we create the parents anyway
@@ -358,9 +358,11 @@ def apply_cuts_cta_dl1(
             mask = np.ones(len(table), dtype=bool)
             # they dont appear individually
             if "event_id" in table.colnames:
-                mask &= np.isin(table.col('event_id'), list(remaining_event_ids))
-                mask &= np.isin(table.col('obs_id'), list(remaining_obs_ids))
-            new_table.append(table[mask])
+                selected = join(selection_table, table.read(), keys=['obs_id', 'event_id'], join_type='left')
+                new_table.append(selected.as_array().astype(table.dtype))
+            else:
+                new_table.append(table[:])
+
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", NaturalNameWarning)
