@@ -302,6 +302,8 @@ def apply_cuts_cta_dl1(
     ) as out_:
         # perform cuts on the measured parameters
         remaining_showers = set()
+        remaining_obs_ids = set()
+        remaining_event_ids = set()
         for table in in_.root.dl1.event.telescope.parameters:
             key = "/dl1/event/telescope/parameters"
             new_table = out_.create_table(
@@ -318,7 +320,8 @@ def apply_cuts_cta_dl1(
             n_rows_before += len(table)
             data = table.read()
             new_table.append(data[mask])
-            remaining_showers.update(data[mask][["obs_id", "event_id"]].tolist())
+            remaining_obs_ids.update(data[mask]["obs_id"].tolist())
+            remaining_event_ids.update(data[mask]["event_id"].tolist())
 
             n_rows_after += np.count_nonzero(mask)
         # copy the other tables disregarding events with no more observations
@@ -345,12 +348,12 @@ def apply_cuts_cta_dl1(
             # set user attributes
             for name in table.attrs._f_list():
                 new_table.attrs[name] = table.attrs[name]
-            for row in table.iterrows():
-                if "event_id" in table.colnames:  # they dont appear individually
-                    event = (row["obs_id"], row["event_id"])
-                    if event not in remaining_showers:
-                        continue
-                new_table.append([row[:]])
+            mask = np.ones(len(table), dtype=bool)
+            # they dont appear individually
+            if "event_id" in table.colnames:
+                mask &= np.isin(table.col('event_id'), list(remaining_event_ids))
+                mask &= np.isin(table.col('obs_id'), list(remaining_obs_ids))
+            new_table.append(table[mask])
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", NaturalNameWarning)
