@@ -7,7 +7,7 @@ with open(path.join(d, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 with open("aict_tools/__init__.py", "r") as f:
-    version = re.search(r"__version__ = \'(\d+[.]\d+[.]\d+)\'", f.read()).groups()[0]
+    version = re.search(r'__version__ = \"(\d+[.]\d+[.]\d+)\"', f.read()).groups()[0]
 
 extras_require = {
     "pmml": [
