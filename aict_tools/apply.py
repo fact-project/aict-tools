@@ -298,7 +298,7 @@ def apply_cuts_cta_dl1(
     n_rows_before = 0
     n_rows_after = 0
     with tables.open_file(input_path) as in_, tables.open_file(
-        output_path, "a", filters=filters
+        output_path, "w", filters=filters
     ) as out_:
         # perform cuts on the measured parameters
         remaining_showers = set()
