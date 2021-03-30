@@ -72,7 +72,7 @@ def main(
         )
 
     n_del_cols = 0
-    # implement this for cta!
+
     for column in columns_to_delete:
         if config.data_format == "CTA":
             n_del = drop_prediction_groups(data_path, group_name=column, yes=yes)

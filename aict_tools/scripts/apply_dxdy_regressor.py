@@ -4,9 +4,10 @@ from tqdm import tqdm
 
 from ..io import (
     append_column_to_hdf5,
+    append_predictions_cta,
     read_telescope_data_chunked,
-    get_column_names_in_file,
-    remove_column_from_file,
+    drop_prediction_column,
+    drop_prediction_groups,
     load_model,
 )
 from ..apply import predict_dxdy
@@ -64,16 +65,13 @@ def main(
     n_del_cols = 0
 
     for column in columns_to_delete:
-        if column in get_column_names_in_file(data_path, config.events_key):
-            if not yes:
-                click.confirm(
-                    'Dataset "{}" exists in file, overwrite?'.format(column),
-                    abort=True,
-                )
-                yes = True
-            remove_column_from_file(data_path, config.events_key, column)
-            log.warn("Deleted {} from the feature set.".format(column))
-            n_del_cols += 1
+        if config.data_format == "CTA":
+            n_del = drop_prediction_groups(data_path, group_name=column, yes=yes)
+        elif config.data_format == "simple":
+            n_del = drop_prediction_column(
+                data_path, group_name=config.events_key, column_name=column, yes=yes
+            )
+        n_del_cols += n_del
 
     if n_del_cols > 0:
         log.warn(
@@ -107,10 +105,23 @@ def main(
 
         source_x = df_data[config.cog_x_column] + dxdy[:, 0]
         source_y = df_data[config.cog_y_column] + dxdy[:, 1]
-        key = config.events_key
-        append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
-        append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")
 
+        if config.data_format == "CTA":
+            df_data.reset_index(inplace=True)
+            for tel_id, group in df_data.groupby("tel_id"):
+                d = group[["obs_id", "event_id"]].copy()
+                d["source_y_pred"] = source_y[group.index]
+                d["source_x_pred"] = source_x[group.index]
+                append_predictions_cta(
+                    data_path,
+                    d,
+                    f"/dl2/event/telescope/tel_{tel_id:03d}",
+                    model_config.output_name,
+                )
+        elif config.data_format == "simple":
+            key = config.events_key
+            append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
+            append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")
 
 if __name__ == "__main__":
     # pylint: disable=no-value-for-parameter
