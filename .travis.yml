@@ -10,7 +10,7 @@ env:
 
 matrix:
   include:
-    - python: '3.7'
+    - python: '3.7.9'
     - python: '3.8'
 
 before_install:
