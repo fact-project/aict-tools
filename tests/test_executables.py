@@ -341,7 +341,7 @@ def test_apply_regression_cta(temp_dir, cta_energy_model):
 
     res_no_chunks = read_data(
         os.path.join(temp_dir, "cta_gammas_diffuse.dl1.h5"),
-        "/dl2/event/telescope/tel_001/gamma_energy_prediction",
+        "/dl2/event/telescope/gamma_energy_prediction/tel_001",
     )
 
     result_2 = runner.invoke(
@@ -361,7 +361,7 @@ def test_apply_regression_cta(temp_dir, cta_energy_model):
 
     res_chunks = read_data(
         os.path.join(temp_dir, "cta_gammas_diffuse.dl1.h5"),
-        "/dl2/event/telescope/tel_001/gamma_energy_prediction",
+        "/dl2/event/telescope/gamma_energy_prediction/tel_001",
     )
 
     assert (res_no_chunks.all() == res_chunks.all()).all()
@@ -412,7 +412,7 @@ def test_apply_separator_cta(temp_dir, cta_separator_model):
     assert result.exit_code == 0
 
     with h5py.File(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "r") as f:
-        assert "gamma_prediction" in f["dl2"]["event"]["telescope"]["tel_001"]
+        assert "gamma_prediction" in f["dl2"]["event"]["telescope"]
         assert "gamma_prediction" in f["dl2"]["event"]["subarray"]
 
 
@@ -506,7 +506,8 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
     assert result.exit_code == 0
 
     with h5py.File(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "r") as f:
-        assert "disp_prediction" in f["dl2"]["event"]["telescope"]["tel_001"]
+        assert "disp_prediction" in f["dl2"]["event"]["telescope"]
+        assert "tel_001" in f["dl2"]["event"]["telescope"]["disp_prediction"]
 
 
 def test_apply_dxdy_cta(temp_dir, cta_dxdy_model):

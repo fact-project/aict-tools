@@ -117,8 +117,7 @@ def main(
                 append_predictions_cta(
                     data_path,
                     d,
-                    f"/dl2/event/telescope/tel_{tel_id:03d}",
-                    model_config.output_name,
+                    f"/dl2/event/telescope/{model_config.output_name}/tel_{tel_id:03d}",
                 )
 
         elif config.data_format == "simple":

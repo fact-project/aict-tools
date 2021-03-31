@@ -689,14 +689,15 @@ def copy_group(inpath, outpath, group):
             infile.copy(group, out_group)
 
 
-def append_predictions_cta(file_path, df, table_path, output_name):
+def append_predictions_cta(file_path, df, table_path):
     with tables.open_file(file_path, mode="a") as f:
-        if f"{table_path}/{output_name}" not in f:
+        if table_path not in f:
+            group, table_name = os.path.split(table_path)
             f.create_table(
-                table_path,
-                output_name,
+                group,
+                table_name,
                 df.to_records(),
                 createparents=True,
             )
         else:
-            f.get_node(f"{table_path}/{output_name}").append(df.to_records())
+            f.get_node(table_path).append(df.to_records())
