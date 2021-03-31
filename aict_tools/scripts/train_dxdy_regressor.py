@@ -84,6 +84,9 @@ def main(
 
     target_dxdy = df.loc[df_train.index, ["true_dx", "true_dy"]].to_numpy()
 
+    if model_config.log_target is True:
+        target_dxdy = np.log(target_dxdy)
+
     # load optional columns if available to be able to make performance plots
     # vs true energy / size
     if config.true_energy_column is not None:

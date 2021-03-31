@@ -335,7 +335,6 @@ def apply_cuts_cta_dl1(
             )
             n_rows_before += len(table)
             n_rows_after += np.count_nonzero(mask)
-
         selection_table = unique(vstack(remaining_showers))
         for node in in_.walk_nodes():
             nodepath = node._v_parent._v_pathname
