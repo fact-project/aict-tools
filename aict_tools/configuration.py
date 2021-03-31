@@ -403,7 +403,6 @@ class DxdyConfig:
         'feature_generation',
         'columns_to_read_apply',
         'columns_to_read_train',
-        'log_target',
         'output_name',
     ]
 
@@ -411,7 +410,6 @@ class DxdyConfig:
         check_coordinate_columns_set(aict_config)
 
         self.dxdy_regressor = load_regressor(model_config['dxdy_regressor'])
-        self.log_target = model_config.get('log_target', False)
 
         self.n_signal = model_config.get("n_signal", None)
         k = "n_cross_validations"

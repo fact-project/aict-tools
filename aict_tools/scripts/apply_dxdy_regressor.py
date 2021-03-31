@@ -101,7 +101,6 @@ def main(
         dxdy = predict_dxdy(
             df_data[model_config.features],
             dxdy_model,
-            log_target=model_config.log_target,
         )
 
         source_x = df_data[config.cog_x_column] + dxdy[:, 0]

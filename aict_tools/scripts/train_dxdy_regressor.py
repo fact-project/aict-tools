@@ -84,9 +84,6 @@ def main(
 
     target_dxdy = df.loc[df_train.index, ["true_dx", "true_dy"]].to_numpy()
 
-    if model_config.log_target is True:
-        target_dxdy = np.log(target_dxdy)
-
     # load optional columns if available to be able to make performance plots
     # vs true energy / size
     if config.true_energy_column is not None:
@@ -118,10 +115,6 @@ def main(
 
         dxdy_regressor.fit(cv_x_train, cv_dxdy_train)
         cv_dxdy_prediction = dxdy_regressor.predict(cv_x_test)
-
-        if model_config.log_target is True:
-            cv_dxdy_test = np.exp(cv_dxdy_test)
-            cv_dxdy_prediction = np.exp(cv_dxdy_prediction)
 
         scores_dxdy.append(metrics.r2_score(cv_dxdy_test, cv_dxdy_prediction))
         cv_df = pd.DataFrame(
