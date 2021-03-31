@@ -1,6 +1,7 @@
-from astropy.table import Table, join
+from astropy.table import Table, join, vstack, unique
 import numpy as np
 import logging
+import os
 from operator import le, lt, eq, ne, ge, gt
 import h5py
 import tables
@@ -143,7 +144,7 @@ def create_mask_h5py(
     mask = np.ones(n_selected, dtype=bool)
 
     if isinstance(selection_config, dict):
-        raise ValueError('Dictionaries are not supported for the cuts anymore, use a list')
+        raise ValueError("Dictionaries are not supported for the cuts anymore, use a list")
 
     for c in selection_config:
         if len(c) > 1:
@@ -301,11 +302,12 @@ def apply_cuts_cta_dl1(
     )
     n_rows_before = 0
     n_rows_after = 0
+
     with tables.open_file(input_path) as in_, tables.open_file(
         output_path, "w", filters=filters
     ) as out_:
         # perform cuts on the measured parameters
-        remaining_showers = set()
+        remaining_showers = []
         for table in in_.root.dl1.event.telescope.parameters:
             key = "/dl1/event/telescope/parameters"
             mask = create_mask_table(
@@ -323,50 +325,63 @@ def apply_cuts_cta_dl1(
             # set user attributes
             for name in table.attrs._f_list():
                 new_table.attrs[name] = table.attrs[name]
+            surviving_events = table.read()
+            new_table.append(surviving_events[mask])
+            remaining_showers.append(
+                Table(
+                    data=surviving_events[mask][["obs_id", "event_id"]],
+                    names=["obs_id", "event_id"],
+                )
+            )
             n_rows_before += len(table)
-            data = table.read()
-            new_table.append(data[mask])
-            remaining_showers.update(data[mask][["obs_id", "event_id"]].tolist())
-
             n_rows_after += np.count_nonzero(mask)
-        selection_table = Table(data=np.array(list(remaining_showers)), names=['obs_id', 'event_id'])
-        # copy the other tables disregarding events with no more observations
-        for table in in_.walk_nodes():
-            # skip groups, we create the parents anyway
-            if not isinstance(table, tables.Table):
+
+        selection_table = unique(vstack(remaining_showers))
+        for node in in_.walk_nodes():
+            nodepath = node._v_parent._v_pathname
+            # skip groups, we create them later
+            if isinstance(node, tables.group.Group):
+                continue
+            # parameter tables were already processed
+            elif nodepath == "/dl1/event/telescope/parameters":
                 continue
             if not keep_images:
-                if table._v_parent._v_pathname == "/dl1/event/telescope/images":
+                if nodepath == "/dl1/event/telescope/images":
                     continue
-                elif (
-                    table._v_parent._v_pathname == "/simulation/event/telescope/images"
-                ):
+                elif nodepath == "/simulation/event/telescope/images":
                     continue
-            # parameter tables were already processed
-            if table._v_parent._v_pathname == "/dl1/event/telescope/parameters":
-                continue
-
-            new_table = out_.create_table(
-                table._v_parent._v_pathname,
-                table.name,
-                table.description,
-                createparents=True,
-            )
-            # set user attributes
-            for name in table.attrs._f_list():
-                new_table.attrs[name] = table.attrs[name]
-            mask = np.ones(len(table), dtype=bool)
-            # they dont appear individually
-            if "event_id" in table.colnames:
-                selected = join(selection_table, table.read(), keys=['obs_id', 'event_id'], join_type='left')
-                new_table.append(selected.as_array().astype(table.dtype))
+            # tables with event_id always contain the obs_id as well
+            if isinstance(node, tables.Table) and "event_id" in node.colnames:
+                selected = join(
+                    selection_table,
+                    node.read(),
+                    keys=["obs_id", "event_id"],
+                    join_type="left",
+                )
+                new_table = out_.create_table(
+                    nodepath,
+                    node.name,
+                    node.description,
+                    createparents=True,
+                    expectedrows=len(selected),
+                )
+                # set user attributes
+                for name in node.attrs._f_list():
+                    new_table.attrs[name] = node.attrs[name]
+                new_table.append(selected.as_array().astype(node.dtype))
             else:
-                new_table.append(table[:])
-
-
+                if nodepath not in out_:
+                    head, tail = os.path.split(nodepath)
+                    out_.create_group(head, tail, createparents=True)
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", NaturalNameWarning)
+                    new = in_.copy_node(
+                        node,
+                        newparent=out_.root[nodepath],
+                    )
+        # set root attributes
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", NaturalNameWarning)
             for name in in_.root._v_attrs._f_list():
                 out_.root._v_attrs[name] = in_.root._v_attrs[name]
-
     return n_rows_before, n_rows_after
