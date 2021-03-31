@@ -333,8 +333,9 @@ def apply_cuts_cta_dl1(
         # copy the other tables disregarding events with no more observations
         for table in in_.walk_nodes():
             # skip groups, we create the parents anyway
-            if not isinstance(table, tables.Table):
+            if isinstance(table, tables.Group):
                 continue
+
             if not keep_images:
                 if table._v_parent._v_pathname == "/dl1/event/telescope/images":
                     continue
