@@ -11,9 +11,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # make sure we have version info
-      - run: git fetch --tags
-
       - name: Set up Python
         uses: actions/setup-python@v2
         with:
