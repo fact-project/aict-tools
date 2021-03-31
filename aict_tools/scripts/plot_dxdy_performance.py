@@ -51,9 +51,7 @@ def main(
     log.info("Loading perfomance data")
     df = fact.io.read_data(performance_path, key=key)
 
-    columns = model_config.columns_to_read_train
-
-    if model_config.coordinate_transformation == "CTA":
+    if config.coordinate_transformation == "CTA":
         camera_unit = r"\mathrm{m}"
     else:
         camera_unit = r"\mathrm{mm}"
@@ -133,7 +131,7 @@ def main(
     # Plot true_delta - delta
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
-    plot_true_delta_delta(df_data, model_config, ax)
+    plot_true_delta_delta(df_data, config, ax)
 
     if config.true_energy_column in df.columns:
         fig = plot_energy_dependent_dxdy_metrics(

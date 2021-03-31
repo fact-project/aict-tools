@@ -998,3 +998,24 @@ def test_plot_disp_performance(temp_dir, disp_models):
         print(result.output)
         print_exception(*result.exc_info)
     assert result.exit_code == 0
+
+
+def test_plot_dxdy_performance(temp_dir, dxdy_model):
+    from aict_tools.scripts.plot_dxdy_performance import main
+
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "examples/config_source_dxdy.yaml",
+            os.path.join(temp_dir, "cv_dxdy.hdf5"),
+            "examples/gamma_diffuse.hdf5",
+            dxdy_model,
+            "-o",
+            os.path.join(temp_dir, "dxdy_performance.pdf"),
+        ],
+    )
+    if result.exit_code != 0:
+        print(result.output)
+        print_exception(*result.exc_info)
+    assert result.exit_code == 0
