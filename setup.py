@@ -16,7 +16,7 @@ extras_require = {
     ],
     "onnx": ["skl2onnx", "onnxmltools", "onnxruntime~=1.0"],
     "cta": ["ctapipe"],
-    "tests": ["pytest", "pytest-runner"],
+    "tests": ["pytest", "pytest-runner", "pytest-cov"],
 }
 extras_require["all"] = list({dep for deps in extras_require.values() for dep in deps})
 

@@ -1,4 +1,4 @@
-from multiprocessing import Pool, cpu_count
+from multiprocessing import cpu_count, get_context
 import numpy as np
 from functools import partial
 
@@ -25,7 +25,8 @@ def parallelize_array_computation(func, *arrays, n_jobs=-1, **kwargs):
         blocks.append([a[start:end] for a in arrays])
 
     func = partial(func, **kwargs)
-    with Pool(n_jobs) as pool:
+    ctx = get_context("spawn")
+    with ctx.Pool(n_jobs) as pool:
         result = pool.starmap(func, blocks)
 
     return result
