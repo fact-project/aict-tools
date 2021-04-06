@@ -243,7 +243,7 @@ class TelescopeDataIterator:
                                 )
                             )
                         else:
-                            raise Exception("Didnt find telescope", key)
+                            log.warning(f"Didnt find telescope: {key}")
                 else:
                     tables_ = [
                         (f"/dl1/event/telescope/parameters/{tel.name}", len(tel))
