@@ -15,7 +15,9 @@ from fact.io import read_h5py, to_h5py
 from fact.instrument.constants import LOCATION
 from fact.analysis.source import calc_theta_camera, calc_theta_offs_camera
 from fact.coordinates import (
-    camera_to_equatorial, horizontal_to_camera, camera_to_horizontal,
+    camera_to_equatorial,
+    horizontal_to_camera,
+    camera_to_horizontal,
 )
 from fact.instrument import camera_distance_mm_to_deg
 
@@ -23,7 +25,7 @@ from ..apply import predict_energy, predict_disp, predict_separator
 from ..parallel import parallelize_array_computation
 from ..io import (
     read_telescope_data_chunked,
-    copy_runs_group,
+    copy_group,
     set_sample_fraction,
     load_model,
 )
@@ -38,46 +40,51 @@ erfa_astrom.set(ErfaAstromInterpolator(5 * u.min))
 
 
 dl3_columns = [
-    'run_id',
-    'event_num',
-    'gamma_energy_prediction',
-    'gamma_prediction',
-    'disp_prediction',
-    'theta_deg',
-    'theta_deg_off_1',
-    'theta_deg_off_2',
-    'theta_deg_off_3',
-    'theta_deg_off_4',
-    'theta_deg_off_5',
-    'pointing_position_az',
-    'pointing_position_zd',
-    'az_prediction',
-    'zd_prediction',
+    "run_id",
+    "event_num",
+    "gamma_energy_prediction",
+    "gamma_prediction",
+    "disp_prediction",
+    "theta_deg",
+    "theta_deg_off_1",
+    "theta_deg_off_2",
+    "theta_deg_off_3",
+    "theta_deg_off_4",
+    "theta_deg_off_5",
+    "pointing_position_az",
+    "pointing_position_zd",
+    "az_prediction",
+    "zd_prediction",
 ]
 dl3_columns_sim_read = [
-    'corsika_run_header_run_number',
-    'corsika_event_header_event_number',
-    'ceres_event_event_reuse',
-    'corsika_event_header_num_reuse',
-    'corsika_event_header_total_energy',
-    'corsika_event_header_x',
-    'corsika_event_header_y',
-    'corsika_event_header_first_interaction_height',
-    'source_position_az',
-    'source_position_zd',
+    "corsika_run_header_run_number",
+    "corsika_event_header_event_number",
+    "ceres_event_event_reuse",
+    "corsika_event_header_num_reuse",
+    "corsika_event_header_total_energy",
+    "corsika_event_header_x",
+    "corsika_event_header_y",
+    "corsika_event_header_first_interaction_height",
+    "source_position_az",
+    "source_position_zd",
 ]
-dl3_columns_sim = dl3_columns_sim_read + dl3_columns + ['true_disp']
+dl3_columns_sim = dl3_columns_sim_read + dl3_columns + ["true_disp"]
 
 dl3_columns_obs = dl3_columns + [
-    'night',
-    'ra_prediction',
-    'dec_prediction',
-    'timestamp'
+    "night",
+    "ra_prediction",
+    "dec_prediction",
+    "timestamp",
 ]
 
 needed_columns = [
-    'cog_x', 'cog_y', 'delta', 'pointing_position_az', 'pointing_position_zd',
-    'run_id', 'event_num',
+    "cog_x",
+    "cog_y",
+    "delta",
+    "pointing_position_az",
+    "pointing_position_zd",
+    "run_id",
+    "event_num",
 ]
 
 
@@ -101,14 +108,11 @@ def to_altaz(obstime, source):
 def concat_results_altaz(results):
     jd1 = np.concatenate([s.obstime.jd1 for s in results])
     jd2 = np.concatenate([s.obstime.jd2 for s in results])
-    obstime = Time(jd1, jd2, format='jd', copy=False)
+    obstime = Time(jd1, jd2, format="jd", copy=False)
 
     alt = u.Quantity(np.concatenate([s.alt.deg for s in results]), u.deg, copy=False)
-    az= u.Quantity(np.concatenate([s.az.deg for s in results]), u.deg, copy=False)
-    return SkyCoord(
-        alt=alt, az=az,
-        frame=AltAz(location=LOCATION, obstime=obstime)
-    )
+    az = u.Quantity(np.concatenate([s.az.deg for s in results]), u.deg, copy=False)
+    return SkyCoord(alt=alt, az=az, frame=AltAz(location=LOCATION, obstime=obstime))
 
 
 def calc_source_features_common(
@@ -121,12 +125,14 @@ def calc_source_features_common(
 ):
     result = {}
 
-    k_zd, k_az = 'zd_prediction', 'az_prediction'
+    k_zd, k_az = "zd_prediction", "az_prediction"
     result[k_zd], result[k_az] = camera_to_horizontal(
-        prediction_x, prediction_y,
-        pointing_position_zd, pointing_position_az,
+        prediction_x,
+        prediction_y,
+        pointing_position_zd,
+        pointing_position_az,
     )
-    result['theta_deg'] = calc_theta_camera(
+    result["theta_deg"] = calc_theta_camera(
         prediction_x,
         prediction_y,
         source_zd=source_zd,
@@ -145,7 +151,7 @@ def calc_source_features_common(
         n_off=5,
     )
     for i, theta_off in enumerate(theta_offs, start=1):
-        result['theta_deg_off_{}'.format(i)] = theta_off
+        result["theta_deg_off_{}".format(i)] = theta_off
     return result
 
 
@@ -159,7 +165,7 @@ def calc_source_features_sim(
     cog_x,
     cog_y,
     delta,
-    project_disp=False
+    project_disp=False,
 ):
     result = calc_source_features_common(
         prediction_x,
@@ -177,12 +183,14 @@ def calc_source_features_sim(
     )
 
     true_disp, true_sign = calc_true_disp(
-        source_x, source_y,
-        cog_x, cog_y,
+        source_x,
+        source_y,
+        cog_x,
+        cog_y,
         delta,
         project_disp=project_disp,
     )
-    result['true_disp'] = true_disp * true_sign
+    result["true_disp"] = true_disp * true_sign
 
     return result
 
@@ -206,7 +214,7 @@ def calc_source_features_obs(
         pointing_position_az,
     )
 
-    result['ra_prediction'], result['dec_prediction'] = camera_to_equatorial(
+    result["ra_prediction"], result["dec_prediction"] = camera_to_equatorial(
         source_x,
         source_y,
         pointing_position_zd,
@@ -217,22 +225,28 @@ def calc_source_features_obs(
 
 
 @click.command()
-@click.argument('configuration_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('data_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('separator_model_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('energy_model_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('disp_model_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('sign_model_path', type=click.Path(exists=True, dir_okay=False))
-@click.argument('output', type=click.Path(exists=False, dir_okay=False))
-@click.option('--random-source', help='Draw a random source position')
-@click.option('--wobble-distance', help='Wobble distance in degree for random source position', default=0.6)
-@click.option('-k', '--key', help='HDF5 key for h5py hdf5', default='events')
-@click.option('-n', '--n-jobs', default=-1, type=int, help='Number of cores to use')
-@click.option('-y', '--yes', help='Do not prompt for overwrites', is_flag=True)
-@click.option('-v', '--verbose', help='Verbose log output', is_flag=True)
+@click.argument("configuration_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("data_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("separator_model_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("energy_model_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("disp_model_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("sign_model_path", type=click.Path(exists=True, dir_okay=False))
+@click.argument("output", type=click.Path(exists=False, dir_okay=False))
+@click.option("--random-source", help="Draw a random source position")
 @click.option(
-    '-N', '--chunksize', type=int,
-    help='If given, only process the given number of events at once',
+    "--wobble-distance",
+    help="Wobble distance in degree for random source position",
+    default=0.6,
+)
+@click.option("-k", "--key", help="HDF5 key for h5py hdf5", default="events")
+@click.option("-n", "--n-jobs", default=-1, type=int, help="Number of cores to use")
+@click.option("-y", "--yes", help="Do not prompt for overwrites", is_flag=True)
+@click.option("-v", "--verbose", help="Verbose log output", is_flag=True)
+@click.option(
+    "-N",
+    "--chunksize",
+    type=int,
+    help="If given, only process the given number of events at once",
 )
 def main(
     configuration_path,
@@ -250,7 +264,7 @@ def main(
     yes,
     verbose,
 ):
-    '''
+    """
     Apply given model to data. Two columns are added to the file, energy_prediction
     and energy_prediction_std
 
@@ -265,7 +279,7 @@ def main(
     DISP_MODEL_PATH: Path to the pickled disp model.
 
     SIGN_MODEL_PATH: Path to the pickled sign model.
-    '''
+    """
     log = setup_logging()
 
     config = AICTConfig.from_yaml(configuration_path)
@@ -273,17 +287,17 @@ def main(
     if os.path.isfile(output):
         if not yes:
             click.confirm(
-                'Outputfile {} exists. Overwrite?'.format(output),
+                "Outputfile {} exists. Overwrite?".format(output),
                 abort=True,
             )
-        open(output, 'w').close()
+        open(output, "w").close()
 
-    log.info('Loading model')
+    log.info("Loading model")
     separator_model = load_model(separator_model_path)
     energy_model = load_model(energy_model_path)
     disp_model = load_model(disp_model_path)
     sign_model = load_model(sign_model_path)
-    log.info('Done')
+    log.info("Done")
 
     if n_jobs:
         separator_model.n_jobs = n_jobs
@@ -292,18 +306,18 @@ def main(
         sign_model.n_jobs = n_jobs
 
     columns = set(needed_columns)
-    for model in ('separator', 'energy', 'disp'):
+    for model in ("separator", "energy", "disp"):
         model_config = getattr(config, model)
         columns.update(model_config.columns_to_read_apply)
     try:
-        runs = read_h5py(data_path, key='runs')
-        sources = runs['source'].unique()
+        runs = read_h5py(data_path, key="runs")
+        sources = runs["source"].unique()
         if len(sources) > 1:
             raise click.ClickException(
-                'to_dl3 only supports files with a single source'
+                "to_dl3 only supports files with a single source"
             )
         source = SkyCoord.from_name(sources[0])
-        columns.update(['timestamp', 'night'])
+        columns.update(["timestamp", "night"])
     except (KeyError, OSError):
         source = None
         columns.update(dl3_columns_sim_read)
@@ -315,15 +329,16 @@ def main(
         columns=columns,
     )
 
-    log.info('Predicting on data...')
+    log.info("Predicting on data...")
     for df, start, end in tqdm(df_generator):
         df_sep = feature_generation(df, config.separator.feature_generation)
-        df['gamma_prediction'] = predict_separator(
-            df_sep[config.separator.features], separator_model,
+        df["gamma_prediction"] = predict_separator(
+            df_sep[config.separator.features],
+            separator_model,
         )
 
         df_energy = feature_generation(df, config.energy.feature_generation)
-        df['gamma_energy_prediction'] = predict_energy(
+        df["gamma_energy_prediction"] = predict_energy(
             df_energy[config.energy.features],
             energy_model,
             log_target=config.energy.log_target,
@@ -331,23 +346,27 @@ def main(
 
         df_disp = feature_generation(df, config.disp.feature_generation)
         disp = predict_disp(
-            df_disp[config.disp.features], disp_model, sign_model,
+            df_disp[config.disp.features],
+            disp_model,
+            sign_model,
             log_target=config.disp.log_target,
         )
 
         prediction_x = df.cog_x + disp * np.cos(df.delta)
         prediction_y = df.cog_y + disp * np.sin(df.delta)
-        df['source_x_prediction'] = prediction_x
-        df['source_y_prediction'] = prediction_y
-        df['disp_prediction'] = disp
+        df["source_x_prediction"] = prediction_x
+        df["source_y_prediction"] = prediction_y
+        df["disp_prediction"] = disp
 
         if source:
-            obstime = Time(df['timestamp'].to_numpy().astype('U'))
-            source_altaz = concat_results_altaz(parallelize_array_computation(
-                partial(to_altaz, source=source),
-                obstime,
-                n_jobs=n_jobs,
-            ))
+            obstime = Time(df["timestamp"].to_numpy().astype("U"))
+            source_altaz = concat_results_altaz(
+                parallelize_array_computation(
+                    partial(to_altaz, source=source),
+                    obstime,
+                    n_jobs=n_jobs,
+                )
+            )
 
             result = parallelize_array_computation(
                 calc_source_features_obs,
@@ -355,8 +374,8 @@ def main(
                 prediction_y,
                 source_altaz.zen.deg,
                 source_altaz.az.deg,
-                df['pointing_position_zd'].to_numpy(),
-                df['pointing_position_az'].to_numpy(),
+                df["pointing_position_zd"].to_numpy(),
+                df["pointing_position_az"].to_numpy(),
                 obstime,
                 n_jobs=n_jobs,
             )
@@ -364,24 +383,24 @@ def main(
 
             if random_source:
                 zd, az = calc_random_source(
-                    df['pointing_position_zd'],
-                    df['pointing_position_az'],
+                    df["pointing_position_zd"],
+                    df["pointing_position_az"],
                     wobble_distance,
                 )
-                df['source_position_zd'] = zd
-                df['source_position_az'] = az
+                df["source_position_zd"] = zd
+                df["source_position_az"] = az
 
             result = parallelize_array_computation(
                 calc_source_features_sim,
                 prediction_x,
                 prediction_y,
-                df['source_position_zd'].to_numpy(),
-                df['source_position_az'].to_numpy(),
-                df['pointing_position_zd'].to_numpy(),
-                df['pointing_position_az'].to_numpy(),
-                df['cog_x'].to_numpy(),
-                df['cog_y'].to_numpy(),
-                df['delta'].to_numpy(),
+                df["source_position_zd"].to_numpy(),
+                df["source_position_az"].to_numpy(),
+                df["pointing_position_zd"].to_numpy(),
+                df["pointing_position_az"].to_numpy(),
+                df["cog_x"].to_numpy(),
+                df["cog_y"].to_numpy(),
+                df["delta"].to_numpy(),
                 project_disp=config.disp.project_disp,
                 n_jobs=n_jobs,
             )
@@ -390,16 +409,17 @@ def main(
             df[k] = np.concatenate([r[k] for r in result])
 
         if source:
-            to_h5py(df[dl3_columns_obs], output, key='events', mode='a')
+            to_h5py(df[dl3_columns_obs], output, key="events", mode="a")
         else:
-            to_h5py(df[dl3_columns_sim], output, key='events', mode='a')
+            to_h5py(df[dl3_columns_sim], output, key="events", mode="a")
 
-    with h5py.File(data_path, 'r') as f:
-        sample_fraction = f.attrs.get('sample_fraction', 1.0)
+    with h5py.File(data_path, "r") as f:
+        sample_fraction = f.attrs.get("sample_fraction", 1.0)
 
     set_sample_fraction(output, sample_fraction)
-    copy_runs_group(data_path, output)
+    copy_group(data_path, output, "runs")
+    copy_group(data_path, output, "corsika_runs")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

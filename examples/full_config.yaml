@@ -5,6 +5,17 @@ seed: 0
 n_cross_validations: 5
 
 energy_unit: GeV
+coordinate_transformation: FACT
+# columns containing coordinates of the source and of the pointing
+source_az_column: source_position_az
+source_zd_column: source_position_zd
+source_az_unit: deg
+source_zd_unit: deg
+
+pointing_az_column: pointing_position_az
+pointing_zd_column: pointing_position_zd
+pointing_az_unit: deg
+pointing_zd_unit: deg
 
 # Define the name of the column that contains the name of the telescope in case you're working
 # with mulitple telescopes and telescope types
@@ -12,26 +23,26 @@ energy_unit: GeV
 
 # Quality cuts from Fabian Temme's phd thesis
 selection:
-    num_pixel_in_shower:
+    - num_pixel_in_shower:
       - '>='  # needs to be in quotes because > and ! are special character in yaml
       - 10
-    num_islands:
+    - num_islands:
       - <=
       - 8
-    width:
+    - width:
       - <=
       - 30
-    leakage1:
+    - leakage1:
       - <
       - 0.6
-    leakage2:
+    - leakage2:
       - lt # string representation also possible
       - 0.85
-    length:
+    - length:
       - lt
       - 70
 
- 
+
 # config for the energy regression
 energy:
   regressor: |
@@ -47,6 +58,7 @@ energy:
 
   # define the name of the regression target
   target_column: corsika_event_header_total_energy
+  log_target: False
 
 
   # Define the name of the variable you want estimate by regression.
@@ -65,7 +77,7 @@ energy:
 
   # Generate some features using pd.DataFrame.eval
   # List all columns that have to be read from the input files
-  # in needed_columns. 
+  # in needed_columns.
   # features must be a mapping of feature name -> expression
   feature_generation:
     needed_columns:
@@ -74,7 +86,7 @@ energy:
     features:
       area: width * length * @pi
 
- 
+
 # config for the g/h separation
 separator:
   #the classifier to use
@@ -124,18 +136,6 @@ disp:
         n_jobs=-1,
         max_depth=20,
     )
-
-  coordinate_transformation: FACT
-  # columns containing coordinates of the source and of the pointing
-  source_az_column: source_position_az
-  source_zd_column: source_position_zd
-  source_az_unit: deg
-  source_zd_unit: deg
-
-  pointing_az_column: pointing_position_az
-  pointing_zd_column: pointing_position_zd
-  pointing_az_unit: deg
-  pointing_zd_unit: deg
 
   # randomly sample the data if you dont want to use the whole set
   n_signal : 500

@@ -13,14 +13,14 @@ def test_energy_regression_results():
     import joblib
     from aict_tools.configuration import AICTConfig
 
-    configuration_path = 'examples/full_config.yaml'
+    configuration_path = "examples/full_config.yaml"
 
-    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+    with tempfile.TemporaryDirectory(prefix="aict_tools_test_") as d:
 
-        data_path = os.path.join(d, 'gamma.hdf5')
-        model_path = os.path.join(d, 'test.pkl')
+        data_path = os.path.join(d, "gamma.hdf5")
+        model_path = os.path.join(d, "test.pkl")
 
-        shutil.copy('examples/gamma.hdf5', data_path)
+        shutil.copy("examples/gamma.hdf5", data_path)
 
         runner = CliRunner()
 
@@ -29,9 +29,9 @@ def test_energy_regression_results():
             [
                 configuration_path,
                 data_path,
-                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, "test.hdf5"),
                 model_path,
-            ]
+            ],
         )
 
         assert result.exit_code == 0
@@ -42,8 +42,10 @@ def test_energy_regression_results():
         model = joblib.load(model_path)
 
         df = read_telescope_data(
-            data_path, config, model_config.columns_to_read_apply,
-            feature_generation_config=model_config.feature_generation
+            data_path,
+            config,
+            model_config.columns_to_read_apply,
+            feature_generation_config=model_config.feature_generation,
         )
 
         energy_prediction = predict_energy(
@@ -51,8 +53,10 @@ def test_energy_regression_results():
             model,
             log_target=model_config.log_target,
         )
-        expectation = pd.read_csv('tests/expected_results.csv')
-        np.testing.assert_array_almost_equal(energy_prediction, expectation['energy_prediction'])
+        expectation = pd.read_csv("tests/expected_results.csv")
+        np.testing.assert_array_almost_equal(
+            energy_prediction, expectation["energy_prediction"]
+        )
 
 
 def test_seperation_results():
@@ -62,18 +66,17 @@ def test_seperation_results():
     import joblib
     from aict_tools.configuration import AICTConfig
 
+    configuration_path = "examples/full_config.yaml"
+    expectation = pd.read_csv("tests/expected_results.csv")
 
-    configuration_path = 'examples/full_config.yaml'
-    expectation = pd.read_csv('tests/expected_results.csv')
+    with tempfile.TemporaryDirectory(prefix="aict_tools_test_") as d:
 
-    with tempfile.TemporaryDirectory(prefix='aict_tools_test_') as d:
+        gamma_path = os.path.join(d, "gamma.hdf5")
+        proton_path = os.path.join(d, "proton.hdf5")
+        model_path = os.path.join(d, "test.pkl")
 
-        gamma_path = os.path.join(d, 'gamma.hdf5')
-        proton_path = os.path.join(d, 'proton.hdf5')
-        model_path = os.path.join(d, 'test.pkl')
-
-        shutil.copy('examples/gamma.hdf5', gamma_path)
-        shutil.copy('examples/proton.hdf5', proton_path)
+        shutil.copy("examples/gamma.hdf5", gamma_path)
+        shutil.copy("examples/proton.hdf5", proton_path)
 
         runner = CliRunner()
 
@@ -83,9 +86,9 @@ def test_seperation_results():
                 configuration_path,
                 gamma_path,
                 proton_path,
-                os.path.join(d, 'test.hdf5'),
+                os.path.join(d, "test.hdf5"),
                 model_path,
-            ]
+            ],
         )
 
         assert result.exit_code == 0
@@ -95,8 +98,10 @@ def test_seperation_results():
         model = joblib.load(model_path)
 
         df = read_telescope_data(
-            proton_path, config, model_config.columns_to_read_apply,
-            feature_generation_config=model_config.feature_generation
+            proton_path,
+            config,
+            model_config.columns_to_read_apply,
+            feature_generation_config=model_config.feature_generation,
         )
         protons_prediction = predict_separator(
             df[model_config.features],
@@ -104,13 +109,19 @@ def test_seperation_results():
         )
 
         df = read_telescope_data(
-            gamma_path, config, model_config.columns_to_read_apply,
-            feature_generation_config=model_config.feature_generation
+            gamma_path,
+            config,
+            model_config.columns_to_read_apply,
+            feature_generation_config=model_config.feature_generation,
         )
         gammas_prediction = predict_separator(
             df[model_config.features],
             model,
         )
 
-        np.testing.assert_array_almost_equal(protons_prediction, expectation['separator_prediction_on_protons'])
-        np.testing.assert_array_almost_equal(gammas_prediction, expectation['separator_prediction_on_gammas'])
+        np.testing.assert_array_almost_equal(
+            protons_prediction, expectation["separator_prediction_on_protons"]
+        )
+        np.testing.assert_array_almost_equal(
+            gammas_prediction, expectation["separator_prediction_on_gammas"]
+        )
