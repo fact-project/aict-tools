@@ -105,7 +105,7 @@ def main(
 
         source_x = df_data[config.cog_x_column] + dxdy[:, 0]
         source_y = df_data[config.cog_y_column] + dxdy[:, 1]
-        source_az, source_alt = camera_to_horizontal(df_data, config, source_x, source_y)
+        source_alt, source_az = camera_to_horizontal(df_data, config, source_x, source_y)
 
         if config.data_format == "CTA":
             df_data.reset_index(inplace=True)
