@@ -13,7 +13,7 @@ from ..io import (
 from ..apply import predict_disp
 from ..configuration import AICTConfig
 from ..logging import setup_logging
-from ..preprocessing import convert_units
+from ..preprocessing import camera_to_horizontal
 
 
 @click.command()
@@ -122,6 +122,8 @@ def main(
         source_y = df_data[config.cog_y_column].values + disp * np.sin(
             df_data[config.delta_column].values
         )
+        log.warning(df_data.keys())
+        source_az, source_alt = camera_to_horizontal(df_data, config, source_x, source_y)
 
         if config.data_format == "CTA":
             df_data.reset_index(inplace=True)
@@ -129,6 +131,8 @@ def main(
                 d = group[["obs_id", "event_id"]].copy()
                 d["source_y_prediction"] = source_y[group.index]
                 d["source_x_prediction"] = source_x[group.index]
+                d["source_alt_prediction"] = source_alt[group.index]
+                d["source_az_prediction"] = source_az[group.index]
                 d["disp_prediction"] = disp[group.index]
                 append_predictions_cta(
                     data_path,
@@ -140,6 +144,8 @@ def main(
             key = config.events_key
             append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
             append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")
+            append_column_to_hdf5(data_path, source_alt, key, "source_alt_prediction")
+            append_column_to_hdf5(data_path, source_az, key, "source_az_prediction")
             append_column_to_hdf5(data_path, disp, key, "disp_prediction")
 
 

@@ -339,18 +339,25 @@ class DispConfig:
             aict_config.delta_column,
         }
 
-        cols.update(model_config['features'])
+        cols.update(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
         # Add id's because we generate new tables instead of adding columns
         # and want these to be included
         # focal_length is necessary for coordinate transformations
-        cols.update(["tel_id", "event_id", "obs_id", "equivalent_focal_length"])
+        cols.update(
+            {
+                "tel_id",
+                "event_id",
+                "obs_id",
+                "equivalent_focal_length",
+                aict_config.pointing_az_column,
+                aict_config.pointing_alt_column,
+            }
+        )
         self.columns_to_read_apply = list(cols)
         cols.update(
             {
-                aict_config.pointing_az_column,
-                aict_config.pointing_alt_column,
                 aict_config.source_az_column,
                 aict_config.source_alt_column,
             }
@@ -372,23 +379,28 @@ class DispConfig:
             aict_config.delta_column,
         }
 
-        cols.update(model_config['features'])
+        cols.update(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-
-        self.columns_to_read_apply = list(cols)
         cols.update(
             {
                 aict_config.pointing_az_column,
                 aict_config.pointing_zd_column,
                 aict_config.pointing_alt_column,
+            }
+        )
+        cols.discard(None)
+        self.columns_to_read_apply = list(cols)
+
+        cols.update(
+            {
                 aict_config.source_az_column,
                 aict_config.source_zd_column,
                 aict_config.source_alt_column,
             }
         )
         cols.discard(None)
-        if aict_config.coordinate_transformation == 'CTA':
+        if aict_config.coordinate_transformation == "CTA":
             cols.add(aict_config.focal_length_column)
         cols.update(get_optional_training_columns(aict_config))
         self.columns_to_read_train = list(cols)
@@ -476,17 +488,24 @@ class DxdyConfig:
         cols.update(model_config["features"])
         if self.feature_generation:
             cols.update(self.feature_generation.needed_columns)
-        self.columns_to_read_apply = list(cols)
-        cols.update({
-            aict_config.pointing_az_column,
-            aict_config.pointing_zd_column,
-            aict_config.pointing_alt_column,
-            aict_config.source_az_column,
-            aict_config.source_zd_column,
-            aict_config.source_alt_column,
-        })
+        cols.update(
+            {
+                aict_config.pointing_az_column,
+                aict_config.pointing_zd_column,
+                aict_config.pointing_alt_column,
+            }
+        )
         cols.discard(None)
-        if aict_config.coordinate_transformation == 'CTA':
+        self.columns_to_read_apply = list(cols)
+        cols.update(
+            {
+                aict_config.source_az_column,
+                aict_config.source_zd_column,
+                aict_config.source_alt_column,
+            }
+        )
+        cols.discard(None)
+        if aict_config.coordinate_transformation == "CTA":
             cols.add(aict_config.focal_length_column)
 
         cols.update(get_optional_training_columns(aict_config))

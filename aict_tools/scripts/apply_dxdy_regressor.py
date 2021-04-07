@@ -14,7 +14,7 @@ from ..io import (
 from ..apply import predict_dxdy
 from ..configuration import AICTConfig
 from ..logging import setup_logging
-from ..preprocessing import calc_true_disp
+from ..preprocessing import calc_true_disp, camera_to_horizontal
 
 
 @click.command()
@@ -105,6 +105,8 @@ def main(
 
         source_x = df_data[config.cog_x_column] + dxdy[:, 0]
         source_y = df_data[config.cog_y_column] + dxdy[:, 1]
+        source_az, source_alt = camera_to_horizontal(df_data, config, source_x, source_y)
+
         if config.data_format == "CTA":
             df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby("tel_id"):
@@ -113,16 +115,19 @@ def main(
                 d["source_x_prediction"] = source_x[group.index]
                 d["dx_prediction"] = dxdy[:, 0][group.index]
                 d["dy_prediction"] = dxdy[:, 1][group.index]
+                d["source_alt_prediction"] = source_alt[group.index]
+                d["source_az_prediction"] = source_az[group.index]
                 append_predictions_cta(
                     data_path,
                     d,
                     f"/dl2/event/telescope/{model_config.output_name}/tel_{tel_id:03d}",
                 )
-
         elif config.data_format == "simple":
             key = config.events_key
             append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
             append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")
+            append_column_to_hdf5(data_path, source_alt, key, "source_alt_prediction")
+            append_column_to_hdf5(data_path, source_az, key, "source_az_prediction")
             append_column_to_hdf5(data_path, dxdy[:, 0], key, "dx_prediction")
             append_column_to_hdf5(data_path, dxdy[:, 1], key, "dy_prediction")
 

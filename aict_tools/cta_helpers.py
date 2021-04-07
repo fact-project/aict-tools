@@ -8,7 +8,7 @@ except ImportError:
     raise ImportError("This functionality requires ctapipe to be installed")
 
 
-def horizontal_to_camera_cta_simtel(alt, az, alt_pointing, az_pointing, focal_length):
+def horizontal_to_camera(alt, az, alt_pointing, az_pointing, focal_length):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", MissingFrameAttributeWarning)
 
@@ -29,5 +29,26 @@ def horizontal_to_camera_cta_simtel(alt, az, alt_pointing, az_pointing, focal_le
             telescope_pointing=tel_pointing,
         )
 
-        cam_coords = source_altaz.transform_to(camera_frame)
-        return cam_coords.x.to_value(u.m), cam_coords.y.to_value(u.m)
+        cam_coordinates = source_altaz.transform_to(camera_frame)
+        return cam_coordinates.x.to_value(u.m), cam_coordinates.y.to_value(u.m)
+
+
+def camera_to_horizontal(x, y, alt_pointing, az_pointing, focal_length):
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", MissingFrameAttributeWarning)
+
+        altaz = AltAz()
+        tel_pointing = SkyCoord(
+            alt=u.Quantity(alt_pointing, u.deg, copy=False),
+            az=u.Quantity(az_pointing, u.deg, copy=False),
+            frame=altaz,
+        )
+        camera_coordinates = CameraFrame(
+            x=u.Quantity(x, u.m, copy=False),
+            y=u.Quantity(y, u.m, copy=False),
+            focal_length=u.Quantity(focal_length, u.m, copy=False),
+            telescope_pointing=tel_pointing,
+        )
+
+        horizontal_coordinates = camera_coordinates.transform_to(altaz)
+        return horizontal_coordinates.alt.to_value(u.deg), horizontal_coordinates.az.to_value(u.deg)
