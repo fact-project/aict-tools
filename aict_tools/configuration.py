@@ -460,14 +460,23 @@ class DxdyConfig:
         # Add id's because we generate new tables instead of adding columns
         # and want these to be included
         # focal_length is necessary for coordinate transformations
-        cols.update(['tel_id', 'event_id', 'obs_id', 'equivalent_focal_length'])
+        cols.update(
+            {
+                "tel_id",
+                "event_id",
+                "obs_id",
+                "equivalent_focal_length",
+                aict_config.pointing_az_column,
+                aict_config.pointing_alt_column,
+            }
+        )
         self.columns_to_read_apply = list(cols)
-        cols.update({
-            aict_config.pointing_az_column,
-            aict_config.pointing_alt_column,
-            aict_config.source_az_column,
-            aict_config.source_alt_column,
-        })
+        cols.update(
+            {
+                aict_config.source_az_column,
+                aict_config.source_alt_column,
+            }
+        )
 
         cols.update(get_optional_training_columns(aict_config))
         self.columns_to_read_train = list(cols)
