@@ -122,10 +122,9 @@ def main(
         source_y = df_data[config.cog_y_column].values + disp * np.sin(
             df_data[config.delta_column].values
         )
-        log.warning(df_data.keys())
-        source_alt, source_az = camera_to_horizontal(df_data, config, source_x, source_y)
 
         if config.data_format == "CTA":
+            source_alt, source_az = camera_to_horizontal(df_data, config, source_x, source_y)
             df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby("tel_id"):
                 d = group[["obs_id", "event_id"]].copy()
@@ -141,10 +140,11 @@ def main(
                 )
 
         elif config.data_format == "simple":
+            source_zd, source_az = camera_to_horizontal(df_data, config, source_x, source_y)
             key = config.events_key
             append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
             append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")
-            append_column_to_hdf5(data_path, source_alt, key, "source_alt_prediction")
+            append_column_to_hdf5(data_path, source_zd, key, "source_zd_prediction")
             append_column_to_hdf5(data_path, source_az, key, "source_az_prediction")
             append_column_to_hdf5(data_path, disp, key, "disp_prediction")
 

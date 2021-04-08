@@ -463,7 +463,7 @@ def test_apply_disp(temp_dir, disp_models):
     assert result.exit_code == 0
     with h5py.File(os.path.join(temp_dir, "gamma.hdf5"), "r") as f:
         assert "source_x_prediction" in f["events"]
-        assert "source_alt_prediction" in f["events"]
+        assert "source_zd_prediction" in f["events"]
 
 
 def test_apply_dxdy(temp_dir, dxdy_model):
@@ -486,7 +486,7 @@ def test_apply_dxdy(temp_dir, dxdy_model):
     assert result.exit_code == 0
     with h5py.File(os.path.join(temp_dir, "gamma.hdf5"), "r") as f:
         assert "source_x_prediction" in f["events"]
-        assert "source_alt_prediction" in f["events"]
+        assert "source_zd_prediction" in f["events"]
 
 
 def test_apply_disp_cta(temp_dir, cta_disp_models):
