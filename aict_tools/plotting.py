@@ -477,3 +477,71 @@ def plot_energy_dependent_dxdy_metrics(df, true_energy_column, energy_unit='GeV'
     ax2.set_xscale('log')
 
     return fig
+
+
+def plot_rocauc_vs_size(
+    df,
+    size_column="size",
+    label_column="label",
+    score_column="scores",
+    ax=None,
+):
+
+    df = df.copy()
+    edges = np.geomspace(
+        df[size_column].min(),
+        df[size_column].max(),
+        50,
+    )
+    df["bin_idx"] = np.digitize(df[size_column], edges)
+
+    def roc_auc_score(group):
+        try:
+            return metrics.roc_auc_score(group[label_column], group[score_column])
+        except:
+            return np.nan
+
+    # discard under and overflow
+    df = df[(df["bin_idx"] != 0) & (df["bin_idx"] != len(edges))]
+
+    binned = pd.DataFrame(
+        {
+            "size_center": 0.5 * (edges[1:] + edges[:-1]),
+            "size_low": edges[:-1],
+            "size_high": edges[1:],
+            "size_width": np.diff(edges),
+        },
+        index=pd.Series(np.arange(1, len(edges)), name="bin_idx"),
+    )
+
+    roc_aucs = pd.DataFrame(index=binned.index)
+    counts = pd.DataFrame(index=binned.index)
+
+    with warnings.catch_warnings():
+        # warns when there are less than 2 events for calculating metrics,
+        # but we throw those away anyways
+        warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
+        for cv_fold, cv in df.groupby("cv_fold"):
+            grouped = cv.groupby("bin_idx")
+            roc_aucs[cv_fold] = grouped.apply(roc_auc_score)
+            counts[cv_fold] = grouped.size()
+
+    binned["roc_auc"] = roc_aucs.mean(axis=1)
+    binned["roc_auc_std"] = roc_aucs.std(axis=1)
+    binned["valid"] = (counts > 50).any(axis=1)
+    binned = binned.query("valid")
+
+    ax = ax or plt.gca()
+
+    ax.errorbar(
+        binned.size_center,
+        binned.roc_auc,
+        yerr=binned.roc_auc_std,
+        xerr=binned.size_width / 2,
+        ls="",
+    )
+    ax.set_ylabel(r"$A_{\mathrm{ROC}}$")
+    ax.set_xlabel(size_column)
+    ax.set_xscale("log")
+
+    return ax

@@ -3,15 +3,17 @@ import logging
 import matplotlib.pyplot as plt
 import matplotlib
 import joblib
-from ..configuration import AICTConfig
 import fact.io
+import numpy as np
 
 from ..plotting import (
     plot_roc,
     plot_scores,
     plot_precision_recall,
     plot_feature_importances,
+    plot_rocauc_vs_size,
 )
+from ..configuration import AICTConfig
 
 if matplotlib.get_backend() == "pgf":
     from matplotlib.backends.backend_pgf import PdfPages
@@ -37,7 +39,8 @@ def main(configuration_path, performance_path, model_path, output, key):
     log.info("Loading model")
     model = joblib.load(model_path)
 
-    model_config = AICTConfig.from_yaml(configuration_path).separator
+    config = AICTConfig.from_yaml(configuration_path)
+    model_config = config.separator
 
     log.info("Creating performance plots. ")
     figures = []
@@ -60,6 +63,36 @@ def main(configuration_path, performance_path, model_path, output, key):
     )
 
     # Plot hists of probas
+    if config.size_column is not None:
+        figures.append(plt.figure())
+        ax = figures[-1].add_subplot(1, 1, 1)
+
+        median = np.nanmedian(df[config.size_column])
+        mask = df[config.size_column] > median
+
+        ax.set_title(f'Scores for {config.size_column} > {median:.1f} (median value)')
+        plot_scores(
+            df[mask],
+            model,
+            score_column=model_config.output_name,
+            ax=ax,
+            xlabel=model_config.output_name,
+        )
+
+        figures.append(plt.figure())
+        ax = figures[-1].add_subplot(1, 1, 1)
+        mask = df[config.size_column] <= median
+
+        ax.set_title(f'Scores for {config.size_column} <= {median:.1f} (median value)')
+        plot_scores(
+            df[mask],
+            model,
+            score_column=model_config.output_name,
+            ax=ax,
+            xlabel=model_config.output_name,
+        )
+
+    # Plot hists of probas
     figures.append(plt.figure())
     ax = figures[-1].add_subplot(1, 1, 1)
 
@@ -72,6 +105,12 @@ def main(configuration_path, performance_path, model_path, output, key):
 
         features = model_config.features
         plot_feature_importances(model, features, ax=ax)
+
+    if config.size_column is not None:
+        figures.append(plt.figure())
+        ax = figures[-1].add_subplot(1, 1, 1)
+        plot_rocauc_vs_size(df, config.size_column, ax=ax, score_column=model_config.output_name)
+
 
     if output is None:
         plt.show()
