@@ -9,7 +9,7 @@ from sklearn import metrics
 from sklearn.exceptions import UndefinedMetricWarning
 from sklearn.calibration import CalibratedClassifierCV
 
-from .preprocessing import delta_error, horizontal_to_camera
+from .preprocessing import horizontal_to_camera
 
 
 def plot_regressor_confusion(
@@ -472,7 +472,7 @@ def plot_energy_dependent_dxdy_metrics(df, true_energy_column, energy_unit='GeV'
     ax2.grid()
 
     ax2.set_xlabel(
-        r'$E_{\mathrm{wahr}} \,\,/\,\,' + rf' \mathrm{{{energy_unit}}}$'
+        r'$E_{\mathrm{true}} \,\,/\,\,' + rf' \mathrm{{{energy_unit}}}$'
     )
     ax2.set_xscale('log')
 
