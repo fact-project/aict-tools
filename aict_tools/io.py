@@ -504,6 +504,11 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
             # columns=columns
             tel_table = read_table(path, tel)[first:last]
 
+            # astropy table joins do not preserve input order
+            # but sort by the join keys, we add this simple index
+            # so we can restore the input order after joining
+            tel_table["__index"] = np.arange(len(tel_table))
+
             # Pointing information has to be loaded from the monitoring tables and interpolated
             # We also need the trigger tables as monitoring is based on time not events
             if columns:
@@ -543,9 +548,13 @@ def read_cta_dl1(path, aict_config, key=None, columns=None, first=None, last=Non
                 if columns:
                     # True / Simulation columns are still missing, so only use the columns already present
                     tel_table = tel_table[
-                        list(set(columns).intersection(tel_table.columns))
+                        list(set(columns).intersection(tel_table.columns)) + ['__index']
                     ].copy()
 
+            # restore the input order that was changed by astropy.table.join
+            # and remove the additional column
+            tel_table.sort('__index')
+            tel_table.remove_column('__index')
             tel_tables.append(tel_table)
 
         # Monte carlo information is located in the simulation group
