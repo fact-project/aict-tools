@@ -42,7 +42,7 @@ def main(
 ):
     """
     Apply given model to data. Three columns are added to the file:
-    source_x_prediction, source_y_prediction and disp_prediction
+    x_prediction, y_prediction and disp_prediction
 
     CONFIGURATION_PATH: Path to the config yaml file
     DATA_PATH: path to the FACT data in a h5py hdf5 file, e.g. erna_gather_fits output
@@ -55,8 +55,8 @@ def main(
     model_config = config.disp
 
     columns_to_delete = [
-        "source_x_prediction",
-        "source_y_prediction",
+        "x_prediction",
+        "y_prediction",
         "theta",
         "theta_deg",
         "theta_rec_pos",
@@ -116,22 +116,22 @@ def main(
             log_target=model_config.log_target,
         )
 
-        source_x = df_data[config.cog_x_column].values + disp * np.cos(
+        x = df_data[config.cog_x_column].values + disp * np.cos(
             df_data[config.delta_column].values
         )
-        source_y = df_data[config.cog_y_column].values + disp * np.sin(
+        y = df_data[config.cog_y_column].values + disp * np.sin(
             df_data[config.delta_column].values
         )
 
         if config.data_format == "CTA":
-            source_alt, source_az = camera_to_horizontal(df_data, config, source_x, source_y)
+            alt, az = camera_to_horizontal(df_data, config, x, y)
             df_data.reset_index(inplace=True)
             for tel_id, group in df_data.groupby("tel_id"):
                 d = group[["obs_id", "event_id"]].copy()
-                d["source_y_prediction"] = source_y[group.index]
-                d["source_x_prediction"] = source_x[group.index]
-                d["source_alt_prediction"] = source_alt[group.index]
-                d["source_az_prediction"] = source_az[group.index]
+                d["y_prediction"] = y[group.index]
+                d["x_prediction"] = x[group.index]
+                d["alt_prediction"] = alt[group.index]
+                d["az_prediction"] = az[group.index]
                 d["disp_prediction"] = disp[group.index]
                 append_predictions_cta(
                     data_path,
@@ -141,16 +141,16 @@ def main(
 
         elif config.data_format == "simple":
             key = config.events_key
-            append_column_to_hdf5(data_path, source_x, key, "source_x_prediction")
-            append_column_to_hdf5(data_path, source_y, key, "source_y_prediction")
+            append_column_to_hdf5(data_path, x, key, "x_prediction")
+            append_column_to_hdf5(data_path, y, key, "y_prediction")
             append_column_to_hdf5(data_path, disp, key, "disp_prediction")
             if config.coordinate_transformation == "CTA":
-                source_alt, source_az = camera_to_horizontal(df_data, config, source_x, source_y)
-                append_column_to_hdf5(data_path, source_alt, key, "source_alt_prediction")
+                alt, az = camera_to_horizontal(df_data, config, x, y)
+                append_column_to_hdf5(data_path, alt, key, "alt_prediction")
             elif config.coordinate_transformation == "FACT":
-                source_zd, source_az = camera_to_horizontal(df_data, config, source_x, source_y)
+                source_zd, az = camera_to_horizontal(df_data, config, x, y)
                 append_column_to_hdf5(data_path, source_zd, key, "source_zd_prediction")
-            append_column_to_hdf5(data_path, source_az, key, "source_az_prediction")
+            append_column_to_hdf5(data_path, az, key, "az_prediction")
 
 
 if __name__ == "__main__":

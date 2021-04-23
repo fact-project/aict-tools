@@ -462,7 +462,7 @@ def test_apply_disp(temp_dir, disp_models):
         print_exception(*result.exc_info)
     assert result.exit_code == 0
     with h5py.File(os.path.join(temp_dir, "gamma.hdf5"), "r") as f:
-        assert "source_x_prediction" in f["events"]
+        assert "x_prediction" in f["events"]
         assert "source_zd_prediction" in f["events"]
 
 
@@ -485,7 +485,7 @@ def test_apply_dxdy(temp_dir, dxdy_model):
         print_exception(*result.exc_info)
     assert result.exit_code == 0
     with h5py.File(os.path.join(temp_dir, "gamma.hdf5"), "r") as f:
-        assert "source_x_prediction" in f["events"]
+        assert "x_prediction" in f["events"]
         assert "source_zd_prediction" in f["events"]
 
 
@@ -514,8 +514,8 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
         assert "disp_prediction" in f["dl2"]["event"]["telescope"]
         assert "tel_001" in f["dl2"]["event"]["telescope"]["disp_prediction"]
     pred = Table.read(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "/dl2/event/telescope/disp_prediction")
-    assert "source_x_prediction" in pred.columns
-    assert "source_alt_prediction" in pred.columns
+    assert "x_prediction" in pred.columns
+    assert "alt_prediction" in pred.columns
 
 
 def test_apply_dxdy_cta(temp_dir, cta_dxdy_model):
@@ -540,8 +540,8 @@ def test_apply_dxdy_cta(temp_dir, cta_dxdy_model):
         assert "dxdy_prediction" in f["dl2"]["event"]["telescope"]
         assert "tel_001" in f["dl2"]["event"]["telescope"]["dxdy_prediction"]
     pred = Table.read(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "/dl2/event/telescope/dxdy_prediction")
-    assert "source_x_prediction" in pred.columns
-    assert "source_alt_prediction" in pred.columns
+    assert "x_prediction" in pred.columns
+    assert "alt_prediction" in pred.columns
 
 
 def test_to_dl3():
