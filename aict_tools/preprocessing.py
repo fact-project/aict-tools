@@ -3,7 +3,8 @@ import logging
 import astropy.units as u
 from astropy.table import Table
 from fact.coordinates.utils import horizontal_to_camera as horizontal_to_camera_fact
-
+from fact.coordinates.utils import camera_to_horizontal as camera_to_horizontal_fact
+from fact.coordinates.utils import camera_to_equatorial as camera_to_equatorial_fact
 from .configuration import AICTConfig
 
 
@@ -127,12 +128,7 @@ def get_alt(df, config: AICTConfig):
         source_alt = 90 - df[config.source_zd_column]
     else:
         source_alt = df[config.source_alt_column]
-
-    if config.pointing_zd_column:
-        pointing_alt = 90 - df[config.pointing_zd_column]
-    else:
-        pointing_alt = df[config.pointing_alt_column]
-
+    pointing_alt = get_alt_pointing(df, config)
     return source_alt, pointing_alt
 
 
@@ -146,20 +142,32 @@ def get_zd(df, config):
     else:
         source_zd = df[config.source_zd_column]
 
+    pointing_zd = get_zd_pointing(df, config)
+    return source_zd, pointing_zd
+
+
+def get_alt_pointing(df, config):
+    if config.pointing_zd_column:
+        pointing_alt = 90 - df[config.pointing_zd_column]
+    else:
+        pointing_alt = df[config.pointing_alt_column]
+    return pointing_alt
+
+
+def get_zd_pointing(df, config):
     if config.pointing_alt_column:
         pointing_zd = 90 - df[config.pointing_alt_column]
     else:
         pointing_zd = df[config.pointing_zd_column]
-
-    return source_zd, pointing_zd
+    return pointing_zd
 
 
 def horizontal_to_camera(df, config):
     if config.coordinate_transformation == "CTA":
-        from .cta_helpers import horizontal_to_camera_cta_simtel
+        from .cta_helpers import horizontal_to_camera as horizontal_to_camera_cta
 
         alt_source, alt_pointing = get_alt(df, config)
-        source_x, source_y = horizontal_to_camera_cta_simtel(
+        source_x, source_y = horizontal_to_camera_cta(
             az=df[config.source_az_column],
             alt=alt_source,
             az_pointing=df[config.pointing_az_column],
@@ -178,6 +186,32 @@ def horizontal_to_camera(df, config):
         raise ValueError("Unsupported value for coordinate_transformation")
 
     return source_x, source_y
+
+
+def camera_to_horizontal(df, config, source_x, source_y):
+    if config.coordinate_transformation == "CTA":
+        from .cta_helpers import camera_to_horizontal as camera_to_horizontal_cta
+
+        alt_pointing = get_alt_pointing(df, config)
+        source_alt, source_az = camera_to_horizontal_cta(
+            x=source_x,
+            y=source_y,
+            az_pointing=df[config.pointing_az_column],
+            alt_pointing=alt_pointing,
+            focal_length=df[config.focal_length_column],
+        )
+        return source_alt, source_az
+    elif config.coordinate_transformation == "FACT":
+        zd_pointing = get_zd_pointing(df, config)
+        source_zd, source_az = camera_to_horizontal_fact(
+            x=source_x,
+            y=source_y,
+            az_pointing=df[config.pointing_az_column],
+            zd_pointing=zd_pointing,
+        )
+        return source_zd, source_az
+    else:
+        raise ValueError("Unsupported value for coordinate_transformation")
 
 
 def delta_error(data_df, model_config):

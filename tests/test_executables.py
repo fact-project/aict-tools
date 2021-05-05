@@ -8,6 +8,7 @@ from pytest import importorskip
 import pytest
 import pandas as pd
 import numpy as np
+from astropy.table import Table
 
 
 class DateNotModified:
@@ -461,7 +462,8 @@ def test_apply_disp(temp_dir, disp_models):
         print_exception(*result.exc_info)
     assert result.exit_code == 0
     with h5py.File(os.path.join(temp_dir, "gamma.hdf5"), "r") as f:
-        assert "source_x_prediction" in f["events"]
+        assert "x_prediction" in f["events"]
+        assert "source_zd_prediction" in f["events"]
 
 
 def test_apply_dxdy(temp_dir, dxdy_model):
@@ -482,6 +484,9 @@ def test_apply_dxdy(temp_dir, dxdy_model):
         print(result.output)
         print_exception(*result.exc_info)
     assert result.exit_code == 0
+    with h5py.File(os.path.join(temp_dir, "gamma.hdf5"), "r") as f:
+        assert "x_prediction" in f["events"]
+        assert "source_zd_prediction" in f["events"]
 
 
 def test_apply_disp_cta(temp_dir, cta_disp_models):
@@ -508,6 +513,9 @@ def test_apply_disp_cta(temp_dir, cta_disp_models):
     with h5py.File(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "r") as f:
         assert "disp_prediction" in f["dl2"]["event"]["telescope"]
         assert "tel_001" in f["dl2"]["event"]["telescope"]["disp_prediction"]
+    pred = Table.read(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "/dl2/event/telescope/disp_prediction")
+    assert "x_prediction" in pred.columns
+    assert "alt_prediction" in pred.columns
 
 
 def test_apply_dxdy_cta(temp_dir, cta_dxdy_model):
@@ -528,6 +536,12 @@ def test_apply_dxdy_cta(temp_dir, cta_dxdy_model):
         print(result.output)
         print_exception(*result.exc_info)
     assert result.exit_code == 0
+    with h5py.File(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "r") as f:
+        assert "dxdy_prediction" in f["dl2"]["event"]["telescope"]
+        assert "tel_001" in f["dl2"]["event"]["telescope"]["dxdy_prediction"]
+    pred = Table.read(os.path.join(temp_dir, "cta_gammas.dl1.h5"), "/dl2/event/telescope/dxdy_prediction")
+    assert "x_prediction" in pred.columns
+    assert "alt_prediction" in pred.columns
 
 
 def test_to_dl3():
