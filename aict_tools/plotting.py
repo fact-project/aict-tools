@@ -50,13 +50,13 @@ def plot_regressor_confusion(
 
     if log_xy is True:
         ax.set_xlabel(
-            rf"$\log_{{10}}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$"
+            rf"$\log_{{10}}(E_{{\mathrm{{True}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$"
         )
         ax.set_ylabel(
             rf"$\log_{{10}}(E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$"
         )
     else:
-        ax.set_xlabel(rf"$E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$")
+        ax.set_xlabel(rf"$E_{{\mathrm{{True}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$")
         ax.set_ylabel(rf"$E_{{\mathrm{{Est}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$")
 
     return ax
@@ -111,7 +111,7 @@ def plot_bias_resolution(
     ax.legend()
     ax.set_xscale("log")
     ax.set_xlabel(
-        rf"$\log_{{10}}(E_{{\mathrm{{MC}}}} \,\, / \,\, \mathrm{{{energy_unit}}})$"
+        rf"$E_{{\mathrm{{True}}}} \,\, / \,\, \mathrm{{{energy_unit}}}$"
     )
 
     return ax
